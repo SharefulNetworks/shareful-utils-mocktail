@@ -1,9 +1,16 @@
 #!/bin/bash
 
+#---------------------------------------------------------------------------------------------------------
+#Sample sub-handler script to demonstrate how a sub handler may be manually written from scratch that
+#can accept, process and dispatch a response to a request routed to it from the root handler.
+#----------------------------------------------------------------------------------------------------------
+
 echo "sample-sub-handler: Received a request, processing..." >&2
 
 #echo path, method and protocol info passed into this script from the root-handler, which should have been passed in as the request line.
-read -r method path protocol
+method="$1"
+path="$2"
+protocol="$3"
 echo "sample-sub-handler: Received request with method: $method, path: $path, protocol: $protocol" >&2
 
 

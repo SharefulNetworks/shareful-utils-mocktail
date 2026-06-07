@@ -15,9 +15,9 @@ read -r -t 5 method path protocol || exit 1
 
 #route request based on path, taking care to pass in the request line to the subhandler
 case "$path" in
-  "/sample")
+  "/sample" | /sample/*)
     echo "root-handler: Routing to sample-sub-handler for path: $path" >&2
-   "${SCRIPT_DIR}/res/handlers/sub/sample-sub-handler" \
+   "${SCRIPT_DIR}/res/handlers/usr/sample-sub-handler" \
     "$method" "$path" "$protocol"
     ;;
   *)

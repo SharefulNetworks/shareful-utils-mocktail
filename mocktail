@@ -11,7 +11,19 @@ trap teardown EXIT INT TERM
 
 
 startup() {
-  echo "Mocktail server is running on port $LISTEN_PORT"
+  acquireScriptDependencies
+  startListening  
+}
+
+
+teardown() {
+  stopListening
+}
+
+startListening(){
+
+  echo "Starting Mocktail server on port $LISTEN_PORT..." >&2
+  
   # process cap, ensures we don't for fork processes indefinitely and exhaust system resources.
   # exported to enable it to be picked up by the roor-handler script.
   export MAX_PROCESSES=30
@@ -22,24 +34,72 @@ startup() {
   # immediately capture the socat PID so we can manage it lifecycle, especially for cleanup.
   SOCAT_PID=$!
 
+  # log status message to indicate the server is running and listening for requests.
+  echo "Mocktail server is running on port $LISTEN_PORT"
+
   # wait for the socat process to exit, which will happen when the server is stopped or if it encounters a critical error.
   wait "$SOCAT_PID"
+
 }
 
+stopListening(){
 
-teardown() {
-  if [[ -n "$SOCAT_PID" ]]; then
-    echo
-    echo "Shutting down Mocktail server (PID: $SOCAT_PID)..."
+   echo "Stopping Mocktail server (PID: $SOCAT_PID)..." >&2
 
+   if [[ -n "$SOCAT_PID" ]]; then
+   
     # best case: process group kill
     kill -- -"$SOCAT_PID" 2>/dev/null || true
 
     # fallback
     kill "$SOCAT_PID" 2>/dev/null || true
-
-    echo "Mocktail server has been stopped."
+  
+  else
+    echo "No active Mocktail server process found to stop." >&2
   fi
+
+  echo "Mocktail server stopped." >&2
+
+}
+
+acquireScriptDependencies() {
+
+
+  echo "Checking for required dependencies..." >&2
+
+  # check if socat is installed, which is required for the server to function.
+  if ! command -v socat &> /dev/null; then
+    echo "Error: socat is not installed and is required for the Mocktail server to function, installing socat..." >&2
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+      sudo apt-get update && sudo apt-get install -y socat
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+      brew install socat
+    else
+      echo "Unsupported OS type: $OSTYPE. Please install socat manually." >&2
+      exit 1
+    fi
+  else
+    echo "socat is already installed." >&2
+  fi
+
+
+  # check if JQ is installed, which is required for the server to function.
+  if ! command -v jq &> /dev/null; then
+    echo "Error: jq is not installed and is required for the Mocktail server to function, installing jq..." >&2
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+      sudo apt-get update && sudo apt-get install -y jq
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+      brew install jq
+    else
+      echo "Unsupported OS type: $OSTYPE. Please install jq manually." >&2
+      exit 1
+    fi
+  else
+    echo "jq is already installed." >&2
+  fi
+
+
+  echo "All dependencies are satisfied." >&2
 }
 
 #call script entry point.

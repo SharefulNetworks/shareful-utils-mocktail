@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+#declare globals
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LISTEN_PORT=3333
+
+# process cap, ensures we don't for fork processes indefinitely and exhaust system resources.
+# exported to enable it to be picked up by the roor-handler script.
+export MAX_PROCESSES=30  
+
+
+# Start the server using socat, which listens on TCP port 3333 and executes the root-handler script for each incoming connection.
+echo "Starting mocktail server on port $LISTEN_PORT"
+socat TCP-LISTEN:3333,reuseaddr,fork,so-rcvtimeo=5000,so-sndtimeo=5000 \
+      EXEC:"timeout 10s bash ${SCRIPT_DIR}/res/root-handler"

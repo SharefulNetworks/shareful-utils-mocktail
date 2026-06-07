@@ -3,14 +3,45 @@
 
 #declare globals
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOCAT_PID="" 
 LISTEN_PORT=3333
 
-# process cap, ensures we don't for fork processes indefinitely and exhaust system resources.
-# exported to enable it to be picked up by the roor-handler script.
-export MAX_PROCESSES=30  
+# trap exit
+trap teardown EXIT INT TERM
 
 
-# Start the server using socat, which listens on TCP port 3333 and executes the root-handler script for each incoming connection.
-echo "Starting mocktail server on port $LISTEN_PORT"
-socat TCP-LISTEN:3333,reuseaddr,fork,so-rcvtimeo=5000,so-sndtimeo=5000 \
-      EXEC:"timeout 10s bash ${SCRIPT_DIR}/res/root-handler"
+startup() {
+  echo "Mocktail server is running on port $LISTEN_PORT"
+  # process cap, ensures we don't for fork processes indefinitely and exhaust system resources.
+  # exported to enable it to be picked up by the roor-handler script.
+  export MAX_PROCESSES=30
+  export SCRIPT_DIR  
+  socat TCP-LISTEN:3333,reuseaddr,fork,so-rcvtimeo=5000,so-sndtimeo=5000 \
+      EXEC:"timeout 10s bash ${SCRIPT_DIR}/res/handlers/root-handler" &
+
+  # immediately capture the socat PID so we can manage it lifecycle, especially for cleanup.
+  SOCAT_PID=$!
+
+  # wait for the socat process to exit, which will happen when the server is stopped or if it encounters a critical error.
+  wait "$SOCAT_PID"
+}
+
+
+teardown() {
+  if [[ -n "$SOCAT_PID" ]]; then
+    echo
+    echo "Shutting down Mocktail server (PID: $SOCAT_PID)..."
+
+    # best case: process group kill
+    kill -- -"$SOCAT_PID" 2>/dev/null || true
+
+    # fallback
+    kill "$SOCAT_PID" 2>/dev/null || true
+
+    echo "Mocktail server has been stopped."
+  fi
+}
+
+#call script entry point.
+startup
+

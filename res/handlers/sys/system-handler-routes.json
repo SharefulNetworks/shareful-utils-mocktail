@@ -1,0 +1,46 @@
+{
+
+    "Name": "Mocktail System Handler Routes",
+    "Description": "Defines the routing configuration for the Mocktail system handler. this handler supports the following types of routes: 1)redirect: A route that automatically forwards requests to one or more target paths or an external URL. 2)dynamic: A route that is handled by a function defined in the system handler script, allowing for custom processing of requests. 3)static: A route that serves static files from a specified directory (in this case .files). 4)sub-handler: A route that delegates request handling to a separate handler script, allowing for modular and organized handling of specific paths or functionalities. 5)json-response: A route that responds with a predefined JSON object, useful for simple API endpoints or testing purposes. ",
+    "Version": "1.0",
+    "Routes": [
+        {
+            "Path": "/",
+            "Type": "redirect",
+            "Targets": ["/manage-ui"],
+            "Description": "The root system path handler, will forward to always forward to the /check-auth route which will, in turn, forward to /auth-ui if the user is not logged in or does not have an admin account or to /manage-ui if the user is logged in and has an admin account. "
+
+        },
+        {
+            "Path": "/check-auth",
+            "Type": "dynamic",
+            "Function": "checkAuthHandler",
+            "Description": "The /check-auth route handler, dynamically checks the authentication status of the user and forwards them to either /auth-ui or /manage-ui based on their authentication status and account type. This allows for a seamless user experience by directing users to the appropriate interface based on their login status and permissions."
+        },
+        {
+            "Path": "/manage-ui*",
+            "Type": "static",
+            "FilePath": "./files/manage-ui.html",
+            "Description": "The /manage-ui route handler, serves the manage-ui.html file from the .files directory. this is the main interface utlised buy the user to add,configure and manage routes"
+        },
+        {
+            "Path": "/auth-ui*",
+            "Type": "static",
+            "FilePath": "./files/auth-ui.html",
+            "Description": "The /auth-ui route handler, serves the auth-ui.html file from the .files directory. this is the interface used by the user to log in or register."
+        },
+        {
+            "Path": "/usr/manage*",
+            "Type": "sub-handler",
+            "HandlerScript": "./res/handlers/usr/user-handler",
+            "Description": "The /usr/manage* route handler, delegates handling of any requests to paths starting with /usr/manage to the user-handler script located at ./res/handlers/usr/user-handler. This allows for modular handling of user-related routes and functionalities, keeping the root handler organized and focused on routing while the user-handler script can manage specific logic related to user operations."
+        },
+        {
+            "Path": "/api/status",
+            "Type": "json-response",
+            "Response": {"status":"ok","message":"API is working"},
+            "Description": "The /api/status route handler, responds with a predefined JSON object indicating that the API is working. This can be used as a simple health check endpoint or for testing purposes to verify that the server is running and able to respond to requests."
+        }
+       
+    ]
+}

@@ -1,6 +1,25 @@
 #!/bin/bash
 
 
+
+# top-level request handler function which will delegate to other sub handlers, as necessary, to process the incoming
+# request and return an appropriate response to the  client.
+handleRequest(){
+
+   echo "root-handler: Received a request, processing..." >&2
+  
+   # check the handling of this request will not cause us to exceed the maximum process limit.
+   checkProcessLimit
+  
+   # read the request line from the incoming request.
+   read -r -t 5 method path protocol || exit 1
+  
+   # resolve the route for this request based on the path and the configuration defined in root-handler.json, then dispatch the request to the appropriate handler script or return a default response if no matching route is found.
+   resolveRouteFromConfig "$path"
+}
+
+
+
 checkProcessLimit() {
   if [[ -n "$MAX_PROCESSES" ]]; then
     current_processes=$(pgrep -fc "root-handler")
@@ -15,10 +34,7 @@ checkProcessLimit() {
 resolveRouteFromConfig() {
 
   local path="$1"
-  local repo_root
   local route_info
-
-  repo_root="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
   echo "root-handler: Resolving route for path: $path using configuration standby..." >&2
 
@@ -39,12 +55,17 @@ resolveRouteFromConfig() {
 
   if [[ -n "$route_info" ]]; then
     local route_type="${route_info%%$'\t'*}"
-    local handler_script="${route_info#*$'\t'}"
-    if [[ "$route_type" == "sub-handler" && -n "$handler_script" ]]; then
-      handler_script="${handler_script#./}"
-      handler_script="${repo_root}/${handler_script}"
-      echo "root-handler: Routing to sub-handler script: $handler_script for path: $path" >&2
-      "$handler_script" "$method" "$path" "$protocol"
+    local sub_handler_script="${route_info#*$'\t'}"
+    if [[ "$route_type" == "sub-handler" && -n "$sub_handler_script" ]]; then
+      echo
+      echo 
+      echo "&&&&&&&&&&&&&&&The BASE script DIR path is ${SCRIPT_DIR}" >&2
+      echo
+      echo
+      sub_handler_script="${sub_handler_script#/}"  # parse the relative sub-handler script path from the config, ensuring we remove any leading slash to avoid issues when constructing the full path.
+      sub_handler_script="${SCRIPT_DIR}/${sub_handler_script}" # construct the full path to the sub-handler script by combining the basescript directory path with the relative path from the config.
+      echo "root-handler: Routing to sub-handler script: $sub_handler_script for path: $path" >&2
+      "$sub_handler_script" "$method" "$path" "$protocol"
       return $?
     else
       echo "root-handler: Unsupported route type: $route_type for path: $path, sending default response." >&2
@@ -70,8 +91,13 @@ resolveRouteFromConfig() {
   fi
 }
 
+# for static path resolution, if necessary. 
 resolveRoute() {
+
+  #obtain path to look up from the supplied parameter.
   local path="$1"
+
+  # delegate to hardcoded handler based on the provided path.
   case "$path" in
     "/sample" | /sample/*)
       echo "root-handler: Routing to sample-sub-handler for path: $path" >&2
@@ -92,22 +118,10 @@ resolveRoute() {
   esac
 }
 
-# top-level request handler function which will delegate to other sub handlers, as necessary, to process the incoming
-# request and return an appropriate response to the  client.
-handleRequest(){
 
- echo "root-handler: Received a request, processing..." >&2
 
- # check the handling of this request will not cause us to exceed the maximum process limit.
- checkProcessLimit
 
- # read the request line from the incoming request.
- read -r -t 5 method path protocol || exit 1
-
- # resolve the route for this request based on the path and the configuration defined in root-handler.json, then dispatch the request to the appropriate handler script or return a default response if no matching route is found.
- resolveRouteFromConfig "$path"
-}
-
+# call top-level entry point function.
 handleRequest
 
 

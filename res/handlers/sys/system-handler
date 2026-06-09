@@ -1,1 +1,22 @@
 #!/bin/bash
+
+
+echo "system-handler: Received a request, processing..." >&2
+
+#echo path, method and protocol info passed into this script from the root-handler, which should have been passed in as the request line.
+method="$1"
+path="$2"
+protocol="$3"
+echo "system-handler: Received request with method: $method, path: $path, protocol: $protocol" >&2
+
+
+body='{"status":"ok","handler":"system-handler","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
+
+printf "HTTP/1.1 200 OK\r\n"
+printf "Content-Type: application/json\r\n"
+printf "Content-Length: %s\r\n" "${#body}"
+printf "Connection: close\r\n"
+printf "\r\n"
+printf "%s" "$body"
+
+echo "system-handler: Response sent, closing connection." >&2

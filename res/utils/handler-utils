@@ -19,7 +19,7 @@ resolveRouteFromPath() {
  # Use jq to select the longest matching wildcard route, then extract the
  # route type and handler script for sub-handler routes.
  route_info="$({
-    jq -r --arg path "$path" '
+    jq -c --arg path "$path" '
       [.Routes[]
        | .Path as $route_path
        | select(
@@ -33,8 +33,7 @@ resolveRouteFromPath() {
       ]
       | sort_by(.Path | length)
       | reverse
-      | .[0]
-      | if . == null then empty else "\(.Type)\t\(.SubHandlerScript)" end
+      | .[0] // empty
     ' "${SCRIPT_DIR}/res/handlers/root-handler.json"
   })"
 
@@ -82,7 +81,7 @@ handleSubHandlerRouteRequest() {
   echo "handler-utils: Handling request for path: $path according to SubHandler route type..." >&2
   local route_info="$1"
   local route_type=$(parseRouteType "$route_info")
-  local sub_handler_script="${route_info#*$'\t'}"
+  local sub_handler_script="$(parseSubHandlerRouteScript "$route_info")"
   if [[ "$route_type" == "sub-handler" && -n "$sub_handler_script" ]]; then
     sub_handler_script="${sub_handler_script#/}"  # parse the relative sub-handler script path from the config, ensuring we remove any leading slash to avoid issues when constructing the full path.
     sub_handler_script="${SCRIPT_DIR}/${sub_handler_script}" # construct the full path to the sub-handler script by combining the basescript directory path with the relative path from the config.
@@ -100,6 +99,19 @@ handleSubHandlerRouteRequest() {
     printf "%s" "$body"
     echo "handler-utils: Default response sent for path: $path, closing connection." >&2
   fi
+}
+
+handleStaticRouteRequest() {
+  echo "handler-utils: Handling request for path: $path according to Static route type..." >&2
+
+  # for static routes we will have a path to a static resource i.e. file, defined in the config
+  # we parse those details here then attempt to read the file into memory and return its contents
+  # in the response body, we also set the content type based on the file extension, defaulting to 
+  # application/json if we cannot determine a specific type.
+  local route_info="$1"
+  local route_type=$(parseRouteType "$route_info")
+  local file_path="${route_info#*$'\t'}"
+  
 }
 
 
@@ -136,6 +148,10 @@ dispatchErrorResponse(){
 
 parseRouteType() {
   local route_info="$1"
-  local route_type="${route_info%%$'\t'*}"
-  echo "$route_type"
+  jq -r '.Type // empty' <<< "$route_info"
+}
+
+parseSubHandlerRouteScript() {
+  local route_info="$1"
+  jq -r '.SubHandlerScript // empty' <<< "$route_info"
 }

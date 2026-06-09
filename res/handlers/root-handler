@@ -14,9 +14,6 @@ handleRequest(){
    # read the request line from the incoming request.
    read -r -t 5 method path protocol || exit 1
   
-   # resolve the route for this request based on the path and the configuration defined in root-handler.json, then dispatch the request to the appropriate handler script or return a default response if no matching route is found.
-   #resolveRouteFromConfig "$path"
-
    # issue a call into our utility method to attempt to resolve route for the path parsed from the request.
    route_info=$(resolveRouteFromPath "$path")
 

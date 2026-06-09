@@ -38,13 +38,27 @@ resolveRouteFromConfig() {
 
   echo "root-handler: Resolving route for path: $path using configuration standby..." >&2
 
+  echo
+  echo
+  echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" >&2
+  echo
+  echo
+  
+
   # Use jq to select the longest matching wildcard route, then extract the
   # route type and handler script for sub-handler routes.
-  route_info="$({
+ route_info="$({
     jq -r --arg path "$path" '
       [.Routes[]
        | .Path as $route_path
-       | select($path | startswith(($route_path | rtrimstr("*"))))
+       | select(
+           ($route_path | rtrimstr("*")) as $prefix
+           | (
+               $path == $prefix
+               or ($path | startswith($prefix + "/"))
+               or ($path | startswith($prefix + "?"))
+             )
+         )
       ]
       | sort_by(.Path | length)
       | reverse
@@ -57,11 +71,6 @@ resolveRouteFromConfig() {
     local route_type="${route_info%%$'\t'*}"
     local sub_handler_script="${route_info#*$'\t'}"
     if [[ "$route_type" == "sub-handler" && -n "$sub_handler_script" ]]; then
-      echo
-      echo 
-      echo "&&&&&&&&&&&&&&&The BASE script DIR path is ${SCRIPT_DIR}" >&2
-      echo
-      echo
       sub_handler_script="${sub_handler_script#/}"  # parse the relative sub-handler script path from the config, ensuring we remove any leading slash to avoid issues when constructing the full path.
       sub_handler_script="${SCRIPT_DIR}/${sub_handler_script}" # construct the full path to the sub-handler script by combining the basescript directory path with the relative path from the config.
       echo "root-handler: Routing to sub-handler script: $sub_handler_script for path: $path" >&2

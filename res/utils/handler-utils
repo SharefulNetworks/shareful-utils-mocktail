@@ -1,0 +1,141 @@
+#!/bin/bash
+
+
+#A suite of handler utility functions, used by all handler scripts, to perform common tasks 
+# such as request parsing, route resolution and response generation/return.
+
+# log messsag to indicate that the script has been successfully loaded/sourced
+echo "handler-utils: Loaded handler utility functions." >&2
+
+
+# attempts to resolve the defined route associated with the specified path 
+resolveRouteFromPath() {
+
+ local path="$1"
+ local route_info
+
+ echo "handler-utils: Resolving route for path: $path using configuration standby..." >&2
+
+ # Use jq to select the longest matching wildcard route, then extract the
+ # route type and handler script for sub-handler routes.
+ route_info="$({
+    jq -r --arg path "$path" '
+      [.Routes[]
+       | .Path as $route_path
+       | select(
+           ($route_path | rtrimstr("*")) as $prefix
+           | (
+               $path == $prefix
+               or ($path | startswith($prefix + "/"))
+               or ($path | startswith($prefix + "?"))
+             )
+         )
+      ]
+      | sort_by(.Path | length)
+      | reverse
+      | .[0]
+      | if . == null then empty else "\(.Type)\t\(.SubHandlerScript)" end
+    ' "${SCRIPT_DIR}/res/handlers/root-handler.json"
+  })"
+
+ # where we have found a matching route return it.
+ if [[ -n "$route_info" ]]; then
+     echo "handler-utils: Successfully resolved route for path: $path, route info: $route_info" >&2
+     echo "$route_info"
+  else
+        echo "handler-utils: No matching route found for path: $path" >&2
+        echo "" # return empty string to indicate no route found 
+ fi
+  
+
+}
+
+handleRequestAccordingToRoute() {
+  echo "handler-utils: Handling request for path: $path according to resolved route..." >&2
+  local route_info="$1"
+  local path="$2"
+  local method="$3"
+  local protocol="$4"
+
+  #parse the route type from the route info, then handle request according to it.
+  route_type=$(parseRouteType "$route_info")
+  case "$route_type" in
+    "sub-handler")
+        handleSubHandlerRouteRequest "$route_info"
+        ;;
+    *)
+        echo "root-handler: Unsupported route type: $route_type for path: $path, sending default response." >&2
+        body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
+        printf "HTTP/1.1 404 Not Found\r\n"
+        printf "Content-Type: application/json\r\n"
+        printf "Content-Length: %s\r\n" "${#body}"
+        printf "Connection: close\r\n"
+        printf "\r\n"
+        printf "%s" "$body"
+        echo "root-handler: Default response sent for path: $path, closing connection." >&2
+        ;;
+  esac
+
+}
+
+handleSubHandlerRouteRequest() {
+  echo "handler-utils: Handling request for path: $path according to SubHandler route type..." >&2
+  local route_info="$1"
+  local route_type=$(parseRouteType "$route_info")
+  local sub_handler_script="${route_info#*$'\t'}"
+  if [[ "$route_type" == "sub-handler" && -n "$sub_handler_script" ]]; then
+    sub_handler_script="${sub_handler_script#/}"  # parse the relative sub-handler script path from the config, ensuring we remove any leading slash to avoid issues when constructing the full path.
+    sub_handler_script="${SCRIPT_DIR}/${sub_handler_script}" # construct the full path to the sub-handler script by combining the basescript directory path with the relative path from the config.
+    echo "root-handler: Routing to sub-handler script: $sub_handler_script for path: $path" >&2
+    "$sub_handler_script" "$method" "$path" "$protocol"
+    return $?
+  else
+    echo "handler-utils: Unsupported route type: $route_type or script definition for SubHandler route type associated with path: $path, sending default response." >&2
+    body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
+    printf "HTTP/1.1 404 Not Found\r\n"
+    printf "Content-Type: application/json\r\n"
+    printf "Content-Length: %s\r\n" "${#body}"
+    printf "Connection: close\r\n"
+    printf "\r\n"
+    printf "%s" "$body"
+    echo "handler-utils: Default response sent for path: $path, closing connection." >&2
+  fi
+}
+
+
+dispatchErrorResponse(){
+    local errorCode="$1"
+    local path="$2"
+    local method="$3"
+    local protocol="$4"
+
+    body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
+
+    # we generate the error status line based on the provided error code, defaulting to 500 if no valid code is provided.
+    case "$errorCode" in
+        404)
+            printf "HTTP/1.1 404 Not Found\r\n"
+            ;;
+        400)
+            printf "HTTP/1.1 400 Bad Request\r\n"
+            ;;
+        *)
+            printf "HTTP/1.1 500 Internal Server Error\r\n"
+            ;;
+    esac
+
+    # ....then the rest of the response which will be the same regardless of the specific error code, 
+    printf "Content-Type: application/json\r\n"
+    printf "Content-Length: %s\r\n" "${#body}"
+    printf "Connection: close\r\n"
+    printf "\r\n"
+    printf "%s" "$body"
+
+
+}
+
+parseRouteType() {
+  local route_info="$1"
+  local route_type="${route_info%%$'\t'*}"
+  echo "$route_type"
+}

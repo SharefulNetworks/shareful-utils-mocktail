@@ -1,27 +1,64 @@
 #!/bin/bash
 
-echo "root-handler: Received a request, processing..." >&2
 
-if [[ -n "$MAX_PROCESSES" ]]; then
-  current_processes=$(pgrep -fc "root-handler")
-  echo "root-handler: Current processes: $current_processes" >&2
-  if (( current_processes > MAX_PROCESSES )); then
-    echo "root-handler: Maximum process limit reached ($current_processes), refusing connection." >&2
-    exit 1
+checkProcessLimit() {
+  if [[ -n "$MAX_PROCESSES" ]]; then
+    current_processes=$(pgrep -fc "root-handler")
+    echo "root-handler: Current processes: $current_processes" >&2
+    if (( current_processes > MAX_PROCESSES )); then
+      echo "root-handler: Maximum process limit reached ($current_processes), refusing connection." >&2
+      exit 1
+    fi
   fi
-fi
+}
 
-read -r -t 5 method path protocol || exit 1
+resolveRouteFromConfig() {
 
-#route request based on path, taking care to pass in the request line to the subhandler
-case "$path" in
-  "/sample" | /sample/*)
-    echo "root-handler: Routing to sample-sub-handler for path: $path" >&2
-   "${SCRIPT_DIR}/res/handlers/usr/sample-sub-handler" \
-    "$method" "$path" "$protocol"
-    ;;
-  *)
-    echo "root-handler: No specific handler for path: $path, sending default response." >&2
+  local path="$1"
+  local repo_root
+  local route_info
+
+  repo_root="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+  echo "root-handler: Resolving route for path: $path using configuration standby..." >&2
+
+  # Use jq to select the longest matching wildcard route, then extract the
+  # route type and handler script for sub-handler routes.
+  route_info="$({
+    jq -r --arg path "$path" '
+      [.Routes[]
+       | .Path as $route_path
+       | select($path | startswith(($route_path | rtrimstr("*"))))
+      ]
+      | sort_by(.Path | length)
+      | reverse
+      | .[0]
+      | if . == null then empty else "\(.Type)\t\(.SubHandlerScript)" end
+    ' "${SCRIPT_DIR}/res/handlers/root-handler.json"
+  })"
+
+  if [[ -n "$route_info" ]]; then
+    local route_type="${route_info%%$'\t'*}"
+    local handler_script="${route_info#*$'\t'}"
+    if [[ "$route_type" == "sub-handler" && -n "$handler_script" ]]; then
+      handler_script="${handler_script#./}"
+      handler_script="${repo_root}/${handler_script}"
+      echo "root-handler: Routing to sub-handler script: $handler_script for path: $path" >&2
+      "$handler_script" "$method" "$path" "$protocol"
+      return $?
+    else
+      echo "root-handler: Unsupported route type: $route_type for path: $path, sending default response." >&2
+      body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
+      printf "HTTP/1.1 404 Not Found\r\n"
+      printf "Content-Type: application/json\r\n"
+      printf "Content-Length: %s\r\n" "${#body}"
+      printf "Connection: close\r\n"
+      printf "\r\n"
+      printf "%s" "$body"
+      echo "root-handler: Default response sent for path: $path, closing connection." >&2
+    fi
+  else
+    echo "root-handler: No matching route for path: $path, sending default response." >&2
     body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
     printf "HTTP/1.1 404 Not Found\r\n"
     printf "Content-Type: application/json\r\n"
@@ -30,9 +67,82 @@ case "$path" in
     printf "\r\n"
     printf "%s" "$body"
     echo "root-handler: Default response sent for path: $path, closing connection." >&2
-    ;;
-esac
+  fi
+}
 
+resolveRoute() {
+  local path="$1"
+  case "$path" in
+    "/sample" | /sample/*)
+      echo "root-handler: Routing to sample-sub-handler for path: $path" >&2
+      "${SCRIPT_DIR}/res/handlers/usr/sample-sub-handler" \
+        "$method" "$path" "$protocol"
+      ;;
+    *)
+      echo "root-handler: No specific handler for path: $path, sending default response." >&2
+      body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
+      printf "HTTP/1.1 404 Not Found\r\n"
+      printf "Content-Type: application/json\r\n"
+      printf "Content-Length: %s\r\n" "${#body}"
+      printf "Connection: close\r\n"
+      printf "\r\n"
+      printf "%s" "$body"
+      echo "root-handler: Default response sent for path: $path, closing connection." >&2
+      ;;
+  esac
+}
+
+# top-level request handler function which will delegate to other sub handlers, as necessary, to process the incoming
+# request and return an appropriate response to the  client.
+handleRequest(){
+
+ echo "root-handler: Received a request, processing..." >&2
+
+ # check the handling of this request will not cause us to exceed the maximum process limit.
+ checkProcessLimit
+
+ # read the request line from the incoming request.
+ read -r -t 5 method path protocol || exit 1
+
+ # resolve the route for this request based on the path and the configuration defined in root-handler.json, then dispatch the request to the appropriate handler script or return a default response if no matching route is found.
+ resolveRouteFromConfig "$path"
+}
+
+handleRequest
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#route request based on path, taking care to pass in the request line to the subhandler
+#case "$path" in
+#  "/sample" | /sample/*)
+#    echo "root-handler: Routing to sample-sub-handler for path: $path" >&2
+#   "${SCRIPT_DIR}/res/handlers/usr/sample-sub-handler" \
+#    "$method" "$path" "$protocol"
+#    ;;
+#  *)
+#    echo "root-handler: No specific handler for path: $path, sending default response." >&2
+#    body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
+#    printf "HTTP/1.1 404 Not Found\r\n"
+#    printf "Content-Type: application/json\r\n"
+#    printf "Content-Length: %s\r\n" "${#body}"
+#    printf "Connection: close\r\n"
+#    printf "\r\n"
+#    printf "%s" "$body"
+#    echo "root-handler: Default response sent for path: $path, closing connection." >&2
+#    ;;
+#esac
 
 #body='{"status":"ok","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
 #printf "HTTP/1.1 200 OK\r\n"

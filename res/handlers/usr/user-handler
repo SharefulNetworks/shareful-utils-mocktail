@@ -1,20 +1,33 @@
 #!/bin/bash
 
-#---------------------------------------------------------------------------------------------------------
-#Sample sub-handler script to demonstrate how a sub handler may be manually written from scratch that
-#can accept, process and dispatch a response to a request routed to it from the root handler.
-#----------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
+# Name: user-handler (mocktail)
+# Author Giles Thompson
+# Date:  08/06/2026
+# Description: This handler is responsible for handling user defined routes under the base path "/usr"
+#              It is invoked by the root-handler when a request matches the "/usr" path prefix and will
+#              attempt to map the path provided in the request to a specifc user-defined API endpoint.
+#              each mock API endpoint will be asssociated with one of two response types: payload or redirect.
+#              Where a payload response is defined. a standard JSON object or JSON array must also be defined
+#              to be returned in the response body. Where a redirect response is defined, an array of target
+#              URLs must be defined, where the array contains more than one URL a URL will be randomly selected 
+#              from the array for each request. Additionally, it is also possible to "force" a specific URL by
+#              including the standard "filter/xfilter" query parameter in the request. "filter" will only INCLUDE
+#              the specified URL in the response, while "xfilter" will EXCLUDE the specified URL from the response.
+#              This handler is designed to be flexible and extensible, allowing users to easily define custom
+#              API endpoints and responses to suit their testing needs.
+#-----------------------------------------------------------------------------------------------------------------
 
-echo "sample-sub-handler: Received a request, processing..." >&2
+echo "user-handler: Received a request, processing..." >&2
 
 #echo path, method and protocol info passed into this script from the root-handler, which should have been passed in as the request line.
 method="$1"
 path="$2"
 protocol="$3"
-echo "sample-sub-handler: Received request with method: $method, path: $path, protocol: $protocol" >&2
+echo "user-handler: Received request with method: $method, path: $path, protocol: $protocol" >&2
 
 
-body='{"status":"ok","handler":"sample-sub-handler","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
+body='{"status":"ok","handler":"user-handler","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
 
 printf "HTTP/1.1 200 OK\r\n"
 printf "Content-Type: application/json\r\n"
@@ -23,4 +36,4 @@ printf "Connection: close\r\n"
 printf "\r\n"
 printf "%s" "$body"
 
-echo "sample-sub-handler: Response sent, closing connection." >&2
+echo "user-handler: Response sent, closing connection." >&2

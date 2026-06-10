@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# import the handler utility functions, which are used by this handler to perform common tasks such as route resolution and response generation.
 source "$(dirname "${BASH_SOURCE[0]}")/../utils/handler-utils"
 
 # top-level request handler function which will delegate to other sub handlers, as necessary, to process the incoming
@@ -15,7 +16,8 @@ handleRequest(){
    read -r -t 5 method path protocol || exit 1
   
    # issue a call into our utility method to attempt to resolve route for the path parsed from the request.
-   route_info=$(resolveRouteFromPath "$path")
+   local config_path="${SCRIPT_DIR}/res/handlers/root-handler.json"
+   route_info=$(resolveRouteFromPath "$path" "$config_path")
 
     # where we have found a matching route, call into our utility function to handle the request 
     # according to it declared route type, otherwise dispatch an appropriate error response.
@@ -41,71 +43,6 @@ checkProcessLimit() {
 }
 
 
-
-
-resolveRouteFromConfig() {
-
-  local path="$1"
-  local route_info
-
-  echo "root-handler: Resolving route for path: $path using configuration standby..." >&2
-
-
-
-  # Use jq to select the longest matching wildcard route, then extract the
-  # route type and handler script for sub-handler routes.
- route_info="$({
-    jq -r --arg path "$path" '
-      [.Routes[]
-       | .Path as $route_path
-       | select(
-           ($route_path | rtrimstr("*")) as $prefix
-           | (
-               $path == $prefix
-               or ($path | startswith($prefix + "/"))
-               or ($path | startswith($prefix + "?"))
-             )
-         )
-      ]
-      | sort_by(.Path | length)
-      | reverse
-      | .[0]
-      | if . == null then empty else "\(.Type)\t\(.SubHandlerScript)" end
-    ' "${SCRIPT_DIR}/res/handlers/root-handler.json"
-  })"
-
-  if [[ -n "$route_info" ]]; then
-    local route_type="${route_info%%$'\t'*}"
-    local sub_handler_script="${route_info#*$'\t'}"
-    if [[ "$route_type" == "sub-handler" && -n "$sub_handler_script" ]]; then
-      sub_handler_script="${sub_handler_script#/}"  # parse the relative sub-handler script path from the config, ensuring we remove any leading slash to avoid issues when constructing the full path.
-      sub_handler_script="${SCRIPT_DIR}/${sub_handler_script}" # construct the full path to the sub-handler script by combining the basescript directory path with the relative path from the config.
-      echo "root-handler: Routing to sub-handler script: $sub_handler_script for path: $path" >&2
-      "$sub_handler_script" "$method" "$path" "$protocol"
-      return $?
-    else
-      echo "root-handler: Unsupported route type: $route_type for path: $path, sending default response." >&2
-      body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
-      printf "HTTP/1.1 404 Not Found\r\n"
-      printf "Content-Type: application/json\r\n"
-      printf "Content-Length: %s\r\n" "${#body}"
-      printf "Connection: close\r\n"
-      printf "\r\n"
-      printf "%s" "$body"
-      echo "root-handler: Default response sent for path: $path, closing connection." >&2
-    fi
-  else
-    echo "root-handler: No matching route for path: $path, sending default response." >&2
-    body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
-    printf "HTTP/1.1 404 Not Found\r\n"
-    printf "Content-Type: application/json\r\n"
-    printf "Content-Length: %s\r\n" "${#body}"
-    printf "Connection: close\r\n"
-    printf "\r\n"
-    printf "%s" "$body"
-    echo "root-handler: Default response sent for path: $path, closing connection." >&2
-  fi
-}
 
 # for static, non-config route resolution, not currently used.
 resolveRoute() {

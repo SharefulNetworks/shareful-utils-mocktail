@@ -12,6 +12,7 @@ echo "handler-utils: Loaded handler utility functions." >&2
 resolveRouteFromPath() {
 
  local path="$1"
+ local config_path="$2"
  local route_info
 
  echo "handler-utils: Resolving route for path: $path using configuration standby..." >&2
@@ -34,7 +35,7 @@ resolveRouteFromPath() {
       | sort_by(.Path | length)
       | reverse
       | .[0] // empty
-    ' "${SCRIPT_DIR}/res/handlers/root-handler.json"
+    ' "${config_path}"
   })"
 
  # where we have found a matching route return it.
@@ -45,10 +46,13 @@ resolveRouteFromPath() {
         echo "handler-utils: No matching route found for path: $path" >&2
         echo "" # return empty string to indicate no route found 
  fi
-  
+   
 
 }
 
+# handles the request according to the route Type defined in the route data provided as the first 
+# parameter to this function. Where the specified route type is unsupported an appropriate error
+# response will be generated and returned to the client.
 handleRequestAccordingToRoute() {
   echo "handler-utils: Handling request for path: $path according to resolved route..." >&2
   local route_info="$1"
@@ -60,47 +64,62 @@ handleRequestAccordingToRoute() {
   route_type=$(parseRouteType "$route_info")
   case "$route_type" in
     "sub-handler")
-        handleSubHandlerRouteRequest "$route_info"
+        handleSubHandlerRouteRequest "$route_info" "$path" "$method" "$protocol"
+        ;;
+    "static")
+        handleStaticRouteRequest "$route_info"
+        ;;
+    "json-response")
+        handleJsonResponseRouteRequest "$route_info"
         ;;
     *)
-        echo "root-handler: Unsupported route type: $route_type for path: $path, sending default response." >&2
-        body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
-        printf "HTTP/1.1 404 Not Found\r\n"
-        printf "Content-Type: application/json\r\n"
-        printf "Content-Length: %s\r\n" "${#body}"
-        printf "Connection: close\r\n"
-        printf "\r\n"
-        printf "%s" "$body"
+        echo "root-handler: Unsupported route type: $route_type for path: $path, sending error response." >&2
+        dispatchErrorResponse 1 "$path" "$method" "$protocol"
         echo "root-handler: Default response sent for path: $path, closing connection." >&2
         ;;
   esac
 
 }
 
+# handles SubHandler type route requests by delgating to the specified sub-handler script defined in the route info, 
+# where the route type is unsupported or no valid script is provided an appropriate error response will be generated 
+# and returned to the client.
 handleSubHandlerRouteRequest() {
   echo "handler-utils: Handling request for path: $path according to SubHandler route type..." >&2
   local route_info="$1"
+  local request_path="$2"
+  local request_method="$3"
+  local request_protocol="$4"
+
   local route_type=$(parseRouteType "$route_info")
-  local sub_handler_script="$(parseSubHandlerRouteScript "$route_info")"
-  if [[ "$route_type" == "sub-handler" && -n "$sub_handler_script" ]]; then
-    sub_handler_script="${sub_handler_script#/}"  # parse the relative sub-handler script path from the config, ensuring we remove any leading slash to avoid issues when constructing the full path.
-    sub_handler_script="${SCRIPT_DIR}/${sub_handler_script}" # construct the full path to the sub-handler script by combining the basescript directory path with the relative path from the config.
-    echo "root-handler: Routing to sub-handler script: $sub_handler_script for path: $path" >&2
-    "$sub_handler_script" "$method" "$path" "$protocol"
+  local route_path=$(parseRoutePath "$route_info")
+  local route_sub_handler_script="$(parseSubHandlerRouteScript "$route_info")"
+
+  # ensure the route type is of type sub handler and a sub handler script path has been specified.
+  if [[ "$route_type" == "sub-handler" && -n "$route_sub_handler_script" ]]; then
+    route_sub_handler_script="${route_sub_handler_script#/}"  # parse the relative sub-handler script path from the config, ensuring we remove any leading slash to avoid issues when constructing the full path.
+    route_sub_handler_script="${SCRIPT_DIR}/${route_sub_handler_script}" # construct the full path to the sub-handler script by combining the basescript directory path with the relative path from the config.
+    echo "root-handler: Routing to sub-handler script: $route_sub_handler_script for path: $request_path" >&2
+    
+    # before delegating to the sub-handler script we need to strip the matched prefix from the path, this is because the sub-handlers will 
+    # expect paths to be relative to their own defined route path, for example if we have a route with the path "/usr" and a request comes in 
+    # for "/usr/profile", when we delegate to the sub-handler we want to pass it "profile" as the path rather than "/usr/profile", 
+    # this allows the sub-handler to be more flexible and reusable as it can be mounted at different base paths without needing to 
+    # worry about adjusting the paths it receives.
+    local stripped_request_path=$(stripPrefixFromPath "$request_path" "$route_path")
+    "$route_sub_handler_script" "$request_path" "$request_method" "$request_protocol" "/$stripped_request_path"
     return $?
   else
-    echo "handler-utils: Unsupported route type: $route_type or script definition for SubHandler route type associated with path: $path, sending default response." >&2
-    body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
-    printf "HTTP/1.1 404 Not Found\r\n"
-    printf "Content-Type: application/json\r\n"
-    printf "Content-Length: %s\r\n" "${#body}"
-    printf "Connection: close\r\n"
-    printf "\r\n"
-    printf "%s" "$body"
-    echo "handler-utils: Default response sent for path: $path, closing connection." >&2
+    echo "handler-utils: Unsupported route type: $route_type or script definition for SubHandler route type associated with path: $request_path, sending default response." >&2
+    dispatchErrorResponse 1 "$request_path" "$request_method" "$request_protocol"
   fi
 }
 
+
+
+# handles Static type route requests by reading the specified static resource from the file system and 
+#returning its contents in the response body, where the route type is unsupported or no valid file path is provided 
+#an appropriate error response will be generated and returned to the client.
 handleStaticRouteRequest() {
   echo "handler-utils: Handling request for path: $path according to Static route type..." >&2
 
@@ -110,8 +129,45 @@ handleStaticRouteRequest() {
   # application/json if we cannot determine a specific type.
   local route_info="$1"
   local route_type=$(parseRouteType "$route_info")
-  local file_path="${route_info#*$'\t'}"
+  local file_path="$(parseStaticRouteFilePath "$route_info")"
+  if [[ "$route_type" == "static" && -n "$file_path" ]]; then
+    file_path="${SCRIPT_DIR}/${file_path}" # construct the full path to the static resource by combining the basescript directory path with the relative path from the config.
+    if [[ -f "$file_path" ]]; then
+      echo "handler-utils: Successfully found static resource for path: $path at file path: $file_path, reading file contents..." >&2
+      local file_contents
+      file_contents=$(<"$file_path")
+      local content_type="application/json" # default content type
+      case "$file_path" in
+        *.html)
+          content_type="text/html"
+          ;;
+        *.css)
+          content_type="text/css"
+          ;;
+        *.js)
+          content_type="application/javascript"
+          ;;
+      esac
+      printf "HTTP/1.1 200 OK\r\n"
+      printf "Content-Type: %s\r\n" "$content_type"
+      printf "Content-Length: %s\r\n" "${#file_contents}"
+      printf "Connection: close\r\n"
+      printf "\r\n"
+      printf "%s" "$file_contents"
+      echo "handler-utils: Static resource response sent for path: $path, closing connection." >&2
+    else
+      echo "handler-utils: Static resource file not found for path: $path at file path: $file_path, sending error response." >&2
+      dispatchErrorResponse 404 "$path" "$method" "$protocol"
+    fi
+  else
+    echo "handler-utils: Unsupported route type: $route_type or file path definition for Static route type associated with path: $path, sending error response." >&2
+    dispatchErrorResponse 1 "$path" "$method" "$protocol"
+  fi    
   
+}
+
+handleJsonResponseRouteRequest(){
+    echo "handler-utils: Handling request for path: $path according to JsonResponse route type..." >&2
 }
 
 
@@ -146,12 +202,48 @@ dispatchErrorResponse(){
 
 }
 
+
+
+parseRouteTitle() {
+  local route_info="$1"
+  jq -r '.Title // empty' <<< "$route_info"
+}
+
+parseRoutePath() {
+  local route_info="$1"
+  jq -r '.Path // empty' <<< "$route_info"
+}
+
 parseRouteType() {
   local route_info="$1"
   jq -r '.Type // empty' <<< "$route_info"
 }
 
+
 parseSubHandlerRouteScript() {
   local route_info="$1"
   jq -r '.SubHandlerScript // empty' <<< "$route_info"
+}
+
+parseStaticRouteFilePath() {
+  local route_info="$1"
+  jq -r '.FilePath // empty' <<< "$route_info"
+}
+
+parseJsonResponseRoutePayload() {
+  local route_info="$1"
+  jq -r '.Payload // empty' <<< "$route_info"
+}
+
+stripPrefixFromPath() {
+    local path="$1"
+    local prefix="$2"
+
+    if [[ "$path" == "$prefix" ]]; then
+        echo ""
+    elif [[ "$path" == "$prefix"/* ]]; then
+        echo "${path#"$prefix"/}"
+    else
+        echo "$path"
+    fi
 }

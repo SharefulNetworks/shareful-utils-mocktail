@@ -5,6 +5,7 @@
     "Version": "1.0",
     "Routes": [
         {
+            "Title": "System Root Redirect",
             "Path": "/",
             "Type": "redirect",
             "Targets": ["/check-auth"],
@@ -12,39 +13,44 @@
 
         },
         {
+            "Title": "Authentication Check",
             "Path": "/check-auth",
             "Type": "dynamic",
             "Function": "checkAuthHandler",
             "Description": "The /check-auth route handler, dynamically checks the authentication status of the user and forwards them to either /sign-in or /manage-ui based on their authentication status and account type. This allows for a seamless user experience by directing users to the appropriate interface based on their login status and permissions."
         },
         {
-            "Path": "/manage-ui*",
+            "Title": "Management UI",
+            "Path": "/manage*",
             "Type": "static",
             "FilePath": "./files/manage-ui.html",
             "Description": "The /manage-ui route handler, serves the manage-ui.html file from the .files directory. this is the main interface utlised buy the user to add,configure and manage routes"
         },
         {
-            "Path": "/sign-in-ui*",
+            "Title": "Sign-In UI",
+            "Path": "/signin*",
             "Type": "static",
             "FilePath": "./files/sign-in.html",
-            "Description": "The /sign-in-ui route handler, serves the sign-in.html file from the .files directory. this is the interface used by the user to log in or register."
+            "Description": "The /signin route handler, serves the sign-in.html file from the .files directory. this is the interface used by the user to log in or register."
         },
         {
-            "Path": "/sign-up-ui*",
+            "Title": "Sign-Up UI",
+            "Path": "/signup*",
             "Type": "static",
-            "FilePath": "./files/sign-up.html",
-            "Description": "The /sign-up route handler, serves the sign-up.html file from the .files directory. this is the interface used by the user to create a new admin account."
+            "FilePath": "/res/handlers/sys/system-handler/.files/auth-register.html",
+            "Description": "The /signup route handler, serves the sign-up.html file from the .files directory. this is the interface used by the user to create a new admin account."
         },
         {
+            "Title": "User Defined Endpoints Management via Sub-Handler", 
             "Path": "/usr/manage*",
             "Type": "sub-handler",
-            "HandlerScript": "./res/handlers/usr/user-handler",
+            "HandlerScript": "/res/handlers/usr/user-handler",
             "Description": "The /usr/manage* route handler, delegates handling of any requests to paths starting with /usr/manage to the user-handler script located at ./res/handlers/usr/user-handler. This allows for modular handling of user-related routes and functionalities, keeping the root handler organized and focused on routing while the user-handler script can manage specific logic related to user operations."
         },
         {
             "Path": "/api/status",
             "Type": "json-response",
-            "Response": {"status":"ok","message":"API is working"},
+            "Payload": {"status":"ok","message":"API is working"},
             "Description": "The /api/status route handler, responds with a predefined JSON object indicating that the API is working. This can be used as a simple health check endpoint or for testing purposes to verify that the server is running and able to respond to requests."
         }
        

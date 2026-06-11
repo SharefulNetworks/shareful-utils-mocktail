@@ -7,6 +7,8 @@
 # log messsag to indicate that the script has been successfully loaded/sourced
 echo "handler-utils: Loaded handler utility functions." >&2
 
+# import/source the mime type utility functions, which are used by the static route handling logic to determine the correct content type to return for static resources.
+source "$(dirname "${BASH_SOURCE[0]}")/mime-utils" #we use path relative to this script, the utilities both share the same parent "utils" directory.
 
 # attempts to resolve the defined route associated with the specified path 
 resolveRouteFromPath() {
@@ -182,24 +184,16 @@ handleStaticRouteRequest() {
     # next, irrespective of how we derive the path to file, we validate that the final file path exists on the system before proceeding.
     if [[ -f "$absolute_file_path" ]]; then
       echo "handler-utils: Successfully found static resource for path: $path at file path: $route_file_path, reading file contents..." >&2
+      
+      # where we have arrived here, this indicates the file exists thus we may proceed to read its contents into memory.
       local file_contents
       file_contents=$(<"$absolute_file_path")
-      local content_type="application/json" # default content type
-      # Determine content type from the resolved absolute file path (handles wildcard routes)
-      case "$absolute_file_path" in
-        *.html)
-          content_type="text/html"
-          ;;
-        *.css)
-          content_type="text/css"
-          ;;
-        *.js)
-          content_type="application/javascript"
-          ;;
-        *.map)
-          content_type="application/json"
-          ;;
-      esac
+
+      # next set the resource content (MIME) type based on its files extension.
+      local content_type="application/json"
+      content_type=$(getMimeType "$absolute_file_path") 
+     
+     
       printf "HTTP/1.1 200 OK\r\n"
       printf "Content-Type: %s\r\n" "$content_type"
       printf "Content-Length: %s\r\n" "${#file_contents}"

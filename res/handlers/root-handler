@@ -3,8 +3,12 @@
 # import the handler utility functions, which are used by this handler to perform common tasks such as route resolution and response generation.
 source "$(dirname "${BASH_SOURCE[0]}")/../utils/handler-utils"
 
+
 # top-level request handler function which will delegate to other sub handlers, as necessary, to process the incoming
-# request and return an appropriate response to the  client.
+# request and return an appropriate response to the  client. We only expect sub handler route types to
+# be defined in the root-handler's configuration, as this is the entry point for all requests. The only
+# exception will be one or more wildcard static routes for serving static respources such as HTML files,CSS, JS etc,
+# which may be directly referenced in .html file served by the system handler, 
 handleRequest(){
 
    echo "root-handler: Received a request, processing..." >&2
@@ -15,8 +19,9 @@ handleRequest(){
    # read the request line from the incoming request.
    read -r -t 5 method path protocol || exit 1
   
-   # issue a call into our utility method to attempt to resolve route for the path parsed from the request.
-   local config_path="${SCRIPT_DIR}/res/handlers/root-handler.json"
+   # issue a call into our utility method to attempt to resolve route for the path parsed from the request
+   # taking care ton pass in the path to THIS handlers routes config
+   local config_path="${SCRIPT_DIR}/res/handlers/root-handler-routes.json"
    route_info=$(resolveRouteFromPath "$path" "$config_path")
 
     # where we have found a matching route, call into our utility function to handle the request 
@@ -30,7 +35,10 @@ handleRequest(){
 }
 
 
-
+# unique to this top-level root handler, checks that the current number of active processes
+# across all Mocktail handlers has not exceeded the predefined maximum as defined in
+# the preveiling config, where this IS the case the the call to this handler will immediately
+# return an appropriate error response will be dispatched to the caller.
 checkProcessLimit() {
   if [[ -n "$MAX_PROCESSES" ]]; then
     current_processes=$(pgrep -fc "root-handler")
@@ -43,80 +51,5 @@ checkProcessLimit() {
 }
 
 
-
-# for static, non-config route resolution, not currently used.
-resolveRoute() {
-
-  #obtain path to look up from the supplied parameter.
-  local path="$1"
-
-  # delegate to hardcoded handler based on the provided path.
-  case "$path" in
-    "/sample" | /sample/*)
-      echo "root-handler: Routing to sample-sub-handler for path: $path" >&2
-      "${SCRIPT_DIR}/res/handlers/usr/sample-sub-handler" \
-        "$method" "$path" "$protocol"
-      ;;
-    *)
-      echo "root-handler: No specific handler for path: $path, sending default response." >&2
-      body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
-      printf "HTTP/1.1 404 Not Found\r\n"
-      printf "Content-Type: application/json\r\n"
-      printf "Content-Length: %s\r\n" "${#body}"
-      printf "Connection: close\r\n"
-      printf "\r\n"
-      printf "%s" "$body"
-      echo "root-handler: Default response sent for path: $path, closing connection." >&2
-      ;;
-  esac
-}
-
-
-
-
 # call top-level entry point function.
 handleRequest
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#route request based on path, taking care to pass in the request line to the subhandler
-#case "$path" in
-#  "/sample" | /sample/*)
-#    echo "root-handler: Routing to sample-sub-handler for path: $path" >&2
-#   "${SCRIPT_DIR}/res/handlers/usr/sample-sub-handler" \
-#    "$method" "$path" "$protocol"
-#    ;;
-#  *)
-#    echo "root-handler: No specific handler for path: $path, sending default response." >&2
-#    body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
-#    printf "HTTP/1.1 404 Not Found\r\n"
-#    printf "Content-Type: application/json\r\n"
-#    printf "Content-Length: %s\r\n" "${#body}"
-#    printf "Connection: close\r\n"
-#    printf "\r\n"
-#    printf "%s" "$body"
-#    echo "root-handler: Default response sent for path: $path, closing connection." >&2
-#    ;;
-#esac
-
-#body='{"status":"ok","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
-#printf "HTTP/1.1 200 OK\r\n"
-#printf "Content-Type: application/json\r\n"
-#printf "Content-Length: %s\r\n" "${#body}"
-#printf "Connection: close\r\n"
-#printf "\r\n"
-#printf "%s" "$body"
-
-# echo "root-handler: Response sent, closing connection." >&2

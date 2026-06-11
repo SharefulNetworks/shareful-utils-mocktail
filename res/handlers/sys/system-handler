@@ -1,22 +1,38 @@
 #!/bin/bash
 
+# import the handler utility functions, which are used by this handler to perform common tasks such as route resolution and response generation.
+source "$(dirname "${BASH_SOURCE[0]}")/../../utils/handler-utils"
 
-echo "system-handler: Received a request, processing..." >&2
-
-#echo path, method and protocol info passed into this script from the root-handler, which should have been passed in as the request line.
-method="$1"
-path="$2"
-protocol="$3"
-echo "system-handler: Received request with method: $method, path: $path, protocol: $protocol" >&2
+# vars passed into us from our parent root-handler
+FULL_PATH="$1"
+METHOD="$2"
+PROTOCOL="$3"
+RELATIVE_PATH="$4"
 
 
-body='{"status":"ok","handler":"system-handler","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
+handleRequest(){
 
-printf "HTTP/1.1 200 OK\r\n"
-printf "Content-Type: application/json\r\n"
-printf "Content-Length: %s\r\n" "${#body}"
-printf "Connection: close\r\n"
-printf "\r\n"
-printf "%s" "$body"
+  echo "system-handler: Received a request associated with (relative) path '$RELATIVE_PATH', processing..." >&2
 
-echo "system-handler: Response sent, closing connection." >&2
+   # issue a call into our utility method to attempt to resolve route for the (relative) path 
+   # provided to us by the root handler, which will have stripped the base path associated with 
+   # this handler (i.e "/sys") from the original request path, we also taking care to pass in 
+   # the path to THIS handlers routes config
+   local config_path="${SCRIPT_DIR}/res/handlers/sys/system-handler-routes.json"
+   route_info=$(resolveRouteFromPath "$RELATIVE_PATH" "$config_path")
+
+   # where we have found a matching route, call into our utility function to handle the request 
+   # according to it declared route type, otherwise dispatch an appropriate error response.
+   if [[ -n "$route_info" ]]; then
+       handleRequestAccordingToRoute "$route_info" "$RELATIVE_PATH" "$METHOD" "$PROTOCOL"
+   else
+     dispatchErrorResponse 404  "$FULL_PATH" "$METHOD" "$PROTOCOL"
+   fi
+
+
+}
+
+handleRequest
+
+
+#  echo "system-handler: Response sent, closing connection." >&2

@@ -13,6 +13,13 @@
 
         },
         {
+            "Title": "General System UI Resources, Static Wildcard Route",
+            "Path": "/assets/*",
+            "Type": "static",
+            "FilePath": "/res/handlers/sys/.files/ui/assets",
+            "Description": "The wildcard path for serving assets such as CSS, JS, images etc for the system handler's UIs. This route will attempt to match any request starting with /assets/ and serve the corresponding static file from the .files/ui directory. This allows for easy referencing of static resources in the HTML files served by the system handler, ensuring that the necessary assets are available for the UI to function properly.Note: Where a wildcard Path is used (i.e /assets/*)  the FilePath MUST refer to the base internal directory that the files should be served from such that [BASE_DIR]/[Relative_Request_Path_Reveived_To_Handler] resolves to the file on disk, failure to set this path correctly will result in 404 Not Found errors being returned to the client."
+        },
+        {
             "Title": "Authentication Check",
             "Path": "/check-auth",
             "Type": "dynamic",
@@ -35,9 +42,9 @@
         },
         {
             "Title": "Sign-Up UI",
-            "Path": "/signup*",
+            "Path": "/signup",
             "Type": "static",
-            "FilePath": "/res/handlers/sys/system-handler/.files/auth-register.html",
+            "FilePath": "/res/handlers/sys/.files/ui/auth-register.html",
             "Description": "The /signup route handler, serves the sign-up.html file from the .files directory. this is the interface used by the user to create a new admin account."
         },
         {
@@ -47,12 +54,14 @@
             "HandlerScript": "/res/handlers/usr/user-handler",
             "Description": "The /usr/manage* route handler, delegates handling of any requests to paths starting with /usr/manage to the user-handler script located at ./res/handlers/usr/user-handler. This allows for modular handling of user-related routes and functionalities, keeping the root handler organized and focused on routing while the user-handler script can manage specific logic related to user operations."
         },
+       
         {
             "Path": "/api/status",
             "Type": "json-response",
             "Payload": {"status":"ok","message":"API is working"},
             "Description": "The /api/status route handler, responds with a predefined JSON object indicating that the API is working. This can be used as a simple health check endpoint or for testing purposes to verify that the server is running and able to respond to requests."
         }
+        
        
     ]
 }

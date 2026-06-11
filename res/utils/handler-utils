@@ -24,9 +24,9 @@ resolveRouteFromPath() {
       [.Routes[]
        | .Path as $route_path
        | select(
-           ($route_path | rtrimstr("*")) as $prefix
+           ($route_path | rtrimstr("*") | rtrimstr("/")) as $prefix
            | (
-               $path == $prefix
+               ($path == $prefix)
                or ($path | startswith($prefix + "/"))
                or ($path | startswith($prefix + "?"))
              )
@@ -40,7 +40,7 @@ resolveRouteFromPath() {
 
  # where we have found a matching route return it.
  if [[ -n "$route_info" ]]; then
-     echo "handler-utils: Successfully resolved route for path: $path, route info: $route_info" >&2
+     echo "handler-utils: Successfully resolved route for path: $path" >&2
      echo "$route_info"
   else
         echo "handler-utils: No matching route found for path: $path" >&2
@@ -67,7 +67,7 @@ handleRequestAccordingToRoute() {
         handleSubHandlerRouteRequest "$route_info" "$path" "$method" "$protocol"
         ;;
     "static")
-        handleStaticRouteRequest "$route_info"
+        handleStaticRouteRequest "$route_info" "$path" "$method" "$protocol"
         ;;
     "json-response")
         handleJsonResponseRouteRequest "$route_info"
@@ -128,16 +128,65 @@ handleStaticRouteRequest() {
   # in the response body, we also set the content type based on the file extension, defaulting to 
   # application/json if we cannot determine a specific type.
   local route_info="$1"
+  local request_path="$2"
+  local request_method="$3"
+  local request_protocol="$4"
+
+
+  local route_path=$(parseRoutePath "$route_info")
   local route_type=$(parseRouteType "$route_info")
-  local file_path="$(parseStaticRouteFilePath "$route_info")"
-  if [[ "$route_type" == "static" && -n "$file_path" ]]; then
-    file_path="${SCRIPT_DIR}/${file_path}" # construct the full path to the static resource by combining the basescript directory path with the relative path from the config.
-    if [[ -f "$file_path" ]]; then
-      echo "handler-utils: Successfully found static resource for path: $path at file path: $file_path, reading file contents..." >&2
+  local route_file_path="$(parseStaticRouteFilePath "$route_info")"
+  if [[ "$route_type" == "static" && -n "$route_file_path" ]]; then 
+    
+    # what we do next will depend on whether this is a wildcard static route or not as denoted
+    # by a route Path that is suffixed with a wildcard i.e "*" character
+    absolute_file_path=""
+    if [[ "$route_path" == *"*" ]]; then
+     
+        echo "handler-utils: Handling request for wildcard static route, stripping wildcard character AND trailing slash (if it exists) from route path..." >&2
+        
+        # we need to strip the wildcard character from the end of the route path, we also want to ensure we strip any trailing slash that may be left after removing 
+        # the wildcard character as this will interfere with our path resolution logic later on.
+        route_path="${route_path%\*}" 
+        route_path="${route_path%/}"
+
+        # build up the absolute file path by stripping the route prefix from the
+        # request path and joining that remainder with the configured FilePath.
+        # e.g. route Path: /assets/*, request_path: /assets/modules/x.css
+        # remainder => modules/x.css, final => [SCRIPT_DIR]/[FilePath]/modules/x.css
+        local stripped_request_path
+        stripped_request_path=$(stripPrefixFromPath "$request_path" "$route_path")
+        if command -v realpath >/dev/null 2>&1; then
+          # Use realpath -m to normalize duplicate slashes and path segments
+          absolute_file_path=$(realpath -m "${SCRIPT_DIR}/${route_file_path#/}/${stripped_request_path#/}")
+        else
+          # Fallback: manually strip trailing slash from base and join
+          base="${route_file_path#/}"
+          base="${base%/}"
+          if [[ -n "$stripped_request_path" ]]; then
+            absolute_file_path="${SCRIPT_DIR}/${base}/${stripped_request_path#/}"
+          else
+            absolute_file_path="${SCRIPT_DIR}/${base}"
+          fi
+        fi
+        echo "handler-utils: final file path for static (wildcard) route is: $absolute_file_path" >&2
+
+    else
+      echo "handler-utils: Handling request for non-wildcard static route..." >&2  
+      # build up absilute path to the file by concatenting the base script directory with the file path defined in the config for this route, this will allow us to correctly resolve the file on disk that corresponds to the request.
+      absolute_file_path="${SCRIPT_DIR}/${route_file_path#/}"
+      echo "handler-utils: final file path for static route is: $absolute_file_path" >&2
+    fi
+
+
+    # next, irrespective of how we derive the path to file, we validate that the final file path exists on the system before proceeding.
+    if [[ -f "$absolute_file_path" ]]; then
+      echo "handler-utils: Successfully found static resource for path: $path at file path: $route_file_path, reading file contents..." >&2
       local file_contents
-      file_contents=$(<"$file_path")
+      file_contents=$(<"$absolute_file_path")
       local content_type="application/json" # default content type
-      case "$file_path" in
+      # Determine content type from the resolved absolute file path (handles wildcard routes)
+      case "$absolute_file_path" in
         *.html)
           content_type="text/html"
           ;;
@@ -146,6 +195,9 @@ handleStaticRouteRequest() {
           ;;
         *.js)
           content_type="application/javascript"
+          ;;
+        *.map)
+          content_type="application/json"
           ;;
       esac
       printf "HTTP/1.1 200 OK\r\n"
@@ -156,7 +208,7 @@ handleStaticRouteRequest() {
       printf "%s" "$file_contents"
       echo "handler-utils: Static resource response sent for path: $path, closing connection." >&2
     else
-      echo "handler-utils: Static resource file not found for path: $path at file path: $file_path, sending error response." >&2
+      echo "handler-utils: Static resource file not found for path: $path at file path: $route_file_path, the absolute file path was: $absolute_file_path, sending error response." >&2
       dispatchErrorResponse 404 "$path" "$method" "$protocol"
     fi
   else

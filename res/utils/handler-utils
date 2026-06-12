@@ -183,23 +183,13 @@ handleStaticRouteRequest() {
 
     # next, irrespective of how we derive the path to file, we validate that the final file path exists on the system before proceeding.
     if [[ -f "$absolute_file_path" ]]; then
-      echo "handler-utils: Successfully found static resource for path: $path at file path: $route_file_path, reading file contents..." >&2
-      
-      # where we have arrived here, this indicates the file exists thus we may proceed to read its contents into memory.
-      local file_contents
-      file_contents=$(<"$absolute_file_path")
+      echo "handler-utils: Successfully found static resource for path: $path at file path: $route_file_path" >&2
 
-      # next set the resource content (MIME) type based on its files extension.
-      local content_type="application/json"
-      content_type=$(getMimeType "$absolute_file_path") 
-     
-     
-      printf "HTTP/1.1 200 OK\r\n"
-      printf "Content-Type: %s\r\n" "$content_type"
-      printf "Content-Length: %s\r\n" "${#file_contents}"
-      printf "Connection: close\r\n"
-      printf "\r\n"
-      printf "%s" "$file_contents"
+      # Determine MIME type from filename and stream the file to the client
+      local content_type
+      content_type=$(getMimeType "$absolute_file_path")
+      dispatchFileResponse "$absolute_file_path" "$content_type"
+
       echo "handler-utils: Static resource response sent for path: $path, closing connection." >&2
     else
       echo "handler-utils: Static resource file not found for path: $path at file path: $route_file_path, the absolute file path was: $absolute_file_path, sending error response." >&2
@@ -247,6 +237,41 @@ dispatchErrorResponse(){
 
 
 }
+
+dispatchSuccessResponse(){
+    local content="$1"
+    local contentType="$2"
+    
+     printf "HTTP/1.1 200 OK\r\n"
+     printf "Content-Type: %s\r\n" "$contentType"
+     printf "Content-Length: %s\r\n" "${#content}"
+     printf "Connection: close\r\n"
+     printf "\r\n"
+     printf "%s" "$content"
+
+}
+
+
+dispatchFileResponse(){
+  local file_path="$1"
+  local contentType="$2"
+
+  # Prefer stat for size, fallback to wc -c
+  local size
+  if ! size=$(stat -c%s "$file_path" 2>/dev/null); then
+    size=$(wc -c <"$file_path" 2>/dev/null || echo 0)
+  fi
+
+  printf "HTTP/1.1 200 OK\r\n"
+  printf "Content-Type: %s\r\n" "$contentType"
+  printf "Content-Length: %s\r\n" "$size"
+  printf "Connection: close\r\n"
+  printf "\r\n"
+  cat "$file_path"
+
+}
+
+
 
 
 

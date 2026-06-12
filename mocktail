@@ -3,8 +3,10 @@
 
 #declare globals
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SOCAT_PID="" 
+MAX_PROCESSES=50
 LISTEN_PORT=3333
+SOCAT_PID="" 
+
 
 # trap exit
 trap teardown EXIT INT TERM
@@ -12,7 +14,8 @@ trap teardown EXIT INT TERM
 
 startup() {
   acquireScriptDependencies
-  startListening  
+  exportSharedVariables # export shared variables that the handler (sub)  scripts may need to reference.
+  startListening 
 }
 
 
@@ -24,10 +27,7 @@ startListening(){
 
   echo "Starting Mocktail server on port $LISTEN_PORT..." >&2
   
-  # process cap, ensures we don't for fork processes indefinitely and exhaust system resources.
-  # exported to enable it to be picked up by the roor-handler script.
-  export MAX_PROCESSES=30
-  export SCRIPT_DIR  
+  # spin up a socat process to start listening on the specified port taking care to specify our root handler subscript.
   socat TCP-LISTEN:3333,reuseaddr,fork,so-rcvtimeo=5000,so-sndtimeo=5000 \
       EXEC:"timeout 10s bash ${SCRIPT_DIR}/res/handlers/root-handler" &
 
@@ -101,6 +101,17 @@ acquireScriptDependencies() {
 
   echo "All dependencies are satisfied." >&2
 }
+
+
+
+
+exportSharedVariables() {
+  export SCRIPT_DIR
+  export MAX_PROCESSES
+}
+
+
+
 
 #call script entry point.
 startup

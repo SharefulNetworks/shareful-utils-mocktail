@@ -30,14 +30,14 @@
             "Title": "Management UI",
             "Path": "/manage*",
             "Type": "static",
-            "FilePath": "./files/manage-ui.html",
+            "FilePath": "/res/handlers/sys/.files/ui/mocktail-dashboard.html",
             "Description": "The /manage-ui route handler, serves the manage-ui.html file from the .files directory. this is the main interface utlised buy the user to add,configure and manage routes"
         },
         {
             "Title": "Sign-In UI",
             "Path": "/signin*",
             "Type": "static",
-            "FilePath": "./files/sign-in.html",
+            "FilePath": "/res/handlers/sys/.files/ui/auth-login.html",
             "Description": "The /signin route handler, serves the sign-in.html file from the .files directory. this is the interface used by the user to log in or register."
         },
         {

@@ -10,6 +10,92 @@ echo "handler-utils: Loaded handler utility functions." >&2
 # import/source the mime type utility functions, which are used by the static route handling logic to determine the correct content type to return for static resources.
 source "$(dirname "${BASH_SOURCE[0]}")/mime-utils" #we use path relative to this script, the utilities both share the same parent "utils" directory.
 
+
+# read and parse the request read from the socket into an array of headers and a body, taking care to handle the case where the 
+# request may not have a body, and return the headers and body as separate variables.
+readAndParseRequest(){ 
+
+  local method path protocol
+  local header
+  local content_length=0
+  local headers='{}'
+  local body=''
+  local query_raw
+  local query_json='{}'
+
+  read -r -t 5 method path protocol || return 1
+
+  # Extract the query string from the path (safe split)
+  if [[ "$path" == *\?* ]]; then
+    query_raw="${path#*\?}"
+    path="${path%%\?*}"
+  else
+    query_raw=""
+  fi
+
+  echo "handler-utils: Received request>>>>: $method $path $protocol " >&2
+  #echo "QUERY STRING IS: $query_string" >&2
+
+  # parse headers into json objects of key value pairs, taking care to handle the case where the request may not have any headers, and return the headers as a json object.
+  while IFS= read -r header; do
+  
+      header=${header%$'\r'} 
+      [[ -z "$header" ]] && break 
+      local name=${header%%:*}
+      local value=${header#*: }
+      
+      headers=$(
+          jq \
+              --arg name "$name" \
+              --arg value "$value" \
+              '. + {($name): $value}' \
+              <<< "$headers"
+      ) 
+      [[ $name == "Content-Length" ]] &&
+          content_length=$value
+  done
+
+  if (( content_length > 0 )); then
+      IFS= read -r -N "$content_length" body
+  fi
+
+  
+  # similarly parse query string into json objects of key value pairs, taking care to handle the case where the request may not have any query parameters, and return the query string as a json object.
+    if [[ -n "$query_raw" ]]; then
+      IFS='&' read -ra query_params <<< "$query_raw"
+      for param in "${query_params[@]}"; do
+        local name=${param%%=*}
+        local value=${param#*=}
+        query_json=$(
+          jq \
+            --arg name "$name" \
+            --arg value "$value" \
+            '. + {($name): $value}' \
+            <<< "$query_json"
+        )
+      done
+    fi
+
+  jq -n \
+      --arg method "$method" \
+      --arg path "$path" \
+      --arg protocol "$protocol" \
+        --arg body "$body" \
+        --argjson headers "$headers" \
+        --argjson query_string "$query_json" \
+      '{
+          method: $method,
+          path: $path,
+          protocol: $protocol,
+          headers: $headers,
+          query_string: $query_string,
+          body: $body
+      }'
+
+}
+
+ 
+
 # attempts to resolve the defined route associated with the specified path 
 resolveRouteFromPath() {
 
@@ -272,7 +358,21 @@ dispatchFileResponse(){
 }
 
 
+stripPrefixFromPath() {
+    local path="$1"
+    local prefix="$2"
 
+    if [[ "$path" == "$prefix" ]]; then
+        echo ""
+    elif [[ "$path" == "$prefix"/* ]]; then
+        echo "${path#"$prefix"/}"
+    else
+        echo "$path"
+    fi
+}
+
+
+#--------------------------------------- ROUTE PARSING METHODS -----------------------------
 
 
 parseRouteTitle() {
@@ -306,15 +406,50 @@ parseJsonResponseRoutePayload() {
   jq -r '.Payload // empty' <<< "$route_info"
 }
 
-stripPrefixFromPath() {
-    local path="$1"
-    local prefix="$2"
 
-    if [[ "$path" == "$prefix" ]]; then
-        echo ""
-    elif [[ "$path" == "$prefix"/* ]]; then
-        echo "${path#"$prefix"/}"
-    else
-        echo "$path"
-    fi
+
+
+#--------------------------------------- INBOUND REQUEST PARSING METHODS -----------------------------
+
+parseRequestMethod() {
+  local request="$1"
+  jq -r '.method' <<< "$request"
+}
+
+parseRequestPath() {
+  local request="$1"
+  jq -r '.path' <<< "$request"
+}
+
+parseRequestProtocol() {
+  local request="$1"
+  jq -r '.protocol' <<< "$request"
+}
+
+parseRequestHeaders() {
+  local request="$1"
+  jq -r '.headers' <<< "$request"
+}
+
+parseRequestHeader() {
+  local request="$1"
+  local header_name="$2"
+  jq -r --arg header_name "$header_name" '.headers[$header_name] // empty' <<< "$request"
+}
+
+parseRequestQueryString() {
+  local request="$1"
+  jq -r '.query_string' <<< "$request"
+}
+
+
+parseRequestQueryStringParam() {
+  local request="$1"
+  local parameter_name="$2"
+  jq -r --arg parameter_name "$parameter_name" '.query_string[$parameter_name] // empty' <<< "$request"
+}
+
+parseRequestBody() {
+  local request="$1"
+  jq -r '.body' <<< "$request"
 }

@@ -27,7 +27,9 @@ initBashletEngine() {
 
   # next parse the all internal bashlet annotations for route metadata, which will allow the engine 
   # to understand how to route inbound request to the appropriate bashlet function based on the route path and method.
-  parseAllBashletAnnotations
+  bashletAnnotationMetaData="$(parseAllBashletAnnotationMetadata)"
+
+  echo "$bashletAnnotationMetaData" >&2
   
 }
 
@@ -65,78 +67,114 @@ resolveBashletsFromRouteConfigs(){
 
 }
 
-parseAllBashletAnnotations(){
-  echo "BashletEngine: Parsing all bashlet annotations for route metadata..." >&2
 
-  # iterate over the associative array of route paths to bashlet paths and parse the route annotations contained within each bashlet.
-  for route_path in "${!ROUTE_PATH_TO_BASHLET_PATH[@]}"; do
-    bashlet_path="${ROUTE_PATH_TO_BASHLET_PATH[$route_path]}"
-    # Append the expected file extension when checking for the script file
-    absolute_bashlet_file_path="${SCRIPT_DIR}${bashlet_path}${BASHLET_FILE_EXT}"
-    if [[ -f "$absolute_bashlet_file_path" && -r "$absolute_bashlet_file_path" ]]; then
-      echo "BashletEngine: Parsing bashlet: $absolute_bashlet_file_path for route metadata..." >&2
-      parseBashletAnnotations "$absolute_bashlet_file_path"
+parseAllBashletAnnotationMetadata() {
+
+    local bashlet_objects=()
+
+    for route_path in "${!ROUTE_PATH_TO_BASHLET_PATH[@]}"; do
+
+        bashlet_path="${ROUTE_PATH_TO_BASHLET_PATH[$route_path]}"
+        absolute_bashlet_file_path="${SCRIPT_DIR}/${bashlet_path#/}${BASHLET_FILE_EXT}"
+
+        if [[ -f "$absolute_bashlet_file_path" ]]; then
+
+            bashlet_objects+=(
+                "$(parseBashletAnnotationMetadata "$absolute_bashlet_file_path")"
+            )
+        fi
+    done
+
+    if ((${#bashlet_objects[@]})); then
+        printf '%s
+' "${bashlet_objects[@]}" | jq -s '{Bashlets: .}'
     else
-      echo "BashletEngine: Bashlet script not found or not readable: $absolute_bashlet_file_path" >&2
+        jq -n '{Bashlets: []}'
     fi
-  done
 
-  echo "BashletEngine: Bashlet annotation parsing complete." >&2
 }
 
-
-parseBashletAnnotations() {
+parseBashletAnnotationMetadata() {
     local file="$1"
 
     declare -A route_meta=()
     local line
+
+    local route_objects=()
 
     while IFS= read -r line; do
 
         # Route annotation - support either "# @route key=val ..." or "# key=val ..."
         if [[ "$line" =~ ^[[:space:]]*#[[:space:]]*@route[[:space:]]+(.+)$ ]]; then
 
-          route_meta=()
+            route_meta=()
 
-          local params="${BASH_REMATCH[1]}"
+            local params="${BASH_REMATCH[1]}"
         elif [[ "$line" =~ ^[[:space:]]*#[[:space:]]*([a-zA-Z0-9_]+=.+)$ ]]; then
 
-          route_meta=()
+            route_meta=()
 
-          local params="${BASH_REMATCH[1]}"
+            local params="${BASH_REMATCH[1]}"
         else
-          params=""
+            params=""
         fi
 
         if [[ -n "$params" ]]; then
-          echo "BashletEngine: Found annotation params: $params" >&2
-          local token
-          for token in $params; do
-            local key="${token%%=*}"
-            local value="${token#*=}"
-            route_meta["$key"]="$value"
-          done
-          continue
+            echo "BashletEngine: Found annotation params: $params" >&2
+            local token
+            for token in $params; do
+                local key="${token%%=*}"
+                local value="${token#*=}"
+                route_meta["$key"]="$value"
+            done
+            continue
         fi
 
-        # Function declaration
         if [[ "$line" =~ ^([a-zA-Z_][a-zA-Z0-9_]*)[[:space:]]*\(\)[[:space:]]*\{ ]]; then
 
             local func_name="${BASH_REMATCH[1]}"
 
             if [[ -n "${route_meta[method]}" ]]; then
 
-                echo "Function : $func_name"
-                echo "Method   : ${route_meta[method]}"
-                echo "Path     : ${route_meta[path]}"
-                echo "Secure   : ${route_meta[secure]}"
-                echo
+                local secure=false
+
+                case "${route_meta[secure],,}" in
+                    true|yes|1)
+                        secure=true
+                        ;;
+                esac
+
+                route_objects+=(
+                    "$(
+                        jq -c -n \
+                            --arg func_name "$func_name" \
+                            --arg method "${route_meta[method]}" \
+                            --arg path "${route_meta[path]}" \
+                            --argjson secure "$secure" \
+                            '{
+                                Function: $func_name,
+                                Method: $method,
+                                Path: $path,
+                                Secure: $secure
+                            }'
+                    )"
+                )
 
                 route_meta=()
             fi
         fi
 
     done < "$file"
+
+    if ((${#route_objects[@]})); then
+        printf '%s\n' "${route_objects[@]}"
+    else
+        printf ''
+    fi |
+    jq -s \
+        --arg filepath "$file" \
+        '{
+            BashletFilePath: $filepath,
+            BashletRoutes: .
+        }'
 }
-
-

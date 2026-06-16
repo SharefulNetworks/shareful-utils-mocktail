@@ -1,0 +1,14 @@
+#!/bin/bash
+
+
+# The Moctail Servers main AdminController bashlet, which is responsible for handling system-level requests such as login, logout, 
+# configuration updates and other system-related operations.
+
+
+# method=GET path=/api/login secure=false
+doLogin(){
+    request="$1"
+    response="$2"
+
+}
+

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+echo "BashletEngine: Loaded BashletEngine component.." >&2
+
+# array of route configs (at well-known usr and system paths) that may have one or more bashlet routes defined.
+ROUTE_CONFIGS=("${SCRIPT_DIR}/res/handlers/sys/system-handler-routes.json" "${SCRIPT_DIR}/res/handlers/usr/user-handler-routes.json")
+
+# an associative array to map route paths to their corresponding bashlet script paths, which will be populated during the resolution process.
+declare -A ROUTE_PATH_TO_BASHLET_PATH=()
+
+
+
+initBashletEngine() {
+
+  echo "BashletEngine: Initializing Bashlet Engine..." >&2
+  resolveBashletsFromRouteConfigs
+
+  
+}
+
+
+resolveBashletsFromRouteConfigs(){
+
+  echo "BashletEngine: Resolving bashlets from route configs..." >&2
+
+  # iterate over the array of route config paths, checking for existence and readability, and if so, parse the JSON to extract any bashlet routes defined.
+  for config_path in "${ROUTE_CONFIGS[@]}"; do
+    if [[ -f "$config_path" && -r "$config_path" ]]; then
+      echo "BashletEngine: Parsing route config: $config_path" >&2
+      # parse the JSON to extract bashlet routes (assuming a specific structure) and store them in an associative array or similar structure for later use.
+      # This is a placeholder for actual JSON parsing logic, which may involve jq or similar tools.
+      # Example: bashlet_routes=$(jq '.routes[] | select(.type == "bashlet")' "$config_path")
+      jq -r '
+        (.routes // .Routes // [])[]
+        | select((.Type // .type) == "bashlet")
+        | [(.Path // .path), (.BashletPath // .bashletPath)]
+        | @tsv
+      ' "$config_path" | while IFS=$'\t' read -r route_path bashlet_path; do
+        echo "BashletEngine: Found bashlet route: $route_path -> $bashlet_path" >&2
+        ROUTE_PATH_TO_BASHLET_PATH["$route_path"]="$bashlet_path"
+      done
+
+
+    else
+      echo "BashletEngine: Route config not found or not readable: $config_path" >&2
+    fi
+  done
+
+  echo "BashletEngine: Bashlet resolution complete." >&2
+
+}
+
+

@@ -15,6 +15,7 @@ trap teardown EXIT INT TERM
 startup() {
   acquireScriptDependencies
   exportSharedVariables # export shared variables that the handler (sub)  scripts may need to reference.
+  initialiseBashletEngine
   startListening 
 }
 
@@ -28,8 +29,8 @@ startListening(){
   echo "Starting Mocktail server on port $LISTEN_PORT..." >&2
   
   # spin up a socat process to start listening on the specified port taking care to specify our root handler subscript.
-  socat TCP-LISTEN:3333,reuseaddr,fork,so-rcvtimeo=5000,so-sndtimeo=5000 \
-      EXEC:"timeout 10s bash ${SCRIPT_DIR}/res/handlers/root-handler" &
+  socat TCP-LISTEN:$LISTEN_PORT,reuseaddr,fork,so-rcvtimeo=5000,so-sndtimeo=5000 \
+      EXEC:"timeout 10s bash ${SCRIPT_DIR}/res/handlers/internal/root-handler" &
 
   # immediately capture the socat PID so we can manage it lifecycle, especially for cleanup.
   SOCAT_PID=$!
@@ -103,6 +104,12 @@ acquireScriptDependencies() {
 }
 
 
+initialiseBashletEngine() {
+  echo "Mocktail: Initialising Bashlet Engine..." >&2
+  # call into the BashletEngine script to initialise it, which will resolve any bashlet routes defined in the route configs.
+  source "${SCRIPT_DIR}/res/bashlets/internal/BashletEngine"
+  initBashletEngine
+}
 
 
 exportSharedVariables() {

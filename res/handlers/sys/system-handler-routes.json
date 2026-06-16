@@ -1,15 +1,23 @@
 {
 
     "Name": "Mocktail System Handler Routes",
-    "Description": "Defines the routing configuration for the Mocktail system handler. this handler supports the following types of routes: 1)redirect: A route that automatically forwards requests to one or more target paths or an external URL. 2)dynamic: A route that is handled by a function defined in the system handler script, allowing for custom processing of requests. 3)static: A route that serves static files from a specified directory (in this case .files). 4)sub-handler: A route that delegates request handling to a separate handler script, allowing for modular and organized handling of specific paths or functionalities. 5)json-response: A route that responds with a predefined JSON object, useful for simple API endpoints or testing purposes. ",
+    "Description": "Defines the routing configuration for the Mocktail system handler.",
     "Version": "1.0",
     "Routes": [
         {
-            "Title": "System Root Redirect",
-            "Path": "/",
-            "Type": "redirect",
-            "Targets": ["/check-auth"],
-            "Description": "The root system path handler, will forward to always forward to the /check-auth route which will, in turn, forward to /auth-ui if the user is not logged in or does not have an admin account or to /manage-ui if the user is logged in and has an admin account. "
+            "Title": "System Admin Controller Route",
+            "Path": "/admin",
+            "Type": "bashlet",
+            "BashletPath": "/res/bashlets/sys/AdminController",
+            "Description": "The root system admin bashlet."
+
+        },
+        {
+            "Title": "System Mocking Controller Route",
+            "Path": "/mocking",
+            "Type": "bashlet",
+            "BashletPath": "/res/bashlets/sys/MockingController",
+            "Description": "The root system mocking bashlet."
 
         },
         {

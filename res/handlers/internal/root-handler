@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # import the handler utility functions, which are used by this handler to perform common tasks such as route resolution and response generation.
-source "$(dirname "${BASH_SOURCE[0]}")/../utils/handler-utils"
+source "$(dirname "${BASH_SOURCE[0]}")/../../utils/handler-utils"
 
 
 # top-level request handler function which will delegate to other sub handlers, as necessary, to process the incoming
@@ -24,20 +24,9 @@ handleRequest(){
    path=$(parseRequestPath "$request")
    protocol=$(parseRequestProtocol "$request")
 
-   # test of various request parsing, may delete once tests have concluded.
-   #headers=$(parseRequestHeaders "$request")
-   #userAgentHeader=$(parseRequestHeader "$request" "User-Agent")
-   #echo "USER AGENT HEADER: $userAgentHeader" >&2
-   #query_string=$(parseRequestQueryString "$request")
-   #echo "QUERY STRING: $query_string" >&2
-   idQueryStringParam=$(parseRequestQueryStringParam "$request" "id")
-   echo "ID QUERY STRING PARAM: $idQueryStringParam" >&2
-
-   
-
    # issue a call into our utility method to attempt to resolve route for the path parsed from the request
    # taking care ton pass in the path to THIS handlers routes config
-   local config_path="${SCRIPT_DIR}/res/handlers/root-handler-routes.json"
+   local config_path="${SCRIPT_DIR}/res/handlers/internal/root-handler-routes.json"
    route_info=$(resolveRouteFromPath "$path" "$config_path")
 
     # where we have found a matching route, call into our utility function to handle the request 

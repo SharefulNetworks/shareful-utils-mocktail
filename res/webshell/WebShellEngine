@@ -1,3 +1,0 @@
-#!/bin/bash
-
-echo "WebShellEngine: Loaded WebShellEngine component.." >&2

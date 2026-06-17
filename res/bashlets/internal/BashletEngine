@@ -60,9 +60,9 @@ DelegateRequestToBashletEngine() {
     local request="$2"
 
     # debug logs remove once debugging is concluded.
-    echo "ROUTE_PATH_TO_BASHLET_PATH: ${ROUTE_PATH_TO_BASHLET_PATH[@]}" >&2
+    echo "************ROUTE_PATH_TO_BASHLET_PATH from inside Delegate function is: $ROUTE_PATH_TO_BASHLET_PATH_DECLARATION_BASE64" >&2
 
-    echo "BASHLET_ANNOTATION_METADATA from inside Delegate function is: $BASHLET_ANNOTATION_METADATA" >&2
+    echo "*********** BASHLET_ANNOTATION_METADATA from inside Delegate function is: $BASHLET_ANNOTATION_METADATA_BASE64" >&2
     echo "BashletEngine: Received request for route path: $route_path" >&2
     echo "BashletEngine: Request object: $request" >&2
 

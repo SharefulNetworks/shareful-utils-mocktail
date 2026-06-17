@@ -10,6 +10,8 @@ doLogin(){
     request="$1"
     response="$2"
 
+    echo "AdminController: Handling login request..." >&2
+
 }
 
 # @route method=GET path=/api/login/extended secure=false

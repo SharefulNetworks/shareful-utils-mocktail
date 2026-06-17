@@ -8,6 +8,7 @@ FULL_PATH="$1"
 METHOD="$2"
 PROTOCOL="$3"
 RELATIVE_PATH="$4"
+REQUEST_JSON_OBJECT="$5"
 
 
 handleRequest(){
@@ -24,7 +25,7 @@ handleRequest(){
    # where we have found a matching route, call into our utility function to handle the request 
    # according to it declared route type, otherwise dispatch an appropriate error response.
    if [[ -n "$route_info" ]]; then
-       HandleRequestAccordingToRoute "$route_info" "$RELATIVE_PATH" "$METHOD" "$PROTOCOL"
+       HandleRequestAccordingToRoute "$route_info" "$RELATIVE_PATH" "$METHOD" "$PROTOCOL" "$REQUEST_JSON_OBJECT"
    else
      DispatchErrorResponse 404  "$FULL_PATH" "$METHOD" "$PROTOCOL"
    fi

@@ -39,19 +39,32 @@ InitBashletEngine() {
   # to understand how to route inbound request to the appropriate bashlet function based on the route path and method.
   BASHLET_ANNOTATION_METADATA="$(parseAllBashletAnnotationMetadata)"
 
-  # crucially export the BASHLET_ANNOTATION_METADATA variable so that it is available to sub bash processes 
-  # spawned by the Mocktail server (i.e. socat under the hood)
-  export BASHLET_ANNOTATION_METADATA
+  # crucially export the BASHLET_ANNOTATION_METADATA and ROUTE_PATH_TO_BASHLET_PATH variables so that 
+  # they are available to sub bash processes spawned by the Mocktail server (i.e. socat under the hood)
+  exportVariablesForSubProcessesAsBase64
 
-  echo "$BASHLET_ANNOTATION_METADATA" >&2
+
+  #echo "$BASHLET_ANNOTATION_METADATA" >&2
   
 }
 
 
-DelegateRequestToBashlet() {
+DelegateRequestToBashletEngine() {
+
+   echo "BashletEngine: Delegating request to bashlet..." >&2
+
+   env >&2
+  
+    # obbtain references to the route path and request object passed in as arguments.
     local route_path="$1"
     local request="$2"
-    local response="$3"
+
+    # debug logs remove once debugging is concluded.
+    echo "ROUTE_PATH_TO_BASHLET_PATH: ${ROUTE_PATH_TO_BASHLET_PATH[@]}" >&2
+
+    echo "BASHLET_ANNOTATION_METADATA from inside Delegate function is: $BASHLET_ANNOTATION_METADATA" >&2
+    echo "BashletEngine: Received request for route path: $route_path" >&2
+    echo "BashletEngine: Request object: $request" >&2
 
     if [[ -z "${ROUTE_PATH_TO_BASHLET_PATH[$route_path]}" ]]; then
         echo "BashletEngine: No bashlet found for route path: $route_path" >&2
@@ -130,7 +143,17 @@ DelegateRequestToBashlet() {
 
     echo "BashletEngine: Resolved '$request_path' -> '$func_name'" >&2
 
+    # build default response object to be returned to the caller, which may be optionally augmented by the
+    # bashlet function being invoked, where its not, this default success response will be returned.
+    local response
+    response="$(BuildDefaultBashletResponseObject 200 'OK' '{}' 'text/plain' 'Default success response from Bashlet')"    
+    
+    # crucially we may now invoke the resolved bashlet function, passing in the request object and the response object, which may 
+    # be optionally modified by the bashlet function to return a custom response to the caller.
     "$func_name" "$request" "$response"
+
+    # finally dispatch the response object to the caller, which may have been modified by the bashlet function invoked.
+    DispatchBashletResponse "$response"
 }
 
 
@@ -317,4 +340,22 @@ normalizeRequestPath() {
     fi
 
     echo "$path"
+}
+
+
+exportVariablesForSubProcessesAsBase64() {
+
+    # Export the Bashlet annotation metadata JSON as a Base64 encoded string
+    # so that it can be safely passed through socat into child Bash processes.
+
+    export BASHLET_ANNOTATION_METADATA_BASE64="$(
+        printf '%s' "$BASHLET_ANNOTATION_METADATA" | base64 -w 0
+    )"
+
+    # Export the route-to-bashlet associative array by serializing the entire
+    # declare statement. This allows the array to be reconstructed later via eval.
+
+    export ROUTE_PATH_TO_BASHLET_PATH_DECLARATION_BASE64="$(
+        declare -p ROUTE_PATH_TO_BASHLET_PATH | base64 -w 0
+    )"
 }

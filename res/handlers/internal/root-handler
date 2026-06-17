@@ -16,13 +16,13 @@ handleRequest(){
    # check the handling of this request will not cause us to exceed the maximum process limit.
    checkProcessLimit
   
-   # read and parse the incoming request,
-   request=$(ReadAndParseRequest) || exit 1
+   # read and parse the incoming request to a high-level JSON object.
+   requestJSON=$(ReadAndParseRequest) || exit 1
 
    # call into helpers to parse method, path and protocol from the request (line)
-   method=$(parseRequestMethod "$request")
-   path=$(parseRequestPath "$request")
-   protocol=$(parseRequestProtocol "$request")
+   method=$(parseRequestMethod "$requestJSON")
+   path=$(parseRequestPath "$requestJSON")
+   protocol=$(parseRequestProtocol "$requestJSON")
 
    # issue a call into our utility method to attempt to resolve route for the path parsed from the request
    # taking care ton pass in the path to THIS handlers routes config
@@ -32,7 +32,7 @@ handleRequest(){
     # where we have found a matching route, call into our utility function to handle the request 
     # according to it declared route type, otherwise dispatch an appropriate error response.
     if [[ -n "$route_info" ]]; then
-        HandleRequestAccordingToRoute "$route_info" "$path" "$method" "$protocol"
+        HandleRequestAccordingToRoute "$route_info" "$path" "$method" "$protocol" "$requestJSON"
     else
       DispatchErrorResponse 404  "$path" "$method" "$protocol"
     fi

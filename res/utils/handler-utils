@@ -10,6 +10,8 @@ echo "handler-utils: Loaded handler utility functions." >&2
 # import/source the mime type utility functions, which are used by the static route handling logic to determine the correct content type to return for static resources.
 source "$(dirname "${BASH_SOURCE[0]}")/mime-utils" #we use path relative to this script, the utilities both share the same parent "utils" directory.
 
+# import/source the BashletEngine so we can delegate to it for handling requests associated with Bashlet route types.
+source "$(dirname "${BASH_SOURCE[0]}")/../bashlets/internal/BashletEngine" #we use path relative to this script, the BashletEngine is located in the "
 
 # PUBLIC FUNCTION: reads and parses the request read from the socket into an array of headers and a body, taking care to handle the case where the 
 # request may not have a body, and return the headers and body as separate variables.
@@ -147,21 +149,19 @@ HandleRequestAccordingToRoute() {
   local path="$2"
   local method="$3"
   local protocol="$4"
+  local request_json_object="$5"
 
   #parse the route type from the route info, then handle request according to it.
   route_type=$(parseRouteType "$route_info")
   case "$route_type" in
     "sub-handler")
-        handleSubHandlerRouteRequest "$route_info" "$path" "$method" "$protocol"
+        handleSubHandlerRouteRequest "$route_info" "$path" "$method" "$protocol" "$request_json_object"
         ;;
     "static")
-        handleStaticRouteRequest "$route_info" "$path" "$method" "$protocol"
-        ;;
-    "json-response")
-        handleJsonResponseRouteRequest "$route_info"
+        handleStaticRouteRequest "$route_info" "$path" "$method" "$protocol" "$request_json_object"
         ;;
     "bashlet")
-        handleBashletRouteRequest "$route_info" "$path" "$method" "$protocol"
+        handleBashletRouteRequest "$route_info" "$path" "$method" "$protocol" "$request_json_object"
         ;;
     *)
         echo "root-handler: Unsupported route type: $route_type for path: $path, sending error response." >&2
@@ -197,6 +197,7 @@ handleSubHandlerRouteRequest() {
   local request_path="$2"
   local request_method="$3"
   local request_protocol="$4"
+  local request_json_object="$5"
 
   local route_type=$(parseRouteType "$route_info")
   local route_path=$(parseRoutePath "$route_info")
@@ -214,7 +215,7 @@ handleSubHandlerRouteRequest() {
     # this allows the sub-handler to be more flexible and reusable as it can be mounted at different base paths without needing to 
     # worry about adjusting the paths it receives.
     local stripped_request_path=$(stripPrefixFromPath "$request_path" "$route_path")
-    "$route_sub_handler_script" "$request_path" "$request_method" "$request_protocol" "/$stripped_request_path"
+    "$route_sub_handler_script" "$request_path" "$request_method" "$request_protocol" "/$stripped_request_path" "$request_json_object"
     return $?
   else
     echo "handler-utils: Unsupported route type: $route_type or script definition for SubHandler route type associated with path: $request_path, sending default response." >&2
@@ -238,6 +239,8 @@ handleStaticRouteRequest() {
   local request_path="$2"
   local request_method="$3"
   local request_protocol="$4"
+  local request_json_object="$5"
+
 
 
   local route_path=$(parseRoutePath "$route_info")
@@ -309,6 +312,27 @@ handleStaticRouteRequest() {
 
 handleBashletRouteRequest() {
   echo "handler-utils: Handling request for path: $path according to Bashlet route type..." >&2
+  local route_info="$1"
+  local request_path="$2"
+  local request_method="$3"
+  local request_protocol="$4"
+  local request_json_object="$5"
+
+
+  local route_type=$(parseRouteType "$route_info")
+  local route_path=$(parseRoutePath "$route_info")
+
+  # ensure the route type is of type bashlet and a request object has been provided.
+  if [[ "$route_type" == "bashlet" && -n "$request_json_object" ]]; then
+
+    echo "handler-utils: Routing to Bashlet Engine for path: $request_path" >&2
+
+    # delegate to the BashletEngine to handle the request, passing in the request object as a parameter.
+    DelegateRequestToBashletEngine "$route_path" "$request_json_object"
+  else
+    echo "handler-utils: Unsupported route type: $route_type or missing request object for Bashlet route type associated with path: $request_path, sending error response." >&2
+    dispatchErrorResponse 1 "$request_path" "$request_method" "$request_protocol"
+  fi    
 
 }
 

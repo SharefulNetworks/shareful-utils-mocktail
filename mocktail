@@ -29,8 +29,12 @@ startListening(){
   echo "Starting Mocktail server on port $LISTEN_PORT..." >&2
   
   # spin up a socat process to start listening on the specified port taking care to specify our root handler subscript.
-  socat TCP-LISTEN:$LISTEN_PORT,reuseaddr,fork,so-rcvtimeo=5000,so-sndtimeo=5000 \
-      EXEC:"timeout 10s bash ${SCRIPT_DIR}/res/handlers/internal/root-handler" &
+  # ensure the base64 annotation metadata is exported in this parent shell
+  #export BASHLET_ANNOTATION_METADATA_BASE64
+
+  HANDLER="$SCRIPT_DIR/res/handlers/internal/root-handler"
+    socat TCP-LISTEN:$LISTEN_PORT,reuseaddr,fork \
+        EXEC:"timeout 10s bash ${SCRIPT_DIR}/res/handlers/internal/root-handler" &
 
   # immediately capture the socat PID so we can manage it lifecycle, especially for cleanup.
   SOCAT_PID=$!

@@ -5,6 +5,55 @@ echo "bashlet-utils: Loaded bashlet-utils helper/utility functions... " >&2
 
 
 
+# constructs a baseline/default bashlet response object in JSON format, which will be 
+# returned to the caller, as-is, where the bashlet function being invoked does not 
+# explicitly augment the response object via the various setter functions provided.
+# Under normal circumstances, it is expected that the bashlet function being invoked will 
+# augment the default response object with the appropriate status code, headers, content type 
+# and body content, as appropriate for the specific request being handled.
+BuildDefaultBashletResponseObject() {
+  local status_code="$1"
+  local status_message="$2"
+  local headers="$3"
+  local content_type="$4"
+  local content="$5"    
+ 
+  
+
+  # construct a default bashlet response object in JSON format, which will be returned to the caller.
+  jq -n --arg status_code "$status_code" \
+        --arg status_message "$status_message" \
+        --argjson headers "$headers" \
+        --arg content_type "$content_type" \
+        --arg content "$content" \
+        '{
+          status_code: ($status_code | tonumber),
+          status_message: $status_message,
+          headers: $headers,
+          content_type: $content_type,
+          body: $content
+        }'
+}
+
+# converts the provided bashlet response object into a standard HTTP response and dispatches it 
+# to the caller.
+DispatchBashletResponse(){
+
+    local responseObject="$1"
+    local status_code=$(jq -r '.status_code' <<< "$responseObject")
+    local status_message=$(jq -r '.status_message' <<< "$responseObject")
+    local headers=$(jq -r '.headers' <<< "$responseObject")
+    local content_type=$(jq -r '.content_type' <<< "$responseObject")
+    local content=$(jq -r '.body' <<< "$responseObject")
+
+     printf "HTTP/1.1 $status_code $status_message\r\n"
+     printf "Content-Type: %s\r\n" "$content_type"
+     printf "Content-Length: %s\r\n" "${#content}"
+     printf "Connection: close\r\n"
+     printf "\r\n"
+     printf "%s" "$content"
+
+}
 
 
 

@@ -2,14 +2,23 @@
 
 echo "BashletEngine: Loaded BashletEngine component.." >&2
 
-# array of route configs (at well-known usr and system paths) that may have one or more bashlet routes defined.
-ROUTE_CONFIGS=("${SCRIPT_DIR}/res/handlers/sys/system-handler-routes.json" "${SCRIPT_DIR}/res/handlers/usr/user-handler-routes.json")
+# source the bashlet-utils script, which provides utility functions for bashlet operations, including parsing request objects and other common tasks.
+source "${SCRIPT_DIR}/res/utils/bashlet-utils"
 
 # the file extension for bashlet scripts, which is used to identify them during the resolution process.
 BASHLET_FILE_EXT=".shh" 
 
-# an associative array to map route paths to their corresponding bashlet script paths, which will be populated during the resolution process.
+# array of route configs (at well-known usr and system paths) that may have one or more bashlet routes defined.
+ROUTE_CONFIGS=("${SCRIPT_DIR}/res/handlers/sys/system-handler-routes.json" "${SCRIPT_DIR}/res/handlers/usr/user-handler-routes.json")
+
+# an associative array to map route paths to their corresponding bashlet script paths, 
+# which will be populated during the resolution process.
 declare -A ROUTE_PATH_TO_BASHLET_PATH=()
+
+# stores route metadata for all bashlets (as a JSON object) which is populated on initialisation of the component
+# via a call to the parseAllBashletAnnotationMetadata function, which parses all bashlet scripts for route annotations.
+BASHLET_ANNOTATION_METADATA=""
+
            
 
 
@@ -17,8 +26,9 @@ declare -A ROUTE_PATH_TO_BASHLET_PATH=()
 
 
 
-
-initBashletEngine() {
+# initialises the BashletEngine, this must be called before attempting to use any other f
+# public facing functions the BashletEngine exports.
+InitBashletEngine() {
 
   echo "BashletEngine: Initializing Bashlet Engine..." >&2
 
@@ -27,13 +37,111 @@ initBashletEngine() {
 
   # next parse the all internal bashlet annotations for route metadata, which will allow the engine 
   # to understand how to route inbound request to the appropriate bashlet function based on the route path and method.
-  bashletAnnotationMetaData="$(parseAllBashletAnnotationMetadata)"
+  BASHLET_ANNOTATION_METADATA="$(parseAllBashletAnnotationMetadata)"
 
-  echo "$bashletAnnotationMetaData" >&2
+  # crucially export the BASHLET_ANNOTATION_METADATA variable so that it is available to sub bash processes 
+  # spawned by the Mocktail server (i.e. socat under the hood)
+  export BASHLET_ANNOTATION_METADATA
+
+  echo "$BASHLET_ANNOTATION_METADATA" >&2
   
 }
 
 
+DelegateRequestToBashlet() {
+    local route_path="$1"
+    local request="$2"
+    local response="$3"
+
+    if [[ -z "${ROUTE_PATH_TO_BASHLET_PATH[$route_path]}" ]]; then
+        echo "BashletEngine: No bashlet found for route path: $route_path" >&2
+        return 1
+    fi
+
+    local bashlet_path="${ROUTE_PATH_TO_BASHLET_PATH[$route_path]}"
+    local absolute_bashlet_file_path="${SCRIPT_DIR}/${bashlet_path#/}${BASHLET_FILE_EXT}"
+
+    if [[ ! -f "$absolute_bashlet_file_path" || ! -r "$absolute_bashlet_file_path" ]]; then
+        echo "BashletEngine: Bashlet file not found or not readable: $absolute_bashlet_file_path" >&2
+        return 1
+    fi
+
+    echo "BashletEngine: Delegating request to bashlet: $absolute_bashlet_file_path" >&2
+
+    # Source the bashlet file to make its functions available in the current shell context
+    source "$absolute_bashlet_file_path"
+
+    
+    # extract the actual request path from the request object, our handler-utils script will assist us in this regard
+    local request_path
+    request_path="$(ParseBashletRequestObjectPath "$request")"
+
+    # normalize the request path to ensure consistent routing behavior, removing any query strings and trailing slashes (except for root).
+    request_path="$(normalizeRequestPath "$request_path")"
+
+    local route_metadata
+
+    route_metadata="$(
+        jq -c \
+            --arg file "$absolute_bashlet_file_path" \
+            --arg path "$request_path" '
+            
+            .bashlets[]
+            | select(.BashletFilePath == $file)
+
+            | [
+                .BashletRoutes[]
+
+                | .Path as $route
+
+                | ($route | rtrimstr("/")) as $prefix
+
+                | select(
+                    ($path == $prefix)
+                    or ($path | startswith($prefix + "/"))
+                )
+
+              ]
+
+            | sort_by(.Path | length)
+            | reverse
+            | .[0] // empty
+
+            ' <<< "$BASHLET_ANNOTATION_METADATA"
+    )"
+
+    if [[ -z "$route_metadata" ]]; then
+        echo "BashletEngine: No function route matched request path '$request_path'" >&2
+        return 1
+    fi
+
+    local func_name
+    func_name="$(jq -r '.Function // empty' <<< "$route_metadata")"
+
+    if [[ -z "$func_name" ]]; then
+        echo "BashletEngine: No function name found in route metadata." >&2
+        return 1
+    fi
+
+    if [[ "$(type -t "$func_name")" != "function" ]]; then
+        echo "BashletEngine: Function '$func_name' not found in bashlet '$absolute_bashlet_file_path'" >&2
+        return 1
+    fi
+
+    echo "BashletEngine: Resolved '$request_path' -> '$func_name'" >&2
+
+    "$func_name" "$request" "$response"
+}
+
+
+
+
+
+#---------------------------------------------------- PRIVATE HELPER FUNCTIONS --------------------------------------------#
+
+
+
+# resolveBashletsFromRouteConfigs - resolves bashlets from the route configs and populates the ROUTE_PATH_TO_BASHLET_PATH associative array.
 resolveBashletsFromRouteConfigs(){
 
   echo "BashletEngine: Resolving bashlets from route configs..." >&2
@@ -68,6 +176,7 @@ resolveBashletsFromRouteConfigs(){
 }
 
 
+# parseAllBashletAnnotationMetadata - parses all bashlet scripts for route annotations and returns a JSON object containing the metadata.
 parseAllBashletAnnotationMetadata() {
 
     local bashlet_objects=()
@@ -94,6 +203,8 @@ parseAllBashletAnnotationMetadata() {
 
 }
 
+
+# parseBashletAnnotationMetadata - parses a single bashlet script for route annotations and returns a JSON object containing the metadata.
 parseBashletAnnotationMetadata() {
     local file="$1"
 
@@ -177,4 +288,33 @@ parseBashletAnnotationMetadata() {
             BashletFilePath: $filepath,
             BashletRoutes: .
         }'
+}
+
+
+
+# normalises request paths by removing query strings and trailing slashes (except for root), 
+# ensuring consistent routing behavior.
+#
+# Normalise:
+#
+#   /api/login
+#   /api/login/
+#   /api/login?a=1
+#
+# all become:
+#
+#   /api/login
+#
+normalizeRequestPath() {
+    local path="$1"
+
+    # Remove query string
+    path="${path%%\?*}"
+
+    # Remove trailing slash except root
+    if [[ "$path" != "/" ]]; then
+        path="${path%/}"
+    fi
+
+    echo "$path"
 }

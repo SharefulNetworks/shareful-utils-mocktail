@@ -1,3 +1,54 @@
 #!/bin/bash
 
 #utils to support the various bashlet operations, including synchronized local file system read and write,etc.
+echo "bashlet-utils: Loaded bashlet-utils helper/utility functions... " >&2
+
+
+
+
+
+
+# public bashlet request object parsing functions---------------------------------------------------
+
+ParseBashletRequestObjectMethod() {
+  local request="$1"
+  jq -r '.method' <<< "$request"
+}
+
+ParseBashletRequestObjectPath() {
+  local request="$1"
+  jq -r '.path' <<< "$request"
+}
+
+ParseBashletRequestObjectProtocol() {
+  local request="$1"
+  jq -r '.protocol' <<< "$request"
+}
+
+ParseBashletRequestObjectHeaders() {
+  local request="$1"
+  jq -r '.headers' <<< "$request"
+}
+
+ParseBashletRequestObjectHeader() {
+  local request="$1"
+  local header_name="$2"
+  jq -r --arg header_name "$header_name" '.headers[$header_name] // empty' <<< "$request"
+}
+
+ParseBashletRequestObjectQueryString() {
+  local request="$1"
+  jq -r '.query_string' <<< "$request"
+}
+
+
+ParseBashletRequestObjectQueryStringParam() {
+  local request="$1"
+  local parameter_name="$2"
+  jq -r --arg parameter_name "$parameter_name" '.query_string[$parameter_name] // empty' <<< "$request"
+}
+
+ParseBashletRequestObjectBody() {
+  local request="$1"
+  jq -r '.body' <<< "$request"
+}

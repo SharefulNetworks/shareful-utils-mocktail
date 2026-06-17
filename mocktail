@@ -15,7 +15,7 @@ trap teardown EXIT INT TERM
 startup() {
   acquireScriptDependencies
   exportSharedVariables # export shared variables that the handler (sub)  scripts may need to reference.
-  initialiseBashletEngine
+  initialiseBashletEngine # call private helper function to initialise the BashletEngine.
   startListening 
 }
 
@@ -108,7 +108,7 @@ initialiseBashletEngine() {
   echo "Mocktail: Initialising Bashlet Engine..." >&2
   # call into the BashletEngine script to initialise it, which will resolve any bashlet routes defined in the route configs.
   source "${SCRIPT_DIR}/res/bashlets/internal/BashletEngine"
-  initBashletEngine
+  InitBashletEngine
 }
 
 

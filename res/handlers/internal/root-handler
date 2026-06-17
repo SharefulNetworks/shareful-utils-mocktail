@@ -17,7 +17,7 @@ handleRequest(){
    checkProcessLimit
   
    # read and parse the incoming request,
-   request=$(readAndParseRequest) || exit 1
+   request=$(ReadAndParseRequest) || exit 1
 
    # call into helpers to parse method, path and protocol from the request (line)
    method=$(parseRequestMethod "$request")
@@ -27,14 +27,14 @@ handleRequest(){
    # issue a call into our utility method to attempt to resolve route for the path parsed from the request
    # taking care ton pass in the path to THIS handlers routes config
    local config_path="${SCRIPT_DIR}/res/handlers/internal/root-handler-routes.json"
-   route_info=$(resolveRouteFromPath "$path" "$config_path")
+   route_info=$(ResolveRouteFromPath "$path" "$config_path")
 
     # where we have found a matching route, call into our utility function to handle the request 
     # according to it declared route type, otherwise dispatch an appropriate error response.
     if [[ -n "$route_info" ]]; then
-        handleRequestAccordingToRoute "$route_info" "$path" "$method" "$protocol"
+        HandleRequestAccordingToRoute "$route_info" "$path" "$method" "$protocol"
     else
-      dispatchErrorResponse 404  "$path" "$method" "$protocol"
+      DispatchErrorResponse 404  "$path" "$method" "$protocol"
     fi
 
 }

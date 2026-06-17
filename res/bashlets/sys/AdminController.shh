@@ -1,14 +1,23 @@
 #!/bin/bash
 
 
-# The Moctail Servers main AdminController bashlet, which is responsible for handling system-level requests such as login, logout, 
+# The Mocktail Servers main AdminController bashlet, which is responsible for handling system-level requests such as login, logout, 
 # configuration updates and other system-related operations.
 
 
-# method=GET path=/api/login secure=false
+# @route method=GET path=/api/login secure=false
 doLogin(){
     request="$1"
     response="$2"
+
+}
+
+# @route method=GET path=/api/login/extended secure=false
+doLoginWithOptions(){
+    request="$1"
+    response="$2"
+
+    #NOTE: this is just a test route to validate that the BashletEngine is correctly parsing the route annotations and routing requests to the correct bashlet function.
 
 }
 

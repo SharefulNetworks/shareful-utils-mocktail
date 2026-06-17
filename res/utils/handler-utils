@@ -11,9 +11,9 @@ echo "handler-utils: Loaded handler utility functions." >&2
 source "$(dirname "${BASH_SOURCE[0]}")/mime-utils" #we use path relative to this script, the utilities both share the same parent "utils" directory.
 
 
-# read and parse the request read from the socket into an array of headers and a body, taking care to handle the case where the 
+# PUBLIC FUNCTION: reads and parses the request read from the socket into an array of headers and a body, taking care to handle the case where the 
 # request may not have a body, and return the headers and body as separate variables.
-readAndParseRequest(){ 
+ReadAndParseRequest(){ 
 
   local method path protocol
   local header
@@ -96,8 +96,8 @@ readAndParseRequest(){
 
  
 
-# attempts to resolve the defined route associated with the specified path 
-resolveRouteFromPath() {
+# PUBLIC FUNCTION: attempts to resolve the defined route associated with the specified path 
+ResolveRouteFromPath() {
 
  local path="$1"
  local config_path="$2"
@@ -138,10 +138,10 @@ resolveRouteFromPath() {
 
 }
 
-# handles the request according to the route Type defined in the route data provided as the first 
+# PUBLIC FUNCTION: handles the request according to the route Type defined in the route data provided as the first 
 # parameter to this function. Where the specified route type is unsupported an appropriate error
 # response will be generated and returned to the client.
-handleRequestAccordingToRoute() {
+HandleRequestAccordingToRoute() {
   echo "handler-utils: Handling request for path: $path according to resolved route..." >&2
   local route_info="$1"
   local path="$2"
@@ -160,6 +160,9 @@ handleRequestAccordingToRoute() {
     "json-response")
         handleJsonResponseRouteRequest "$route_info"
         ;;
+    "bashlet")
+        handleBashletRouteRequest "$route_info" "$path" "$method" "$protocol"
+        ;;
     *)
         echo "root-handler: Unsupported route type: $route_type for path: $path, sending error response." >&2
         dispatchErrorResponse 1 "$path" "$method" "$protocol"
@@ -168,6 +171,22 @@ handleRequestAccordingToRoute() {
   esac
 
 }
+
+
+
+# PUBLIC FUNCTION: dispatches an error response to the client based on the provided error code, path, method and protocol. 
+# The response will include a JSON body with details of the error.
+# Note: This is just a wrapper around the private variant of this function.
+DispatchErrorResponse(){
+   #simply delegate to the private variant of this function, which is defined below, passing in the provided parameters.
+   dispatchErrorResponse "$1" "$2" "$3" "$4"
+}
+
+
+
+
+#-------------------------------- PRIVATE HELPER/UTILITY FUNCTION IMPLEMENTATIONS ---------------------------------
+
 
 # handles SubHandler type route requests by delgating to the specified sub-handler script defined in the route info, 
 # where the route type is unsupported or no valid script is provided an appropriate error response will be generated 
@@ -288,11 +307,21 @@ handleStaticRouteRequest() {
   
 }
 
+handleBashletRouteRequest() {
+  echo "handler-utils: Handling request for path: $path according to Bashlet route type..." >&2
+
+}
+
 handleJsonResponseRouteRequest(){
     echo "handler-utils: Handling request for path: $path according to JsonResponse route type..." >&2
 }
 
 
+
+
+
+# dispatches an error response to the client based on the provided error code, path, method and protocol. 
+# The response will include a JSON body with details of the error.
 dispatchErrorResponse(){
     local errorCode="$1"
     local path="$2"

@@ -13,16 +13,15 @@ echo "bashlet-utils: Loaded bashlet-utils helper/utility functions... " >&2
 # and body content, as appropriate for the specific request being handled.
 BuildDefaultBashletResponseObject() {
   local status_code="$1"
-  local status_message="$2"
-  local headers="$3"
-  local content_type="$4"
-  local content="$5"    
+  local headers="$2"
+  local content_type="$3"
+  local content="$4"    
  
   
 
   # construct a default bashlet response object in JSON format, which will be returned to the caller.
   jq -n --arg status_code "$status_code" \
-        --arg status_message "$status_message" \
+        --arg status_message "$(GetStatusMsgForCode $status_code)" \
         --argjson headers "$headers" \
         --arg content_type "$content_type" \
         --arg content "$content" \
@@ -33,6 +32,23 @@ BuildDefaultBashletResponseObject() {
           content_type: $content_type,
           body: $content
         }'
+}
+
+# constructs a default bashlet error response object in JSON format, which will be automatically returned where the
+# BashletEngine encounters an error while attempting to invoke a target function, defined in a bashlet 
+# such as when the specified function or the entire bashlet is not found or if the function fails to 
+# execute successfully. User may also utilise this function within their own bashlet functions to 
+# return a standard error response to the client, as necessary.
+# Note: this function ONLY constructs (and returns) the error response object to dispatch the 
+# error response to the client, use the DispatchBashletResponse function taking care to pass in the error response 
+# object returned by this function.
+BuildBashletErrorResponse(){
+    
+  local status_code="$1"
+  local content="$2"
+
+  # construct a default bashlet error response object in JSON format, which will be returned to the caller.
+  BuildDefaultBashletResponseObject "$status_code" '{}' 'text/html' "$content"
 }
 
 # converts the provided bashlet response object into a standard HTTP response and dispatches it 
@@ -126,3 +142,83 @@ EnsureLeadingSlash() {
 
     printf '%s' "$path"
 }
+
+
+GetStatusMsgForCode() {
+
+    local status_code="$1"
+
+    case "$status_code" in
+    100) printf "Continue" ;;
+    101) printf "Switching Protocols" ;;
+    102) printf "Processing" ;;
+    103) printf "Early Hints" ;;
+
+    200) printf "OK" ;;
+    201) printf "Created" ;;
+    202) printf "Accepted" ;;
+    203) printf "Non-Authoritative Information" ;;
+    204) printf "No Content" ;;
+    205) printf "Reset Content" ;;
+    206) printf "Partial Content" ;;
+    207) printf "Multi-Status" ;;
+    208) printf "Already Reported" ;;
+    226) printf "IM Used" ;;
+
+    300) printf "Multiple Choices" ;;
+    301) printf "Moved Permanently" ;;
+    302) printf "Found" ;;
+    303) printf "See Other" ;;
+    304) printf "Not Modified" ;;
+    305) printf "Use Proxy" ;;
+    307) printf "Temporary Redirect" ;;
+    308) printf "Permanent Redirect" ;;
+
+    400) printf "Bad Request" ;;
+    401) printf "Unauthorized" ;;
+    402) printf "Payment Required" ;;
+    403) printf "Forbidden" ;;
+    404) printf "Not Found" ;;
+    405) printf "Method Not Allowed" ;;
+    406) printf "Not Acceptable" ;;
+    407) printf "Proxy Authentication Required" ;;
+    408) printf "Request Timeout" ;;
+    409) printf "Conflict" ;;
+    410) printf "Gone" ;;
+    411) printf "Length Required" ;;
+    412) printf "Precondition Failed" ;;
+    413) printf "Payload Too Large" ;;
+    414) printf "URI Too Long" ;;
+    415) printf "Unsupported Media Type" ;;
+    416) printf "Range Not Satisfiable" ;;
+    417) printf "Expectation Failed" ;;
+    418) printf "I'm a Teapot" ;;
+    421) printf "Misdirected Request" ;;
+    422) printf "Unprocessable Content" ;;
+    423) printf "Locked" ;;
+    424) printf "Failed Dependency" ;;
+    425) printf "Too Early" ;;
+    426) printf "Upgrade Required" ;;
+    428) printf "Precondition Required" ;;
+    429) printf "Too Many Requests" ;;
+    431) printf "Request Header Fields Too Large" ;;
+    451) printf "Unavailable For Legal Reasons" ;;
+
+    500) printf "Internal Server Error" ;;
+    501) printf "Not Implemented" ;;
+    502) printf "Bad Gateway" ;;
+    503) printf "Service Unavailable" ;;
+    504) printf "Gateway Timeout" ;;
+    505) printf "HTTP Version Not Supported" ;;
+    506) printf "Variant Also Negotiates" ;;
+    507) printf "Insufficient Storage" ;;
+    508) printf "Loop Detected" ;;
+    510) printf "Not Extended" ;;
+    511) printf "Network Authentication Required" ;;
+
+    *)
+        printf "Unknown Status"
+        ;;
+esac
+
+}   

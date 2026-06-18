@@ -61,16 +61,30 @@ DelegateRequestToBashletEngine() {
     # import pre-parsed metadata from parent to reconstruct associative arrays
     importVariablesFromParentProcess
 
+    # This error should really only occur where the user has failed to specify a path to the target bashlet 
+    # in the route config. Its critical to note that the path itself IS NOT checked here (we'll do that next), 
+    # rather this check just determines if a non-zero path to a bashlet has been specified.
+    # This is really a server configuration issue and thus we return a 500 error.
     if [[ -z "${ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC[$route_path]}" ]]; then
-        echo "BashletEngine: No bashlet found for route path: $route_path" >&2
+        echo "BashletEngine: A non-existent or invalid bashlet path was specified for route: $route_path" >&2
+
+        # build appropriate error response object
+        local error_response
+        error_response="$(BuildBashletErrorResponse 500 " A non-existent or invalid bashlet path was specified for route: $route_path")"
+        DispatchBashletResponse "$error_response"
         return 1
     fi
 
     local bashlet_path="${ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC[$route_path]}"
     local absolute_bashlet_file_path="${SCRIPT_DIR}/${bashlet_path#/}${BASHLET_FILE_EXT}"
 
+    # satisfied that we have a path, next we check if the path is valid, where its not we
+    # return a 404 error to the client to indicate that the specified bashlet could not be found. 
     if [[ ! -f "$absolute_bashlet_file_path" || ! -r "$absolute_bashlet_file_path" ]]; then
-        echo "BashletEngine: Bashlet file not found or not readable: $absolute_bashlet_file_path" >&2
+        echo "BashletEngine: Bashlet file not found or is unreadable: $absolute_bashlet_file_path" >&2
+        local error_response
+        error_response="$(BuildBashletErrorResponse 404 "Bashlet file not found or is unreadable: $absolute_bashlet_file_path")"
+        DispatchBashletResponse "$error_response"
         return 1
     fi
 
@@ -128,30 +142,47 @@ DelegateRequestToBashletEngine() {
             ' <<< "$BASHLET_ANNOTATION_METADATA_FROM_PARENT_PROC"
     )"
 
+    # if no route metadata was found for the specified request path, we return a 404 error to the client 
+    # to indicate that no function route in the bashlet matched the request path.
     if [[ -z "$route_metadata" ]]; then
-        echo "BashletEngine: No function route matched request path '$sanitized_request_path'" >&2
+        echo "BashletEngine: No function route in bashlet '$absolute_bashlet_file_path' matched request path '$sanitized_request_path'" >&2
+        local error_response
+        error_response="$(BuildBashletErrorResponse 404 "No function route in bashlet '$absolute_bashlet_file_path' matched request path '$sanitized_request_path'")"
+        DispatchBashletResponse "$error_response"
         return 1
     fi
 
     local func_name
     func_name="$(jq -r '.Function // empty' <<< "$route_metadata")"
 
+    # if no function name was found in the route metadata, we return a 500 error to the client 
+    # to indicate that the bashlet is misconfigured and cannot be invoked.
     if [[ -z "$func_name" ]]; then
         echo "BashletEngine: No function name found in route metadata." >&2
+        local error_response
+        error_response="$(BuildBashletErrorResponse 500 "No function name found in route configuration for bashlet '$absolute_bashlet_file_path'")"
+        DispatchBashletResponse "$error_response"
         return 1
     fi
 
+    # check if the function exists in the current shell context, where it does not we return a 500 error to the client
+    # to indicate that the bashlet is misconfigured and cannot be invoked.
     if [[ "$(type -t "$func_name")" != "function" ]]; then
         echo "BashletEngine: Function '$func_name' not found in bashlet '$absolute_bashlet_file_path'" >&2
+        local error_response
+        error_response="$(BuildBashletErrorResponse 500 "Function '$func_name' not found in bashlet '$absolute_bashlet_file_path'")"
+        DispatchBashletResponse "$error_response"
         return 1
     fi
 
+    # otherwise where the bashlet route config is correct and the function exists, we can now invoke 
+    # the bashlet function, passing in the request object and a default response object. 
     echo "BashletEngine: Resolved '$sanitized_request_path' -> '$func_name'" >&2
 
     # build default response object to be returned to the caller, which may be optionally augmented by the
     # bashlet function being invoked, where its not, this default success response will be returned.
     local response
-    response="$(BuildDefaultBashletResponseObject 200 'OK' '{}' 'text/plain' 'Default success response from Bashlet')"    
+    response="$(BuildDefaultBashletResponseObject 200 '{}' 'text/plain' 'Default success response from Bashlet')"    
     
     # crucially we may now invoke the resolved bashlet function, passing in the request object and the response object, which may 
     # be optionally modified by the bashlet function to return a custom response to the caller.

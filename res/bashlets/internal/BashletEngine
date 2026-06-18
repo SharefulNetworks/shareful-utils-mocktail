@@ -51,27 +51,22 @@ InitBashletEngine() {
 
 DelegateRequestToBashletEngine() {
 
-   echo "BashletEngine: Delegating request to bashlet..." >&2
-
-   env >&2
+    echo "BashletEngine: Delegating request to bashlet..." >&2
   
-    # obbtain references to the route path and request object passed in as arguments.
+    # obtain references to the route path and request object passed in as arguments.
     local route_path="$1"
     local request="$2"
+    local relative_request_path="$3"
 
-    # debug logs remove once debugging is concluded.
-    echo "************ROUTE_PATH_TO_BASHLET_PATH from inside Delegate function is: $ROUTE_PATH_TO_BASHLET_PATH_DECLARATION_BASE64" >&2
+    # import pre-parsed metadata from parent to reconstruct associative arrays
+    importVariablesFromParentProcess
 
-    echo "*********** BASHLET_ANNOTATION_METADATA from inside Delegate function is: $BASHLET_ANNOTATION_METADATA_BASE64" >&2
-    echo "BashletEngine: Received request for route path: $route_path" >&2
-    echo "BashletEngine: Request object: $request" >&2
-
-    if [[ -z "${ROUTE_PATH_TO_BASHLET_PATH[$route_path]}" ]]; then
+    if [[ -z "${ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC[$route_path]}" ]]; then
         echo "BashletEngine: No bashlet found for route path: $route_path" >&2
         return 1
     fi
 
-    local bashlet_path="${ROUTE_PATH_TO_BASHLET_PATH[$route_path]}"
+    local bashlet_path="${ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC[$route_path]}"
     local absolute_bashlet_file_path="${SCRIPT_DIR}/${bashlet_path#/}${BASHLET_FILE_EXT}"
 
     if [[ ! -f "$absolute_bashlet_file_path" || ! -r "$absolute_bashlet_file_path" ]]; then
@@ -86,20 +81,30 @@ DelegateRequestToBashletEngine() {
 
     
     # extract the actual request path from the request object, our handler-utils script will assist us in this regard
-    local request_path
-    request_path="$(ParseBashletRequestObjectPath "$request")"
+    #local request_path
+    #request_path="$(ParseBashletRequestObjectPath "$request")"
 
-    # normalize the request path to ensure consistent routing behavior, removing any query strings and trailing slashes (except for root).
-    request_path="$(normalizeRequestPath "$request_path")"
+    # normalize the (relative) request path to ensure consistent routing behavior, removing any query strings and trailing slashes (except for root).
+    request_path="$(normalizeRequestPath "$relative_request_path")"
+
+    # strip the bashlet route prefix from the request path to obtain the relative path that will be passed to the bashlet function.
+    sanitized_request_path="$(StripPrefixFromBashletPath "$request_path" "$route_path")"
+
+    # ensure the request path always begins with a leading slash since bashlet functions will always 
+    # specify relative to the containing bashlets route path.
+    sanitized_request_path="$(EnsureLeadingSlash "$sanitized_request_path")"
+
+    echo "bashlet engine: final targtet bashlet function path: $sanitized_request_path" >&2
+
 
     local route_metadata
 
     route_metadata="$(
         jq -c \
             --arg file "$absolute_bashlet_file_path" \
-            --arg path "$request_path" '
+            --arg path "$sanitized_request_path" '
             
-            .bashlets[]
+            (.bashlets // .Bashlets // [])[]
             | select(.BashletFilePath == $file)
 
             | [
@@ -120,11 +125,11 @@ DelegateRequestToBashletEngine() {
             | reverse
             | .[0] // empty
 
-            ' <<< "$BASHLET_ANNOTATION_METADATA"
+            ' <<< "$BASHLET_ANNOTATION_METADATA_FROM_PARENT_PROC"
     )"
 
     if [[ -z "$route_metadata" ]]; then
-        echo "BashletEngine: No function route matched request path '$request_path'" >&2
+        echo "BashletEngine: No function route matched request path '$sanitized_request_path'" >&2
         return 1
     fi
 
@@ -141,7 +146,7 @@ DelegateRequestToBashletEngine() {
         return 1
     fi
 
-    echo "BashletEngine: Resolved '$request_path' -> '$func_name'" >&2
+    echo "BashletEngine: Resolved '$sanitized_request_path' -> '$func_name'" >&2
 
     # build default response object to be returned to the caller, which may be optionally augmented by the
     # bashlet function being invoked, where its not, this default success response will be returned.
@@ -358,4 +363,63 @@ exportVariablesForSubProcessesAsBase64() {
     export ROUTE_PATH_TO_BASHLET_PATH_DECLARATION_BASE64="$(
         declare -p ROUTE_PATH_TO_BASHLET_PATH | base64 -w 0
     )"
+}
+
+# undertakes the inverse operation of the immediately preceeding function: exportVariablesForSubProcessesAsBase64
+# the requisite variables are first base64 DECODED before being exported as environment variables. This will
+# be called by sub processes spawned by the Mocktail server (i.e. socat under the hood) to import the requisite
+# variables for use in routing requests to the appropriate bashlet function.
+importVariablesFromParentProcess() {
+
+    # -----------------------------
+    # Restore JSON metadata (safe string variable)
+    # -----------------------------
+    if [[ -z "${BASHLET_ANNOTATION_METADATA_FROM_PARENT_PROC:-}" ]]; then
+        if [[ -n "${BASHLET_ANNOTATION_METADATA_BASE64:-}" ]]; then
+            BASHLET_ANNOTATION_METADATA_FROM_PARENT_PROC="$(printf '%s' "$BASHLET_ANNOTATION_METADATA_BASE64" | base64 --decode)"
+        fi
+    fi
+
+    # -----------------------------
+    # Restore associative array (Bash object)
+    # -----------------------------
+    if [[ ${#ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC[@]} -eq 0 ]]; then
+
+        if [[ -n "${ROUTE_PATH_TO_BASHLET_PATH_DECLARATION_BASE64:-}" ]]; then
+
+            local __decoded_decl
+            __decoded_decl="$(printf '%s' "$ROUTE_PATH_TO_BASHLET_PATH_DECLARATION_BASE64" | base64 --decode)"
+
+            # Debug: show the decoded declare (preview) and non-printables, then syntax-check it
+            #echo "BashletEngine: Decoded declare (preview):" >&2
+            #printf '%s\n' "$__decoded_decl" | sed -n '1,120p' >&2
+            #echo "BashletEngine: Decoded declare (show non-printables):" >&2
+            #printf '%s' "$__decoded_decl" | sed -n '1,120p' | sed -n l >&2
+
+            #if ! bash -n -c "$__decoded_decl" 2>/dev/null; then
+            #    echo "BashletEngine: decoded declare failed 'bash -n' check" >&2
+            #    echo "BashletEngine: dumping full decoded declare for debugging:" >&2
+            #    printf '%s\n' "$__decoded_decl" >&2
+            #fi
+
+            # Attempt to eval the declare (creates ROUTE_PATH_TO_BASHLET_PATH)
+            if ! eval "$__decoded_decl" 2>/dev/null; then
+                echo "BashletEngine: eval of decoded declare failed; attempting fallback parse" >&2
+            fi
+
+            # Create a usable associative copy named ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC
+            declare -g -A ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC=()
+
+            if declare -p ROUTE_PATH_TO_BASHLET_PATH >/dev/null 2>&1; then
+                local __k
+                for __k in "${!ROUTE_PATH_TO_BASHLET_PATH[@]}"; do
+                    ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC["$__k"]="${ROUTE_PATH_TO_BASHLET_PATH[$__k]}"
+                done
+            fi
+
+            # Keep raw declaration string available under the legacy name too
+            ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC_DECLARATION="$__decoded_decl"
+            ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC="$__decoded_decl"
+        fi
+    fi
 }

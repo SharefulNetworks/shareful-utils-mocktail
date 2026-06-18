@@ -185,6 +185,8 @@ DispatchErrorResponse(){
 
 
 
+
+
 #-------------------------------- PRIVATE HELPER/UTILITY FUNCTION IMPLEMENTATIONS ---------------------------------
 
 
@@ -328,7 +330,7 @@ handleBashletRouteRequest() {
     echo "handler-utils: Routing to Bashlet Engine for path: $request_path" >&2
 
     # delegate to the BashletEngine to handle the request, passing in the request object as a parameter.
-    DelegateRequestToBashletEngine "$route_path" "$request_json_object"
+    DelegateRequestToBashletEngine "$route_path" "$request_json_object" "$request_path"
   else
     echo "handler-utils: Unsupported route type: $route_type or missing request object for Bashlet route type associated with path: $request_path, sending error response." >&2
     dispatchErrorResponse 1 "$request_path" "$request_method" "$request_protocol"

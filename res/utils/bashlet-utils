@@ -57,6 +57,9 @@ DispatchBashletResponse(){
 
 
 
+
+
+
 # public bashlet request object parsing functions---------------------------------------------------
 
 ParseBashletRequestObjectMethod() {
@@ -100,4 +103,26 @@ ParseBashletRequestObjectQueryStringParam() {
 ParseBashletRequestObjectBody() {
   local request="$1"
   jq -r '.body' <<< "$request"
+}
+
+
+StripPrefixFromBashletPath() {
+    local path="$1"
+    local prefix="$2"
+
+    if [[ "$path" == "$prefix" ]]; then
+        echo ""
+    elif [[ "$path" == "$prefix"/* ]]; then
+        echo "${path#"$prefix"/}"
+    else
+        echo "$path"
+    fi
+}
+
+EnsureLeadingSlash() {
+    local path="$1"
+
+    [[ "$path" == /* ]] || path="/$path"
+
+    printf '%s' "$path"
 }

@@ -3,7 +3,7 @@
 echo "BashletEngine: Loaded BashletEngine component.." >&2
 
 # source the bashlet-utils script, which provides utility functions for bashlet operations, including parsing request objects and other common tasks.
-source "${SCRIPT_DIR}/res/utils/bashlet-utils"
+source "${SCRIPT_DIR}/res/bashlets/internal/BashletContext"
 
 # the file extension for bashlet scripts, which is used to identify them during the resolution process.
 BASHLET_FILE_EXT=".shh" 
@@ -55,7 +55,7 @@ DelegateRequestToBashletEngine() {
   
     # obtain references to the route path and request object passed in as arguments.
     local route_path="$1"
-    local request="$2"
+    local bashletRequest="$2"
     local relative_request_path="$3"
 
     # import pre-parsed metadata from parent to reconstruct associative arrays
@@ -96,7 +96,7 @@ DelegateRequestToBashletEngine() {
     
     # extract the actual request path from the request object, our handler-utils script will assist us in this regard
     #local request_path
-    #request_path="$(ParseBashletRequestObjectPath "$request")"
+    #request_path="$(ParseBashletRequestObjectPath "$bashletRequest")"
 
     # normalize the (relative) request path to ensure consistent routing behavior, removing any query strings and trailing slashes (except for root).
     request_path="$(normalizeRequestPath "$relative_request_path")"
@@ -111,7 +111,7 @@ DelegateRequestToBashletEngine() {
     echo "bashlet engine: final targtet bashlet function path: $sanitized_request_path" >&2
 
     # parse the request method from the request object
-    request_method="$(ParseBashletRequestObjectMethod "$request")"
+    request_method="$(ParseBashletRequestMethod "$bashletRequest")"
 
     echo "bashlet engine: final targtet bashlet function method: $request_method" >&2
 
@@ -191,15 +191,17 @@ DelegateRequestToBashletEngine() {
 
     # build default response object to be returned to the caller, which may be optionally augmented by the
     # bashlet function being invoked, where its not, this default success response will be returned.
-    local response
-    response="$(BuildDefaultBashletResponseObject 200 '{}' 'text/plain' 'Default success response from Bashlet')"    
-    
+    bashletResponse="$(BuildDefaultBashletResponseObject 200 '{}' 'text/plain' 'Default success response from Bashlet')"    
+    bashletResponseVarName="bashletResponse" # name of the response object variable to pass to the bash 
+
     # crucially we may now invoke the resolved bashlet function, passing in the request object and the response object, which may 
     # be optionally modified by the bashlet function to return a custom response to the caller.
-    "$func_name" "$request" "$response"
+    # NB: we only pass in the NAME of the response objecrt variable which will serve as a handle, of sorts,
+    # to enable the callee to load the response as a namedref and augment it as necesary.
+    "$func_name" "$bashletRequest" "$bashletResponseVarName"
 
     # finally dispatch the response object to the caller, which may have been modified by the bashlet function invoked.
-    DispatchBashletResponse "$response"
+    DispatchBashletResponse "$bashletResponse"
 }
 
 

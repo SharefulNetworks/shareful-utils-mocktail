@@ -4,13 +4,22 @@
 # The Mocktail Servers main AdminController bashlet, which is responsible for handling system-level requests such as login, logout, 
 # configuration updates and other system-related operations.
 
+# import/source the BashletContext helper functions to support parsing of the incoming request object and constructing the response object.
+source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
 
-# @route method=GET path=/api/login secure=false
+
+# @route method=GeT path=/api/login secure=false
 doLogin(){
     request="$1"
     response="$2"
 
     echo "AdminController: inside doLogin..." >&2
+
+    #update the response body to indicate that the login was successful, 200 is assigned by default.
+    SetBashletResponseBody "$response" "login successful"
+  
+
+   
 
 }
 

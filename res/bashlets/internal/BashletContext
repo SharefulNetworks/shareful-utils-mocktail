@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #utils to support the various bashlet operations, including synchronized local file system read and write,etc.
-echo "bashlet-utils: Loaded bashlet-utils helper/utility functions... " >&2
+echo "BashletContext: Loaded BashletContext helper/utility functions... " >&2
 
 
 
@@ -76,51 +76,97 @@ DispatchBashletResponse(){
 
 
 
-# public bashlet request object parsing functions---------------------------------------------------
+# -----------------------------------------------------public bashlet request object parsing functions---------------------------------------------------
 
-ParseBashletRequestObjectMethod() {
+ParseBashletRequestMethod() {
   local request="$1"
   jq -r '.method' <<< "$request"
 }
 
-ParseBashletRequestObjectPath() {
+ParseBashletRequestPath() {
   local request="$1"
   jq -r '.path' <<< "$request"
 }
 
-ParseBashletRequestObjectProtocol() {
+ParseBashletRequestProtocol() {
   local request="$1"
   jq -r '.protocol' <<< "$request"
 }
 
-ParseBashletRequestObjectHeaders() {
+ParseBashletRequestHeaders() {
   local request="$1"
   jq -r '.headers' <<< "$request"
 }
 
-ParseBashletRequestObjectHeader() {
+ParseBashletRequestHeader() {
   local request="$1"
   local header_name="$2"
   jq -r --arg header_name "$header_name" '.headers[$header_name] // empty' <<< "$request"
 }
 
-ParseBashletRequestObjectQueryString() {
+ParseBashletRequestQueryString() {
   local request="$1"
   jq -r '.query_string' <<< "$request"
 }
 
 
-ParseBashletRequestObjectQueryStringParam() {
+ParseBashletRequestQueryStringParam() {
   local request="$1"
   local parameter_name="$2"
   jq -r --arg parameter_name "$parameter_name" '.query_string[$parameter_name] // empty' <<< "$request"
 }
 
-ParseBashletRequestObjectBody() {
+ParseBashletRequestBody() {
   local request="$1"
   jq -r '.body' <<< "$request"
 }
 
+# -----------------------------------------------------public bashlet response setter functions---------------------------------------------------
+
+# sets the status code of the provided bashlet response object to the specified value; this will
+# also automatically set the status message to the standard message associated with the specified status code.
+SetBashletResponseStatusCode() {
+  local -n responseObject="$1"
+  local status_code="$2"
+  responseObject="$(jq --argjson status_code "$status_code" '.status_code = $status_code' <<< "$responseObject")"
+  responseObject="$(jq --arg status_message "$(GetStatusMsgForCode $status_code)" '.status_message = $status_message' <<< "$responseObject")"
+}
+
+# sets the status message of the provided bashlet response object to the specified value.
+# for standard HTTP status codes, this will be automatically set by the SetBashletResponseStatusCode function
+# and thus it should not be necessary to call this function directly unless you wish to override the standard status message.
+SetBashletResponseStatusMessage() {
+  local -n responseObject="$1"
+  local status_message="$2"
+  responseObject="$(jq --arg status_message "$status_message" '.status_message = $status_message' <<< "$responseObject")"
+}
+
+# sets the headers of the provided bashlet response object to the specified name/value pair; 
+# this will overwrite any existing header with the same name.
+SetBashletResponseHeader() {
+  local -n responseObject="$1"
+  local header_name="$2"
+  local header_value="$3"
+  responseObject="$(jq --arg header_name "$header_name" --arg header_value "$header_value" '.headers[$header_name] = $header_value' <<< "$responseObject")"
+}
+
+# sets the content type of the provided bashlet response object to the specified value.
+SetBashletResponseContentType() {
+  local -n responseObject="$1"
+  local content_type="$2"
+  responseObject="$(jq --arg content_type "$content_type" '.content_type = $content_type' <<< "$responseObject")"
+}
+
+# sets the body of the provided bashlet response object to the specified value.
+SetBashletResponseBody() {
+  local -n responseObject="$1"
+  local body="$2"
+  responseObject="$(jq --arg body "$body" '.body = $body' <<< "$responseObject")"
+}
+
+
+
+# ------------------------------------------------ public generic utility functions ---------------------------------------------------
 
 StripPrefixFromBashletPath() {
     local path="$1"

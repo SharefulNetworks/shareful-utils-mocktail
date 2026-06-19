@@ -14,7 +14,7 @@ doLogin(){
 
 }
 
-# @route method=GET path=/api/login/extended secure=false
+# @route method=GeT path=/api/login/extended secure=false
 doLoginWithOptions(){
     request="$1"
     response="$2"

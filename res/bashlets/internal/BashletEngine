@@ -138,7 +138,7 @@ DelegateRequestToBashletEngine() {
 
                 | select(
                     ( ($path == $prefix) or ($path | startswith($prefix + "/")) )
-                    and ( (($route_method == "") or ($route_method == $method)) )
+                    and ( ($route_method == "") or ( ($route_method | ascii_downcase) == ($method | ascii_downcase) ) )
                 )
 
               ]

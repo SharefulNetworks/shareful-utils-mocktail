@@ -110,14 +110,20 @@ DelegateRequestToBashletEngine() {
 
     echo "bashlet engine: final targtet bashlet function path: $sanitized_request_path" >&2
 
+    # parse the request method from the request object
+    request_method="$(ParseBashletRequestObjectMethod "$request")"
 
+    echo "bashlet engine: final targtet bashlet function method: $request_method" >&2
+
+    # var to hold target route parsed from the bashlet annotation metadata.
     local route_metadata
 
     route_metadata="$(
         jq -c \
             --arg file "$absolute_bashlet_file_path" \
-            --arg path "$sanitized_request_path" '
-            
+            --arg path "$sanitized_request_path" \
+            --arg method "$request_method" '
+                
             (.bashlets // .Bashlets // [])[]
             | select(.BashletFilePath == $file)
 
@@ -128,9 +134,11 @@ DelegateRequestToBashletEngine() {
 
                 | ($route | rtrimstr("/")) as $prefix
 
+                | (.Method // .method // "") as $route_method
+
                 | select(
-                    ($path == $prefix)
-                    or ($path | startswith($prefix + "/"))
+                    ( ($path == $prefix) or ($path | startswith($prefix + "/")) )
+                    and ( (($route_method == "") or ($route_method == $method)) )
                 )
 
               ]
@@ -142,12 +150,14 @@ DelegateRequestToBashletEngine() {
             ' <<< "$BASHLET_ANNOTATION_METADATA_FROM_PARENT_PROC"
     )"
 
+    #echo "ROUTE DATA IS: $route_metadata" >&2
+
     # if no route metadata was found for the specified request path, we return a 404 error to the client 
     # to indicate that no function route in the bashlet matched the request path.
     if [[ -z "$route_metadata" ]]; then
         echo "BashletEngine: No function route in bashlet '$absolute_bashlet_file_path' matched request path '$sanitized_request_path'" >&2
         local error_response
-        error_response="$(BuildBashletErrorResponse 404 "No function route in bashlet '$absolute_bashlet_file_path' matched request path '$sanitized_request_path'")"
+        error_response="$(BuildBashletErrorResponse 404 "No function route in bashlet '$absolute_bashlet_file_path' matched request path '$sanitized_request_path' for method '$request_method'")"
         DispatchBashletResponse "$error_response"
         return 1
     fi

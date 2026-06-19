@@ -10,7 +10,7 @@ doLogin(){
     request="$1"
     response="$2"
 
-    echo "AdminController: Handling login request..." >&2
+    echo "AdminController: inside doLogin..." >&2
 
 }
 
@@ -18,6 +18,8 @@ doLogin(){
 doLoginWithOptions(){
     request="$1"
     response="$2"
+
+    echo "AdminController: inside doLoginWithOptions..." >&2
 
     #NOTE: this is just a test route to validate that the BashletEngine is correctly parsing the route annotations and routing requests to the correct bashlet function.
 

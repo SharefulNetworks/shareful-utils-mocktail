@@ -18,7 +18,7 @@ doLogin(){
     echo "AdminController: inside doLogin..." >&2
 
     #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" "{\"status\": \"success\", \"message\": \"login successful\", \"endpoint\": \"/api/login\", \"method\": \"GET\"}"
+    SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
 
     echo "THE RECEIVED REQUEST OBJECT: $request" >&2
   
@@ -34,7 +34,7 @@ doLoginPost(){
     echo "AdminController: inside doLoginPost..." >&2
 
     #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" "{\"status\": \"success\", \"message\": \"login successful\", \"endpoint\": \"/api/login\", \"method\": \"POST\"}"
+    SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
 
     echo "THE RECEIVED REQUEST OBJECT: $request" >&2
   
@@ -49,8 +49,7 @@ doLoginPut(){
     echo "AdminController: inside doLoginPut..." >&2
 
     #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" "{\"status\": \"success\", \"message\": \"login successful\", \"endpoint\": \"/api/login\", \"method\": \"PUT\"}"
-
+    SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
     echo "THE RECEIVED REQUEST OBJECT: $request" >&2
   
 
@@ -64,7 +63,7 @@ doLoginHead(){
     echo "AdminController: inside doLoginHead..." >&2
 
     #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" "{\"status\": \"success\", \"message\": \"login successful\", \"endpoint\": \"/api/login\", \"method\": \"HEAD\"}"
+    SetBashletResponseBody "$response" "{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}"
 
     echo "THE RECEIVED REQUEST OBJECT: $request" >&2
   

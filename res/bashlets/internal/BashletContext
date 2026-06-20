@@ -162,6 +162,21 @@ SetBashletResponseBody() {
   local -n responseObject="$1"
   local body="$2"
   responseObject="$(jq --arg body "$body" '.body = $body' <<< "$responseObject")"
+
+  # if this is a JSON response, as determined by the body starting with '{' or '[', 
+  # then we will also set the content type to application/json, unless this has already set,
+  # otherwise we will leave the content type as-is, as it may have been set to something else 
+  # by the caller where this not the case the default content type is text/html, which is set 
+  # when the response object is first constructed.
+  if [[ "$body" == \{* || "$body" == \[* ]]; then
+    local current_content_type
+    current_content_type=$(jq -r '.content_type' <<< "$responseObject")
+    if [[ "$current_content_type" != "application/json" ]]; then
+      SetBashletResponseContentType "$responseObject" "application/json"
+    fi
+  fi  
+
+
 }
 
 

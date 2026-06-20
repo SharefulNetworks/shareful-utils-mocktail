@@ -93,11 +93,6 @@ DelegateRequestToBashletEngine() {
     # Source the bashlet file to make its functions available in the current shell context
     source "$absolute_bashlet_file_path"
 
-    
-    # extract the actual request path from the request object, our handler-utils script will assist us in this regard
-    #local request_path
-    #request_path="$(ParseBashletRequestObjectPath "$bashletRequest")"
-
     # normalize the (relative) request path to ensure consistent routing behavior, removing any query strings and trailing slashes (except for root).
     request_path="$(normalizeRequestPath "$relative_request_path")"
 
@@ -200,7 +195,12 @@ DelegateRequestToBashletEngine() {
     # to enable the callee to load the response as a namedref and augment it as necesary.
     "$func_name" "$bashletRequest" "$bashletResponseVarName"
 
+   
     # finally dispatch the response object to the caller, which may have been modified by the bashlet function invoked.
+    if [[ $request_method == "HEAD" ]]; then
+        # For HEAD requests, we should not return a body, so we clear the body in the response object.
+        SetBashletResponseBody "$bashletResponseVarName" ""
+    fi
     DispatchBashletResponse "$bashletResponse"
 }
 

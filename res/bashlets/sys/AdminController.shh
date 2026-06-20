@@ -8,6 +8,8 @@
 source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
 
 
+
+# Tests standard GET route handling using mock login endpoint.
 # @route method=GeT path=/api/login secure=false
 doLogin(){
     request="$1"
@@ -16,10 +18,56 @@ doLogin(){
     echo "AdminController: inside doLogin..." >&2
 
     #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" "login successful"
+    SetBashletResponseBody "$response" "{\"status\": \"success\", \"message\": \"login successful\", \"endpoint\": \"/api/login\", \"method\": \"GET\"}"
+
+    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
   
 
-   
+}
+
+
+# @route method=post path=/api/login secure=false
+doLoginPost(){
+    request="$1"
+    response="$2"
+
+    echo "AdminController: inside doLoginPost..." >&2
+
+    #update the response body to indicate that the login was successful, 200 is assigned by default.
+    SetBashletResponseBody "$response" "{\"status\": \"success\", \"message\": \"login successful\", \"endpoint\": \"/api/login\", \"method\": \"POST\"}"
+
+    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
+  
+
+}
+
+# @route method=put path=/api/login secure=false
+doLoginPut(){
+    request="$1"
+    response="$2"
+
+    echo "AdminController: inside doLoginPut..." >&2
+
+    #update the response body to indicate that the login was successful, 200 is assigned by default.
+    SetBashletResponseBody "$response" "{\"status\": \"success\", \"message\": \"login successful\", \"endpoint\": \"/api/login\", \"method\": \"PUT\"}"
+
+    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
+  
+
+}
+
+# @route method=head path=/api/login secure=false
+doLoginHead(){
+    request="$1"
+    response="$2"
+
+    echo "AdminController: inside doLoginHead..." >&2
+
+    #update the response body to indicate that the login was successful, 200 is assigned by default.
+    SetBashletResponseBody "$response" "{\"status\": \"success\", \"message\": \"login successful\", \"endpoint\": \"/api/login\", \"method\": \"HEAD\"}"
+
+    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
+  
 
 }
 
@@ -29,6 +77,8 @@ doLoginWithOptions(){
     response="$2"
 
     echo "AdminController: inside doLoginWithOptions..." >&2
+
+    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
 
     #NOTE: this is just a test route to validate that the BashletEngine is correctly parsing the route annotations and routing requests to the correct bashlet function.
 

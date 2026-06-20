@@ -172,7 +172,7 @@ SetBashletResponseBody() {
     local current_content_type
     current_content_type=$(jq -r '.content_type' <<< "$responseObject")
     if [[ "$current_content_type" != "application/json" ]]; then
-      SetBashletResponseContentType "$responseObject" "application/json"
+      responseObject="$(jq --arg content_type "application/json" '.content_type = $content_type' <<< "$responseObject")"
     fi
   fi  
 
@@ -204,6 +204,11 @@ EnsureLeadingSlash() {
     printf '%s' "$path"
 }
 
+ParseJSONField() {
+    local json="$1"
+    local path="$2"
+    jq -cr "$path" <<< "$json"
+}
 
 GetStatusMsgForCode() {
 

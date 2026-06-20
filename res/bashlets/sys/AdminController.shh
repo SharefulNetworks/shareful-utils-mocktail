@@ -20,9 +20,10 @@ doLogin(){
     #update the response body to indicate that the login was successful, 200 is assigned by default.
     SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
 
-    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
+    # parse body from the request, for GET method, we expect it to be empty
+    requestBody="$(ParseBashletRequestBody "$request")"
+    echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
   
-
 }
 
 
@@ -36,8 +37,52 @@ doLoginPost(){
     #update the response body to indicate that the login was successful, 200 is assigned by default.
     SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
 
-    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
-  
+    # parse body from the request, for the purpose of the test the body is expected to take the following form:
+    #{
+    #"guid": "AB36C78D87A886E868F686F86F86842A32424B24AAA42A4A", 
+    #"firstName": "Giles", 
+    #"surnname": "Thompson", 
+    #"age": 35, 
+    #"addresses": [
+    #    {
+    #     "streetNumber": 21,
+    #     "streetname": "Sutcliffe Avenue",
+    #     "area": "Longsight",
+    #     "city": "Manchester",
+    #     "county": "Lancashire",
+    #     "postcode": "M125TN"
+    #    },
+    #
+    #    { 
+    #      "streetNumber": 37,
+    #      "streetname": "Hobart Street",
+    #      "area": "Gorton",
+    #      "city": "Manchester",
+    #      "county": "Lancashire",
+    #      "postcode": "M375RF"
+    #    }
+    #
+    #    ]
+    #}
+
+
+
+    requestBody="$(ParseBashletRequestBody "$request")"
+    echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
+
+    # next parse specifc fields from the request body, we'll parse one top-level field
+    # and a nested field from and object in the  addresses array to confirm that nested
+    # parsing functionality is working as expected.
+
+    # first the top-level guid field, which is a string.
+    guid="$(ParseJSONField "$requestBody" '.guid')"
+    echo "THE PARSED GUID FIELD: $guid" >&2
+
+    # next the nested streetname field from the first address object in the addresses array.
+    streetname="$(ParseJSONField "$requestBody" '.addresses[0].streetname')"
+    echo "THE PARSED STREETNAME FIELD: $streetname" >&2
+
+
 
 }
 
@@ -50,8 +95,29 @@ doLoginPut(){
 
     #update the response body to indicate that the login was successful, 200 is assigned by default.
     SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
-    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
   
+     # parse body from the request, see the POST method for the expected body format.
+    requestBody="$(ParseBashletRequestBody "$request")"
+    echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
+
+    # first the top-level guid field, which is a string.
+    guid="$(ParseJSONField "$requestBody" '.guid')"
+    echo "THE PARSED GUID FIELD: $guid" >&2
+
+    # next obtain the addresses array and iterate over each address object, parsing each field as we go.
+    # for each object we should be able to call ParseJSONField with the appropriate path to extract the fields we need.
+   while IFS= read -r address; do
+    streetNumber="$(ParseJSONField "$address" '.streetNumber')"
+    streetname="$(ParseJSONField "$address" '.streetname')"
+    area="$(ParseJSONField "$address" '.area')"
+    city="$(ParseJSONField "$address" '.city')"
+    county="$(ParseJSONField "$address" '.county')"
+    postcode="$(ParseJSONField "$address" '.postcode')"
+
+    echo "Parsed Address: $streetNumber, $streetname, $area, $city, $county, $postcode" >&2
+   done < <(ParseJSONField "$requestBody" '.addresses[]')
+    
+
 
 }
 

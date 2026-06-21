@@ -28,14 +28,23 @@ viewProfiles(){
 
     echo "ExampleBashlet: inside viewProfiles..." >&2
 
+
+    # parse body from the request, for GET method, we expect it to be empty
+    requestBody="$(ParseBashletRequestBody "$request")"
+    echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
+
     # build a mock response body to simulate list of user profiles...
 
-    #first mock  user profile 1...
+    # first mock  user profile 1...
     userProfile1="{}"
     userProfile1="$(SetJSONString "$userProfile1" '.guid' 'AB36C78D87A886E868F686F86F86842A32424B24AAA42A4A')"
     userProfile1="$(SetJSONField  "$userProfile1" '.firstName' 'Giles')"
     userProfile1="$(SetJSONField  "$userProfile1" '.surname' 'Thompson')"
     userProfile1="$(SetJSONField  "$userProfile1" '.age' 35)"
+    userProfile1Address="[]" # create array to hold addresses for user profile 1
+    userProfile1Address="$(AppendJSONArrayItem "$userProfile1Address" '{"streetNumber": 25, "streetname": "Marton Avenue", "area": "Wythenshawe", "city": "Manchester", "county": "Lancashire", "postcode": "W145RE"}')"
+    userProfile1Address="$(AppendJSONArrayItem "$userProfile1Address" '{"streetNumber": 57, "streetname": "Cronwell Street", "area": "Gorton", "city": "Manchester", "county": "Lancashire", "postcode": "M184RT"}')"
+    userProfile1="$(SetJSONField "$userProfile1" '.addresses' "$userProfile1Address")" # append addresses array to user profile 1
 
     # then mock user profile 2..
     userProfile2="{}"
@@ -53,10 +62,6 @@ viewProfiles(){
     # finally set the response body to the mock user profiles array, this will signal the BashletEngine
     # to return the set response to the client.
     SetBashletResponseBody "$response" "$userProfiles"
-
-    # parse body from the request, for GET method, we expect it to be empty
-    requestBody="$(ParseBashletRequestBody "$request")"
-    echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
   
 }
 
@@ -69,8 +74,7 @@ createUserProfile(){
 
     echo "ExampleBashlet: inside createUserProfile..." >&2
 
-    #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
+  
 
     # parse body from the request, for the purpose of the test the body is expected to take the following form:
     #{
@@ -80,34 +84,34 @@ createUserProfile(){
     #"age": 35, 
     #"addresses": [
     #    {
-    #     "streetNumber": 21,
-    #     "streetname": "Sutcliffe Avenue",
-    #     "area": "Longsight",
+    #     "streetNumber": 25,
+    #     "streetname": "Marton Avenue",
+    #     "area": "Wythenshawe",
     #     "city": "Manchester",
     #     "county": "Lancashire",
-    #     "postcode": "M125TN"
+    #     "postcode": "W145RE"
     #    },
     #
     #    { 
-    #      "streetNumber": 37,
-    #      "streetname": "Hobart Street",
+    #      "streetNumber": 57,
+    #      "streetname": "Cronwell Street",
     #      "area": "Gorton",
     #      "city": "Manchester",
     #      "county": "Lancashire",
-    #      "postcode": "M375RF"
+    #      "postcode": "M184RT"
     #    }
     #
     #    ]
     #}
 
 
-
+    # parse the body from the received request.
     requestBody="$(ParseBashletRequestBody "$request")"
     echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
 
     # next parse specifc fields from the request body, we'll parse one top-level field
-    # and a nested field from and object in the  addresses array to confirm that nested
-    # parsing functionality is working as expected.
+    # and a nested field in the  addresses array. In a real service implementation
+    # the parsed fields would be used to create a new user profile in a database or other data store.
 
     # first the top-level guid field, which is a string.
     guid="$(ParseJSONField "$requestBody" '.guid')"
@@ -116,6 +120,19 @@ createUserProfile(){
     # next the nested streetname field from the first address object in the addresses array.
     streetname="$(ParseJSONField "$requestBody" '.addresses[0].streetname')"
     echo "THE PARSED STREETNAME FIELD: $streetname" >&2
+
+    # build up a mock response to indicate that the profile was created successfully.
+    successResponseBody="{}"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.status' 'success')"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.message' 'profile created')"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.guid' $guid)"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.endpoint' '/api/profiles')"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.method' 'POST')"
+
+
+    # finally set the response body to indicate that the profile was created successfully, this will signal the BashletEngine
+    # to return the set response to the client.
+    SetBashletResponseBody "$response" "$successResponseBody"
 
 
 
@@ -130,29 +147,43 @@ updateUserProfile(){
 
     echo "ExampleBashlet: inside updateUserProfile..." >&2
 
-    #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" '{"status": "success", "message": "profile updated", "endpoint": "/api/profiles", "method": "PUT"}'
 
-     # parse body from the request, see the POST method for the expected body format.
+    # parse body from the request, see the POST method for the expected body format.
     requestBody="$(ParseBashletRequestBody "$request")"
     echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
+
+    # next parse specifc fields from the request body, we'll parse one top-level field
+    # and a nested field from  the  addresses array. In a real service implementation
+    # the parsed fields would be used to update an existing user profile in a database or other data store.
 
     # first the top-level guid field, which is a string.
     guid="$(ParseJSONField "$requestBody" '.guid')"
     echo "THE PARSED GUID FIELD: $guid" >&2
 
-    # next obtain the addresses array and iterate over each address object, parsing each field as we go.
+    # Demonstrates the parsing of a nested array field:
+    # Obtain the addresses array and iterate over each address object, parsing each field as we go.
     # for each object we should be able to call ParseJSONField with the appropriate path to extract the fields we need.
-   while IFS= read -r address; do
-    streetNumber="$(ParseJSONField "$address" '.streetNumber')"
-    streetname="$(ParseJSONField "$address" '.streetname')"
-    area="$(ParseJSONField "$address" '.area')"
-    city="$(ParseJSONField "$address" '.city')"
-    county="$(ParseJSONField "$address" '.county')"
-    postcode="$(ParseJSONField "$address" '.postcode')"
+    while IFS= read -r address; do
+     streetNumber="$(ParseJSONField "$address" '.streetNumber')"
+     streetname="$(ParseJSONField "$address" '.streetname')"
+     area="$(ParseJSONField "$address" '.area')"
+     city="$(ParseJSONField "$address" '.city')"
+     county="$(ParseJSONField "$address" '.county')"
+     postcode="$(ParseJSONField "$address" '.postcode')"
+ 
+     echo "Parsed Address: $streetNumber, $streetname, $area, $city, $county, $postcode" >&2
+    done < <(ParseJSONField "$requestBody" '.addresses[]')
 
-    echo "Parsed Address: $streetNumber, $streetname, $area, $city, $county, $postcode" >&2
-   done < <(ParseJSONField "$requestBody" '.addresses[]')
+    successResponseBody="{}"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.status' 'success')"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.message' 'profile updated')"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.guid' $guid)"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.endpoint' '/api/profiles')"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.method' 'PUT')"
+
+
+    #update the response body to indicate that the profile was updated successfully, 200 is assigned by default.
+    SetBashletResponseBody "$response" "$successResponseBody"
     
 
 

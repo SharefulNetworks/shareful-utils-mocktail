@@ -1,0 +1,156 @@
+#!/bin/bash
+
+
+# An example Bashlet implementation that demonstrates how to configure route handlers for different HTTP
+# methods (GET, POST, PUT, HEAD) and how to parse the request body and construct a response. This should 
+# serve as a reference for users creating their own Bashlets to handle specific API endpoints and 
+# implement custom logic as needed.
+
+# IMPORTANT: source the BashletContext, it supplies helper functions to support parsing of the incoming request object and constructing the response object.
+source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
+
+
+
+# Tests standard GET route handling using mock profiles endpoint. Typically a GET request at a 
+# resource endpoint is used to retrieve a list of resources, in this case a list of user profiles.
+# @route method=get path=/api/profiles secure=false
+viewProfiles(){
+    request="$1"
+    response="$2"
+
+    echo "ExampleBashlet: inside viewProfiles..." >&2
+
+    #update the response body to indicate that the profiles were retrieved successfully, 200 is assigned by default.
+    SetBashletResponseBody "$response" '{"status": "success", "message": "profiles retrieved", "endpoint": "/api/profiles", "method": "GET"}'
+
+    # parse body from the request, for GET method, we expect it to be empty
+    requestBody="$(ParseBashletRequestBody "$request")"
+    echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
+  
+}
+
+# Tests standard POST route handling using mock profiles endpoint. Typically a POST request at a 
+# resource endpoint is used to create a new resource, in this case a new user profile.
+# @route method=post path=/api/profiles secure=false
+createUserProfile(){
+    request="$1"
+    response="$2"
+
+    echo "ExampleBashlet: inside createUserProfile..." >&2
+
+    #update the response body to indicate that the login was successful, 200 is assigned by default.
+    SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
+
+    # parse body from the request, for the purpose of the test the body is expected to take the following form:
+    #{
+    #"guid": "AB36C78D87A886E868F686F86F86842A32424B24AAA42A4A", 
+    #"firstName": "Giles", 
+    #"surnname": "Thompson", 
+    #"age": 35, 
+    #"addresses": [
+    #    {
+    #     "streetNumber": 21,
+    #     "streetname": "Sutcliffe Avenue",
+    #     "area": "Longsight",
+    #     "city": "Manchester",
+    #     "county": "Lancashire",
+    #     "postcode": "M125TN"
+    #    },
+    #
+    #    { 
+    #      "streetNumber": 37,
+    #      "streetname": "Hobart Street",
+    #      "area": "Gorton",
+    #      "city": "Manchester",
+    #      "county": "Lancashire",
+    #      "postcode": "M375RF"
+    #    }
+    #
+    #    ]
+    #}
+
+
+
+    requestBody="$(ParseBashletRequestBody "$request")"
+    echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
+
+    # next parse specifc fields from the request body, we'll parse one top-level field
+    # and a nested field from and object in the  addresses array to confirm that nested
+    # parsing functionality is working as expected.
+
+    # first the top-level guid field, which is a string.
+    guid="$(ParseJSONField "$requestBody" '.guid')"
+    echo "THE PARSED GUID FIELD: $guid" >&2
+
+    # next the nested streetname field from the first address object in the addresses array.
+    streetname="$(ParseJSONField "$requestBody" '.addresses[0].streetname')"
+    echo "THE PARSED STREETNAME FIELD: $streetname" >&2
+
+
+
+}
+
+# Tests standard PUT route handling using mock profiles endpoint. Typically a PUT request at a
+# resource endpoint is used to update an existing resource, in this case an existing user profile.
+# @route method=put path=/api/profiles secure=false
+updateUserProfile(){
+    request="$1"
+    response="$2"
+
+    echo "ExampleBashlet: inside updateUserProfile..." >&2
+
+    #update the response body to indicate that the login was successful, 200 is assigned by default.
+    SetBashletResponseBody "$response" '{"status": "success", "message": "profile updated", "endpoint": "/api/profiles", "method": "PUT"}'
+
+     # parse body from the request, see the POST method for the expected body format.
+    requestBody="$(ParseBashletRequestBody "$request")"
+    echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
+
+    # first the top-level guid field, which is a string.
+    guid="$(ParseJSONField "$requestBody" '.guid')"
+    echo "THE PARSED GUID FIELD: $guid" >&2
+
+    # next obtain the addresses array and iterate over each address object, parsing each field as we go.
+    # for each object we should be able to call ParseJSONField with the appropriate path to extract the fields we need.
+   while IFS= read -r address; do
+    streetNumber="$(ParseJSONField "$address" '.streetNumber')"
+    streetname="$(ParseJSONField "$address" '.streetname')"
+    area="$(ParseJSONField "$address" '.area')"
+    city="$(ParseJSONField "$address" '.city')"
+    county="$(ParseJSONField "$address" '.county')"
+    postcode="$(ParseJSONField "$address" '.postcode')"
+
+    echo "Parsed Address: $streetNumber, $streetname, $area, $city, $county, $postcode" >&2
+   done < <(ParseJSONField "$requestBody" '.addresses[]')
+    
+
+
+}
+
+# @route method=head path=/api/profiles secure=false
+viewProfilesHead(){
+    request="$1"
+    response="$2"
+
+    echo "ExampleBashlet: inside viewProfilesHead..." >&2
+
+    #update the response body to indicate that the login was successful, 200 is assigned by default.
+    SetBashletResponseBody "$response" "{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}"
+
+    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
+  
+
+}
+
+# @route method=GeT path=/api/login/extended secure=false
+doLoginWithOptions(){
+    request="$1"
+    response="$2"
+
+    echo "AdminController: inside doLoginWithOptions..." >&2
+
+    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
+
+    #NOTE: this is just a test route to validate that the BashletEngine is correctly parsing the route annotations and routing requests to the correct bashlet function.
+
+}

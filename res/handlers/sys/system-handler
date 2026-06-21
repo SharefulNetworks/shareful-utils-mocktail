@@ -34,6 +34,3 @@ handleRequest(){
 }
 
 handleRequest
-
-
-#  echo "system-handler: Response sent, closing connection." >&2

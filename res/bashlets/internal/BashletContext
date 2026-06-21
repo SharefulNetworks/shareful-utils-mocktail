@@ -181,6 +181,96 @@ SetBashletResponseBody() {
 
 
 
+# -----------------------------------------------------public JSON utility functions---------------------------------------------------
+
+ParseJSONField() {
+    local json="$1"
+    local path="$2"
+    jq -cr "$path" <<< "$json"
+}
+
+
+SetJSONField() {
+
+    local json="$1"
+    local path="$2"
+    local value="$3"
+
+    if IsJSON "$value"; then
+
+        jq -c \
+           --argjson value "$value" \
+           "$path = \$value" <<< "$json"
+
+    else
+
+        jq -c \
+           --arg value "$value" \
+           "$path = \$value" <<< "$json"
+
+    fi
+}
+
+SetJSONBoolean() {
+
+    local json="$1"
+    local path="$2"
+    local value="$3"
+
+    case "$value" in
+        true|false)
+            ;;
+        *)
+            echo "SetJSONBoolean: value must be 'true' or 'false'" >&2
+            return 1
+            ;;
+    esac
+
+    jq -c \
+       --argjson value "$value" \
+       "$path = \$value" <<< "$json"
+}
+
+SetJSONNumber() {
+
+    local json="$1"
+    local path="$2"
+    local value="$3"
+
+    if ! jq -en --arg value "$value" '$value | tonumber' >/dev/null 2>&1; then
+        echo "SetJSONNumber: '$value' is not a valid number" >&2
+        return 1
+    fi
+
+    jq -c \
+       --argjson value "$value" \
+       "$path = \$value" <<< "$json"
+}
+
+SetJSONString() {
+
+    local json="$1"
+    local path="$2"
+    local value="$3"
+
+    jq -c \
+       --arg value "$value" \
+       "$path = \$value" <<< "$json"
+}
+
+AppendJSONArrayItem() {
+    local json="$1"
+    local value="$2"
+
+    if IsJSON "$value"; then
+        jq -c --argjson v "$value" '. += [$v]' <<< "$json"
+    else
+        jq -c --arg v "$value" '. += [$v]' <<< "$json"
+    fi
+}
+
+
+
 # ------------------------------------------------ public generic utility functions ---------------------------------------------------
 
 StripPrefixFromBashletPath() {
@@ -204,11 +294,7 @@ EnsureLeadingSlash() {
     printf '%s' "$path"
 }
 
-ParseJSONField() {
-    local json="$1"
-    local path="$2"
-    jq -cr "$path" <<< "$json"
-}
+
 
 GetStatusMsgForCode() {
 

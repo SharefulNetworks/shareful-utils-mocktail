@@ -7,33 +7,46 @@
 # Description: This handler is responsible for handling user defined routes under the base path "/usr"
 #              It is invoked by the root-handler when a request matches the "/usr" path prefix and will
 #              attempt to map the path provided in the request to a specifc user-defined API endpoint.
-#              each mock API endpoint will be asssociated with one of two response types: payload or redirect.
-#              Where a payload response is defined. a standard JSON object or JSON array must also be defined
-#              to be returned in the response body. Where a redirect response is defined, an array of target
-#              URLs must be defined, where the array contains more than one URL a URL will be randomly selected 
-#              from the array for each request. Additionally, it is also possible to "force" a specific URL by
-#              including the standard "filter/xfilter" query parameter in the request. "filter" will only INCLUDE
-#              the specified URL in the response, while "xfilter" will EXCLUDE the specified URL from the response.
-#              This handler is designed to be flexible and extensible, allowing users to easily define custom
-#              API endpoints and responses to suit their testing needs.
+#              
+#
+# IMPORTANT: IT GENERALLY SHOULD NOT BE NECESSARY TO MODIFY THIS FILE, and it's recommended that one does not
+#            unless they know what they are doing and have a specific reason to do so. The handler is one
+#            of two default handlers defined by the Mocktail Server and is used to route requests to user-defined 
+#            bashlets, under the default "/usr" path prefix.
 #-----------------------------------------------------------------------------------------------------------------
 
-echo "user-handler: Received a request, processing..." >&2
-
-#echo path, method and protocol info passed into this script from the root-handler, which should have been passed in as the request line.
-method="$1"
-path="$2"
-protocol="$3"
-echo "user-handler: Received request with method: $method, path: $path, protocol: $protocol" >&2
 
 
-body='{"status":"ok","handler":"user-handler","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
+# import the handler utility functions, which are used by this handler to perform common tasks such as route resolution and response generation.
+source "$(dirname "${BASH_SOURCE[0]}")/../../utils/handler-utils"
 
-printf "HTTP/1.1 200 OK\r\n"
-printf "Content-Type: application/json\r\n"
-printf "Content-Length: %s\r\n" "${#body}"
-printf "Connection: close\r\n"
-printf "\r\n"
-printf "%s" "$body"
+# vars passed into us from our parent root-handler
+FULL_PATH="$1"
+METHOD="$2"
+PROTOCOL="$3"
+RELATIVE_PATH="$4"
+REQUEST_JSON_OBJECT="$5"
 
-echo "user-handler: Response sent, closing connection." >&2
+
+handleRequest(){
+
+  echo "user-handler: Received a request associated with (relative) path '$RELATIVE_PATH', processing..." >&2
+
+   # issue a call into our utility method to attempt to resolve route for the (relative) path 
+   # provided to us by the root handler, which will have stripped the base path associated with 
+   # this handler (i.e "/sys") from the original request path, we also taking care to pass in 
+   # the path to THIS handlers routes config
+   local config_path="${SCRIPT_DIR}/res/handlers/usr/user-handler-routes.json"
+   route_info=$(ResolveRouteFromPath "$RELATIVE_PATH" "$config_path")
+
+   # where we have found a matching route, call into our utility function to handle the request 
+   # according to it declared route type, otherwise dispatch an appropriate error response.
+   if [[ -n "$route_info" ]]; then
+       HandleRequestAccordingToRoute "$route_info" "$RELATIVE_PATH" "$METHOD" "$PROTOCOL" "$REQUEST_JSON_OBJECT"
+   else
+     DispatchErrorResponse 404  "$FULL_PATH" "$METHOD" "$PROTOCOL"
+   fi
+  
+}
+
+handleRequest

@@ -1,0 +1,16 @@
+{
+
+    "Name": "Mocktail User Handler Routes",
+    "Description": "Defines the routing configuration for the Mocktail user handler.",
+    "Version": "1.0",
+    "Routes": [
+        {
+            "Title": "Example (User Profile) Bashlet Controller Route",
+            "Path": "/example",
+            "Type": "bashlet",
+            "BashletPath": "/res/bashlets/usr/ExampleBashlet",
+            "Description": "An example (profiles) bashlet that serves to demonstrate core bashlet functionality."
+
+        }
+    ]
+}

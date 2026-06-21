@@ -189,6 +189,9 @@ ParseJSONField() {
     jq -cr "$path" <<< "$json"
 }
 
+IsJSON() {
+    jq -e . >/dev/null 2>&1 <<< "$1"
+}
 
 SetJSONField() {
 

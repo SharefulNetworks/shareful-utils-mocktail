@@ -1,27 +1,58 @@
 #!/bin/bash
 
 
+# ----------------------------------------------------------------------------------------------------------------
+# Name:  ExampleBashlet 
+# Author Giles Thompson
+# Date:  21/06/2026
+#
+# Description:    
 # An example Bashlet implementation that demonstrates how to configure route handlers for different HTTP
-# methods (GET, POST, PUT, HEAD) and how to parse the request body and construct a response. This should 
+# methods (GET, POST, PUT, HEAD) how to parse the request body and construct a response. This should 
 # serve as a reference for users creating their own Bashlets to handle specific API endpoints and 
 # implement custom logic as needed.
+#----------------------------------------------------------------------------------------------------------------
 
-# IMPORTANT: source the BashletContext, it supplies helper functions to support parsing of the incoming request object and constructing the response object.
+
+# IMPORTANT: first and foremost source the BashletContext, it supplies helper functions to support parsing of the incoming request object and constructing the response object.
 source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
 
 
 
 # Tests standard GET route handling using mock profiles endpoint. Typically a GET request at a 
 # resource endpoint is used to retrieve a list of resources, in this case a list of user profiles.
-# @route method=get path=/api/profiles secure=false
+# @route method=get path=/api/profiles
 viewProfiles(){
     request="$1"
     response="$2"
 
     echo "ExampleBashlet: inside viewProfiles..." >&2
 
-    #update the response body to indicate that the profiles were retrieved successfully, 200 is assigned by default.
-    SetBashletResponseBody "$response" '{"status": "success", "message": "profiles retrieved", "endpoint": "/api/profiles", "method": "GET"}'
+    # build a mock response body to simulate list of user profiles...
+
+    #first mock  user profile 1...
+    userProfile1="{}"
+    userProfile1="$(SetJSONString "$userProfile1" '.guid' 'AB36C78D87A886E868F686F86F86842A32424B24AAA42A4A')"
+    userProfile1="$(SetJSONField  "$userProfile1" '.firstName' 'Giles')"
+    userProfile1="$(SetJSONField  "$userProfile1" '.surname' 'Thompson')"
+    userProfile1="$(SetJSONField  "$userProfile1" '.age' 35)"
+
+    # then mock user profile 2..
+    userProfile2="{}"
+    userProfile2="$(SetJSONString "$userProfile2" '.guid' 'B36C78D87A886E868F686F86F86842A32424B24AAA42A4B')"
+    userProfile2="$(SetJSONField  "$userProfile2" '.firstName' 'John')"
+    userProfile2="$(SetJSONField  "$userProfile2" '.surname' 'Doe')"
+    userProfile2="$(SetJSONField  "$userProfile2" '.age' 28)"
+
+    # create the top-level profiles array and add the mock user profiles to it...
+    userProfiles="[]"
+    userProfiles="$(AppendJSONArrayItem "$userProfiles" "$userProfile1")"
+    userProfiles="$(AppendJSONArrayItem "$userProfiles" "$userProfile2")"
+
+
+    # finally set the response body to the mock user profiles array, this will signal the BashletEngine
+    # to return the set response to the client.
+    SetBashletResponseBody "$response" "$userProfiles"
 
     # parse body from the request, for GET method, we expect it to be empty
     requestBody="$(ParseBashletRequestBody "$request")"
@@ -31,7 +62,7 @@ viewProfiles(){
 
 # Tests standard POST route handling using mock profiles endpoint. Typically a POST request at a 
 # resource endpoint is used to create a new resource, in this case a new user profile.
-# @route method=post path=/api/profiles secure=false
+# @route method=post path=/api/profiles
 createUserProfile(){
     request="$1"
     response="$2"
@@ -92,7 +123,7 @@ createUserProfile(){
 
 # Tests standard PUT route handling using mock profiles endpoint. Typically a PUT request at a
 # resource endpoint is used to update an existing resource, in this case an existing user profile.
-# @route method=put path=/api/profiles secure=false
+# @route method=put path=/api/profiles
 updateUserProfile(){
     request="$1"
     response="$2"
@@ -127,7 +158,7 @@ updateUserProfile(){
 
 }
 
-# @route method=head path=/api/profiles secure=false
+# @route method=head path=/api/profiles
 viewProfilesHead(){
     request="$1"
     response="$2"
@@ -135,22 +166,9 @@ viewProfilesHead(){
     echo "ExampleBashlet: inside viewProfilesHead..." >&2
 
     #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" "{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}"
+    SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
 
     echo "THE RECEIVED REQUEST OBJECT: $request" >&2
   
-
-}
-
-# @route method=GeT path=/api/login/extended secure=false
-doLoginWithOptions(){
-    request="$1"
-    response="$2"
-
-    echo "AdminController: inside doLoginWithOptions..." >&2
-
-    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
-
-    #NOTE: this is just a test route to validate that the BashletEngine is correctly parsing the route annotations and routing requests to the correct bashlet function.
 
 }

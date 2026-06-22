@@ -21,6 +21,13 @@
 
         },
         {
+            "Title": "General System UI, Static Wildcard Route",
+            "Path": "/ui/*",
+            "Type": "static",
+            "FilePath": "/res/handlers/sys/.files/ui",
+            "Description": "The wildcard path for serving top-level system UI resources. This route will attempt to match any request starting with /ui/ and serve the corresponding static file from the .files/ui directory."
+        },
+        {
             "Title": "General System UI Resources, Static Wildcard Route",
             "Path": "/assets/*",
             "Type": "static",

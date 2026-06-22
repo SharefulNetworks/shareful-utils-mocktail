@@ -3,6 +3,15 @@
 # import the handler utility functions, which are used by this handler to perform common tasks such as route resolution and response generation.
 source "$(dirname "${BASH_SOURCE[0]}")/../../utils/handler-utils"
 
+# vars passed into us from an another handler where this handler is being invoked as a result of a FORWARD requests,
+# for standard requests these vars will be empty.
+FULL_PATH="$1"
+METHOD="$2"
+PROTOCOL="$3"
+RELATIVE_PATH="$4"
+REQUEST_JSON_OBJECT="$5"
+
+
 
 # top-level request handler function which will delegate to other sub handlers, as necessary, to process the incoming
 # request and return an appropriate response to the  client. We only expect sub handler route types to
@@ -55,6 +64,19 @@ checkProcessLimit() {
   fi
 }
 
+# Forwards request to another handler based on the provided route information. This function allows one 
+# handler to delegate the processing of a request to another handler, this is principally used to support
+# the delegation of requests from one Bashlet to another.
+ForwardRequest(){
+  echo "root-handler: Forwarding request to another handler based on route information..." >&2
 
-# call top-level entry point function.
-handleRequest
+}
+
+# export the ForwardRequest function.
+export -f ForwardRequest
+
+# call top-level entry point function, unless this handler is being invoked as a result of a FORWARD request from another handler,
+# as indicated by the presemce of a non-empty REQUEST_JSON_OBJECT.
+if [[ -z "$REQUEST_JSON_OBJECT" ]]; then
+  handleRequest
+fi

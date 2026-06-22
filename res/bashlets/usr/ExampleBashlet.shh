@@ -62,6 +62,8 @@ viewProfiles(){
     # finally set the response body to the mock user profiles array, this will signal the BashletEngine
     # to return the set response to the client.
     SetBashletResponseBody "$response" "$userProfiles"
+
+    ForwardRequest "$request" "$response" "/usr/example/api/profiles" "GET" "HTTP/1.1" "$userProfiles"
   
 }
 

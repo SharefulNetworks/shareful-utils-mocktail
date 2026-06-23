@@ -348,6 +348,16 @@ DoForwardBashletRequest(){
 
 }
 
+requestAcceptsHtml() {
+    local request="$1"
+    local accept
+
+    accept="$(ParseBashletRequestHeader "$request" 'Accept')"
+
+    [[ "$accept" == *text/html* ]]
+}
+
+
 StripPrefixFromBashletPath() {
     local path="$1"
     local prefix="$2"

@@ -189,7 +189,7 @@ DelegateRequestToBashletEngine() {
 
     # build default response object to be returned to the caller, which may be optionally augmented by the
     # bashlet function being invoked, where its not, this default success response will be returned.
-    bashletResponse="$(BuildDefaultBashletResponseObject 200 '{}' 'text/plain' 'Default success response from Bashlet')"    
+    bashletResponse="$(BuildDefaultBashletResponseObject 200 '{}' 'text/plain' '')"    
     bashletResponseVarName="bashletResponse" # name of the response object variable to pass to the bash 
 
     # crucially we may now invoke the resolved bashlet function, passing in the request object and the response object, which may 
@@ -204,6 +204,8 @@ DelegateRequestToBashletEngine() {
     xForwardToHeader="$(ParseBashletRequestHeader "$bashletRequest" 'X-Forward-To')"
     if [[ -z "$xForwardToHeader" ]]; then
 
+       echo "REQUEST WAS: $bashletRequest" >&2
+
        # where the X-FORWARD-TO header does not exist, we can safely dispatch the response object to the caller.
        echo "BashletEngine: Dispatching response to client..." >&2
        # dispatch the response object to the caller, which may have been modified by the bashlet function invoked.
@@ -211,7 +213,24 @@ DelegateRequestToBashletEngine() {
            # For HEAD requests, we should not return a body, so we clear the body in the response object.
            SetBashletResponseBody "$bashletResponseVarName" ""
        fi
-       DispatchBashletResponse "$bashletResponse"
+           
+       # if the response body wasn't set we send one of two default success responses...
+       if [[ -z "$(ParseJSONField "$bashletResponse" '.body')" ]]; then
+
+           echo "BashletEngine: Response body was not set by bashlet handler function, sending default success response..." >&2
+
+           if requestAcceptsHtml "$bashletRequest"; then
+               ForwardBashletRequest "/sys/ui/success-200-default.html"
+               DoForwardBashletRequest
+           else
+               SetBashletResponseBody "$bashletResponseVarName" "Default success response from Bashlet"
+               DispatchBashletResponse "$bashletResponse"
+           fi
+       else
+            echo "BashletEngine: Response body was set by bashlet handler function." >&2
+            DispatchBashletResponse "$bashletResponse"
+       fi
+      
     else
        # where the X-FORWARD-TO header exists, we do not dispatch a response to the client, instead we log that the request is being forwarded.
        echo "BashletEngine: Request is being forwarded to: $xForwardToHeader" >&2

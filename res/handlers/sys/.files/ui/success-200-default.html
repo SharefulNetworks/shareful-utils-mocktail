@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
-  <title>403 &mdash; Stisla</title>
+  <title>Mocktail - Default Bashlet Success Response</title>
 
   <!-- General CSS Files -->
   <link rel="stylesheet" href="assets/modules/bootstrap/css/bootstrap.min.css">
@@ -14,6 +14,11 @@
   <!-- Template CSS -->
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/components.css">
+
+  <!-- Highlight.js CSS-->
+  <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
+
 <!-- Start GA -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-94034622-3"></script>
 <script>
@@ -29,18 +34,50 @@
   <div id="app">
     <section class="section">
       <div class="container mt-5">
-        <div class="login-brand">
+        
+        <div class="page-error">
+        
+          <div class="page-inner">
+            <div class="login-brand">
               <!--
               <img src="assets/img/mocktail-logo.png" alt="logo" width="430" class="shadow-light">
             -->
               <img src="assets/img/mocktail-logo-new-trans.png" alt="logo" width="520" >
             </div>
-        <div class="page-error">
-          <div class="page-inner">
-            <h1>403</h1>
+            <h1 style="color: rgb(103, 121, 224);">200</h1>
             <div class="page-description">
-            	You do not have access to this page.
+            	<b>Important</b>: this is the Bashlet default success response. You can override this by setting the <span style="color: rgb(103, 121, 224);">response body</span> in your Bashlet handler function or by forwarding the request to another local or static resource. Please see the below example for details on how to easily set a response body using the built in Bashlet JSON helper functions.
             </div>
+            <br/>
+            <div style="text-align: left; position: relative; ">
+            <pre><code class="language-bash">
+# An example Bashlet handler function
+# @route method=get path=/api/profiles
+getUsers(){
+  
+    # The Bashlet request/response objects are automatically provided to 
+    # every handler function, as argument 1 and 2 respectively.
+    request="$1"
+    response="$2"
+
+    # A textual/html or JSON response can be set as the response body.
+    # Here we build up a mock userProfile JSON object using the built in 
+    # Bashlet JSON helper functions.
+    userProfile1="{}"
+    userProfile1="$(SetJSONString "$userProfile1" '.guid' 'AB36C78D87A886E868F686F86F86842A32424B24AAA42A4A')"
+    userProfile1="$(SetJSONField  "$userProfile1" '.firstName' 'Giles')"
+    userProfile1="$(SetJSONField  "$userProfile1" '.surname' 'Thompson')"
+    userProfile1="$(SetJSONField  "$userProfile1" '.age' 35)"
+
+    # finally we set the response body (using the built-in Bashlet function) 
+    # to the userProfile JSON object which will result in the BashletEngine 
+    # returning this JSON response to the client instead of this default 
+    # success response.
+    SetBashletResponseBody "$response" "$userProfile1"
+
+}
+    </code></pre>
+    </div>
             <div class="page-search">
               <form>              	
                 <div class="form-group floating-addon floating-addon-not-append">
@@ -88,5 +125,15 @@
   <!-- Template JS File -->
   <script src="assets/js/scripts.js"></script>
   <script src="assets/js/custom.js"></script>
+
+  <!-- Highlight.js Core JS -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+
+  <!-- init Highlight.js -->
+  <script>
+      hljs.highlightAll();
+  </script>
+
+
 </body>
 </html>

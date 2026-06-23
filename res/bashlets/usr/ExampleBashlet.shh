@@ -186,7 +186,8 @@ updateUserProfile(){
     #update the response body to indicate that the profile was updated successfully, 200 is assigned by default.
     SetBashletResponseBody "$response" "$successResponseBody"
     
-
+    # here we test forwarding the request rather than sending a direct response. The call to SetBashletResponseBody 
+    # above will be ignored by the BashletEngine, as the forwarding of a request will always take preedence.
     ForwardBashletRequest "/sys/ui/auth-login.html"
 
 
@@ -204,5 +205,19 @@ viewProfilesHead(){
 
     echo "THE RECEIVED REQUEST OBJECT: $request" >&2
   
+
+}
+
+
+# This alternative viewProfiles function demonstrates the correct set up/definition of handler function
+# with the exception of the fact that no request body is set. Where this is the case (as it might where a new handler is
+# being developed) the BashletEngine will automatically set a default response body to be returned to the client.
+# @route method=get path=/api/profiles/2
+viewProfiles2(){
+
+    request="$1"
+    response="$2"
+
+    echo "ExampleBashlet: inside viewProfiles2..." >&2
 
 }

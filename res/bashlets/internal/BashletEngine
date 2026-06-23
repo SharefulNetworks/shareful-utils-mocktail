@@ -113,6 +113,9 @@ DelegateRequestToBashletEngine() {
     # var to hold target route parsed from the bashlet annotation metadata.
     local route_metadata
 
+    # crucially, next we attempt to resolve the route metadata for the specified path (where it exists) the route metadata
+    # is derived from the bashlet handler function annotations which are parsed and stored in the BASHLET_ANNOTATION_METADATA variable 
+    # during the initialisation of the BashletEngine.
     route_metadata="$(
         jq -c \
             --arg file "$absolute_bashlet_file_path" \
@@ -195,13 +198,28 @@ DelegateRequestToBashletEngine() {
     # to enable the callee to load the response as a namedref and augment it as necesary.
     "$func_name" "$bashletRequest" "$bashletResponseVarName"
 
-   
-    # finally dispatch the response object to the caller, which may have been modified by the bashlet function invoked.
-    if [[ $request_method == "HEAD" ]]; then
-        # For HEAD requests, we should not return a body, so we clear the body in the response object.
-        SetBashletResponseBody "$bashletResponseVarName" ""
+    # before attempting to dispatch a response we check for the existence of the X-FORWARD-TO header in the request
+    # if it exists then this indicates that the user, in their bashlet handler function, has requested that the request 
+    # be forwarded to another route for further processing, thus we will not dispatch a response to the client here.
+    xForwardToHeader="$(ParseBashletRequestHeader "$bashletRequest" 'X-Forward-To')"
+    if [[ -z "$xForwardToHeader" ]]; then
+
+       # where the X-FORWARD-TO header does not exist, we can safely dispatch the response object to the caller.
+       echo "BashletEngine: Dispatching response to client..." >&2
+       # dispatch the response object to the caller, which may have been modified by the bashlet function invoked.
+       if [[ $request_method == "HEAD" ]]; then
+           # For HEAD requests, we should not return a body, so we clear the body in the response object.
+           SetBashletResponseBody "$bashletResponseVarName" ""
+       fi
+       DispatchBashletResponse "$bashletResponse"
+    else
+       # where the X-FORWARD-TO header exists, we do not dispatch a response to the client, instead we log that the request is being forwarded.
+       echo "BashletEngine: Request is being forwarded to: $xForwardToHeader" >&2
+       DoForwardBashletRequest
     fi
-    DispatchBashletResponse "$bashletResponse"
+
+   
+   
 }
 
 

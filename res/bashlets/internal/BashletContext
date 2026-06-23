@@ -121,6 +121,19 @@ ParseBashletRequestBody() {
   jq -r '.body' <<< "$request"
 }
 
+SetRequestHeader() {
+  local request="$1"
+  local header_name="$2"
+  local header_value="$3"
+  jq -c --arg header_name "$header_name" --arg header_value "$header_value" '.headers[$header_name] = $header_value' <<< "$request"
+}
+
+DeleteRequestHeader() {
+  local request="$1"
+  local header_name="$2"
+  jq -c --arg header_name "$header_name" 'del(.headers[$header_name])' <<< "$request"
+}
+
 # -----------------------------------------------------public bashlet response setter functions---------------------------------------------------
 
 # sets the status code of the provided bashlet response object to the specified value; this will
@@ -275,6 +288,65 @@ AppendJSONArrayItem() {
 
 
 # ------------------------------------------------ public generic utility functions ---------------------------------------------------
+
+# Signals to the BashletEngine (via setting of the X-Forward-To header) that the current request 
+# is to be forwarded to the specified path, this will cause the BashletEngine to omit sending a 
+# direct response to the client and instead forward the request to the specified path.
+# This function is intended to be called from within the context of a bashlet function, where there is
+# a requirement to forward the request to another bashlet or static resource.
+ForwardBashletRequest(){
+   forward_to_path="$1"
+
+   # here we merely append the X-FORWARD-TO header to the request, this will signal that the BashletEngine
+   # that the request is required to be forwarded and will preclude it from dispatching a direct response to the client.
+   # The BashletEngine stores the request struct under $bashletRequest
+   bashletRequest="$(SetRequestHeader "$bashletRequest" 'X-Forward-To' "$forward_to_path")"
+
+}
+
+# Actually undertakes the work of fowarding the request to the specified path, by delegating the request to the root-handler, 
+# which will cause the request to re-enter the Mocktail Server routing system, as if it was received, afresh, from a remote client.
+DoForwardBashletRequest(){
+
+  # grab reference to the request and extract the X-Forward-To header, which will contain the path 
+  # to which the request is to be forwarded. The bashlet engine always stores the current request under 
+  # $bashletRequest.
+  forwardPath="$(ParseBashletRequestHeader "$bashletRequest" 'X-Forward-To')"
+  if [[ -z "$forwardPath" ]]; then
+      echo "DoForwardBashletRequest: No X-Forward-To header found in request, cannot forward request." >&2
+      return 1
+  fi
+
+  # next parse the rest of the requisite details that we'll need to delegate the request to the root-handler...
+  reqMethod="$(ParseJSONField "$bashletRequest" '.method')"
+  reqProtocol="$(ParseJSONField "$bashletRequest" '.protocol')"
+  reqHost="$(ParseBashletRequestHeader "$bashletRequest" 'Host')"  # required for the X-Forwarded-For header we'll ultimately append to the request.
+  reqPath="$(ParseJSONField "$bashletRequest" '.path')"
+
+  
+  # attempt to obtain the X-Forwarded-For header from the request, this may have been set by a prior forward,
+  # where it exist we will append the current non-forwarded path to it. Conversely where it does not exist
+  # we create the header and set it to the current, non-forwarded path.
+  fullForwardForPath="$reqHost$reqPath"
+  xForwardedFor="$(ParseBashletRequestHeader "$bashletRequest" 'X-Forwarded-For')"
+  if [[ -n "$xForwardedFor" ]]; then
+      xForwardedFor="$xForwardedFor, $fullForwardForPath"
+  else
+    bashletRequest="$(SetRequestHeader "$bashletRequest" 'X-Forwarded-For' "$fullForwardForPath")"
+  fi
+       
+  # now we've set the forwarded for header to the old path update the bashlet request path to the new forward path.
+  bashletRequest="$(SetJSONField "$bashletRequest" '.path' "$forwardPath")"
+
+  # delete the X-Forward-To header from the request, as it is no longer required, and we don't want to pass it on to the next handler
+  # as this may (where the forward is to another bashlet) cause a forwarding storm, where the request would be forwarded in a loop.
+  bashletRequest="$(DeleteRequestHeader "$bashletRequest" 'X-Forward-To')"
+
+  # finally delegate the request to the root-handler, which will cause the request to re-enter the Mocktail Server 
+  # routing system, as if it was received, afresh, from a remote client.
+  DelegateRequest "$forwardPath" "$reqMethod" "$reqProtocol" "$bashletRequest"-
+
+}
 
 StripPrefixFromBashletPath() {
     local path="$1"

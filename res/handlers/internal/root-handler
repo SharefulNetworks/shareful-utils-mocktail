@@ -5,15 +5,45 @@ source "$(dirname "${BASH_SOURCE[0]}")/../../utils/handler-utils"
 
 # vars passed into us from an another handler where this handler is being invoked as a result of a FORWARD requests,
 # for standard requests these vars will be empty.
-FULL_PATH="$1"
-METHOD="$2"
-PROTOCOL="$3"
-RELATIVE_PATH="$4"
-REQUEST_JSON_OBJECT="$5"
+#FULL_PATH="$1"
+#METHOD="$2"
+#PROTOCOL="$3"
+#REQUEST_JSON_OBJECT="$4"
+
+
+# PUBLIC FUNCTION: DelegateRequest, similar to the handleRequest function, the principal difference is handlerRequest is 
+# invoked when an external request is received to the Mocktail server, from a remote client. Conversely DelegateRequest enables
+# other internal handlers to invoke this root handler to process a request on their behalf. On recceipt of the
+# request the root handler will parse and route the request to the appropriate sub handler in a similar manner to how handleRequest 
+# processes request received over the wire. However as the request is NOT received over the wire, no attempt will be made
+# to read the request data from stdin, instead, the call to this function requires that all pertinent request information be provided as arguments.
+DelegateRequest(){
+  
+    # capture the request information passed in as arguments to this function.
+    delegate_req_path="$1"
+    delegate_req_method="$2"
+    delegate_req_protocol="$3"
+    delegate_req_json="$4"
+
+    # issue a call into our utility method to attempt to resolve route for the path parsed from the request
+    # taking care ton pass in the path to THIS handlers routes config
+    local config_path="${SCRIPT_DIR}/res/handlers/internal/root-handler-routes.json"
+    route_info=$(ResolveRouteFromPath "$delegate_req_path" "$config_path")
+
+    # where we have found a matching route, call into our utility function to handle the request 
+    # according to it declared route type, otherwise dispatch an appropriate error response.
+    if [[ -n "$route_info" ]]; then
+        HandleRequestAccordingToRoute "$route_info" "$delegate_req_path" "$delegate_req_method" "$delegate_req_protocol" "$delegate_req_json"
+    else
+      DispatchErrorResponse 404  "$delegate_req_path" "$delegate_req_method" "$delegate_req_protocol"
+    fi
 
 
 
-# top-level request handler function which will delegate to other sub handlers, as necessary, to process the incoming
+}
+
+
+# default, top-level request handler function which will delegate to other sub handlers, as necessary, to process the incoming
 # request and return an appropriate response to the  client. We only expect sub handler route types to
 # be defined in the root-handler's configuration, as this is the entry point for all requests. The only
 # exception will be one or more wildcard static routes for serving static respources such as HTML files,CSS, JS etc,
@@ -64,19 +94,15 @@ checkProcessLimit() {
   fi
 }
 
-# Forwards request to another handler based on the provided route information. This function allows one 
-# handler to delegate the processing of a request to another handler, this is principally used to support
-# the delegation of requests from one Bashlet to another.
-ForwardRequest(){
-  echo "root-handler: Forwarding request to another handler based on route information..." >&2
 
-}
 
-# export the ForwardRequest function.
-export -f ForwardRequest
 
-# call top-level entry point function, unless this handler is being invoked as a result of a FORWARD request from another handler,
-# as indicated by the presemce of a non-empty REQUEST_JSON_OBJECT.
+# export the DelegateRequest function.
+export -f DelegateRequest
+
+# call top-level entry point function, unless this handler is being invoked as a result of a DelegateRequest from another handler,
+# as indicated by the presence of a non-empty REQUEST_JSON_OBJECT. The REQUEST_JSON_OBJECT would have been set by the initial handler that 
+# invoked this handler via the DelegateRequest function.
 if [[ -z "$REQUEST_JSON_OBJECT" ]]; then
   handleRequest
 fi

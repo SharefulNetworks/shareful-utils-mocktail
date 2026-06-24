@@ -223,7 +223,21 @@ DelegateRequestToBashletEngine() {
                ForwardBashletRequest "/sys/ui/success-200-default.html"
                DoForwardBashletRequest
            else
-               SetBashletResponseBody "$bashletResponseVarName" "Default success response from Bashlet"
+               
+               # grab request host we'll need it to create the "more info" link 
+               reqHost="$(ParseBashletRequestHeader "$bashletRequest" 'Host')"
+               fullLink="$reqHost/sys/ui/response-body-setup-guide.html"
+
+               # build up the defzult success response message body.
+               defaultSuccessMsg="{}"
+               defaultSuccessMsg="$(SetJSONString "$defaultSuccessMsg" '.status' 'success')"
+               defaultSuccessMsg="$(SetJSONField  "$defaultSuccessMsg" '.message' 'This is the default Mocktail Bashlet success response, which is returned when a Mocktail Bashlet handler function does not explicitly set a response body. You can set a custom response body in your bashlet handler function by calling the built in SetBashletResponseBody() utility function with the body content. For more more info on how to do this please visit the link below, in your browser of choice.')"
+               defaultSuccessMsg="$(SetJSONString "$defaultSuccessMsg" '.moreInfo' "$fullLink")"
+               
+               # set default response body.
+               SetBashletResponseBody "$bashletResponseVarName" "$defaultSuccessMsg"
+
+               # dispatch the default success response to the client.
                DispatchBashletResponse "$bashletResponse"
            fi
        else

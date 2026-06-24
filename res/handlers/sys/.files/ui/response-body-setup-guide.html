@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
+  <title>Mocktail - Default Bashlet Success Response</title>
+
+  <!-- General CSS Files -->
+  <link rel="stylesheet" href="assets/modules/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/modules/fontawesome/css/all.min.css">
+
+  <!-- CSS Libraries -->
+
+  <!-- Template CSS -->
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+
+  <!-- Highlight.js CSS-->
+  <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
+
+<!-- Start GA -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-94034622-3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-94034622-3');
+</script>
+<!-- /END GA --></head>
+
+<body>
+  <div id="app">
+    <section class="section">
+      <div class="container mt-5">
+        
+        <div class="page-error">
+        
+          <div class="page-inner">
+            <div class="login-brand">
+              <!--
+              <img src="assets/img/mocktail-logo.png" alt="logo" width="430" class="shadow-light">
+            -->
+              <img src="assets/img/mocktail-logo-new-trans.png" alt="logo" width="520" >
+            </div>
+            <h2 style="color: rgb(103, 121, 224); font-weight: bold; font-size: 32PX;">Setting Bashlet Response Body.</h2>
+            <div class="page-description">
+            	  Please see the below example for details on how to easily set a <span style="color: rgb(103, 121, 224);">response body</span>, in your Bashlet handler function, using the built in Bashlet JSON helper functions.
+            </div>
+            <br/>
+            <div style="text-align: left; position: relative; ">
+            <pre><code class="language-bash">
+# An example Bashlet handler function
+# @route method=get path=/api/profiles
+getUsers(){
+  
+    # The Bashlet request/response objects are automatically provided to 
+    # every handler function, as argument 1 and 2 respectively.
+    request="$1"
+    response="$2"
+
+    # A textual/html or JSON response can be set as the response body.
+    # Here we build up a mock userProfile JSON object using the built in 
+    # Bashlet JSON helper functions.
+    userProfile1="{}"
+    userProfile1="$(SetJSONString "$userProfile1" '.guid' 'AB36C78D87A886E868F686F86F86842A32424B24AAA42A4A')"
+    userProfile1="$(SetJSONField  "$userProfile1" '.firstName' 'Giles')"
+    userProfile1="$(SetJSONField  "$userProfile1" '.surname' 'Thompson')"
+    userProfile1="$(SetJSONField  "$userProfile1" '.age' 35)"
+
+    # finally we set the response body (using the built-in Bashlet function) 
+    # to the userProfile JSON object which will result in the BashletEngine 
+    # returning this JSON response to the client instead of the default 
+    # success response.
+    SetBashletResponseBody "$response" "$userProfile1"
+
+}
+    </code></pre>
+    </div>
+            <div class="page-search">
+              <form>              	
+                <div class="form-group floating-addon floating-addon-not-append">
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <div class="input-group-text">                          
+                        <i class="fas fa-search"></i>
+                      </div>
+                    </div>
+                    <input type="text" class="form-control" placeholder="Search">
+                    <div class="input-group-append">
+                      <button class="btn btn-primary btn-lg">
+                        Search
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+              <div class="mt-3">
+                <a href="index.html">Back to Home</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="simple-footer mt-5">
+          Copyright &copy; 2026 - Erudite Ltd <div class="bullet"></div> Part of the <a href="https://github.com/sharefulnetworks">Shareful Networks OSS </a> project
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- General JS Scripts -->
+  <script src="assets/modules/jquery.min.js"></script>
+  <script src="assets/modules/popper.js"></script>
+  <script src="assets/modules/tooltip.js"></script>
+  <script src="assets/modules/bootstrap/js/bootstrap.min.js"></script>
+  <script src="assets/modules/nicescroll/jquery.nicescroll.min.js"></script>
+  <script src="assets/modules/moment.min.js"></script>
+  <script src="assets/js/stisla.js"></script>
+  
+  <!-- JS Libraies -->
+
+  <!-- Page Specific JS File -->
+  
+  <!-- Template JS File -->
+  <script src="assets/js/scripts.js"></script>
+  <script src="assets/js/custom.js"></script>
+
+  <!-- Highlight.js Core JS -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+
+  <!-- init Highlight.js -->
+  <script>
+      hljs.highlightAll();
+  </script>
+
+
+</body>
+</html>

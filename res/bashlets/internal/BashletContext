@@ -4,6 +4,8 @@
 echo "BashletContext: Loaded BashletContext helper/utility functions... " >&2
 
 
+# souce the mime-utils library, which provides a set of utility functions for working with MIME types.
+source "${SCRIPT_DIR}/res/utils/mime-utils"
 
 # constructs a baseline/default bashlet response object in JSON format, which will be 
 # returned to the caller, as-is, where the bashlet function being invoked does not 
@@ -46,13 +48,32 @@ BuildBashletErrorResponse(){
     
   local status_code="$1"
   local content="$2"
+  local short_content_type="$3"  # short contnt type is just the second part of the content type, e.g: html for text/html or json for application/json, etc.
+
+  # if the short content type is not provided, we will default to html.
+  if [[ -z $short_content_type ]]; then
+      short_content_type=".html"
+  fi
+
+  # next we use yhe short content type (case insensitive) to look up the full content type, via the mime-utils helper functions.
+  local content_type
+  content_type=$(getMimeType ".$short_content_type")
+
+
+  # the error code MUST start with a 4 where this not the case we return a 500 internal server error,
+  # as this is an unexpected error condition.
+  if [[ ! "$status_code" =~ ^4[0-9]{2}$ ]]; then
+      status_code=500
+      content="Internal Server Error - An attempt was made to build a bashlet error response with a non-4xx status code (i.e: $1), this is not permitted. The status code has been automatically set to 500 Internal Server Error. The original error message was: $content"
+  fi
 
   # construct a default bashlet error response object in JSON format, which will be returned to the caller.
-  BuildDefaultBashletResponseObject "$status_code" '{}' 'text/html' "$content"
+  BuildDefaultBashletResponseObject "$status_code" '{}' "$content_type" "$content"
 }
 
 # converts the provided bashlet response object into a standard HTTP response and dispatches it 
-# to the caller.
+# to the caller. A special header is also set in the response to indicate that its COMPLETED. 
+# this will prevent the BashletEngine from attempting to send a second response to the client.
 DispatchBashletResponse(){
 
     local responseObject="$1"
@@ -68,6 +89,21 @@ DispatchBashletResponse(){
      printf "Connection: close\r\n"
      printf "\r\n"
      printf "%s" "$content"
+
+     # grab reference to the response object and set the X-Request-Completed header to true, 
+     # this will signal to the BashletEngine that the request has been completed and that it should 
+     # not attempt to send a second response to the client.
+     local header_name="X-Request-Completed"
+     local header_value="true"
+     responseObject="$(jq --arg header_name "$header_name" --arg header_value "$header_value" '.headers[$header_name] = $header_value' <<< "$responseObject")"
+     bashletResponse="$responseObject" # update the response object in the BashletEngine context to include the X-Request-Completed header, this will prevent the BashletEngine from attempting to send a second response to the client.
+    
+     #echo "RESPONSE OBJECT FROM INSIDE DISPATCH FUNCTION: $responseObject" >&2
+     #echo "***Response variable name: $bashletResponseVarName" >&2
+     #local -n responseObject="$bashletResponseVarName"
+     #responseObject="$(SetBashletResponseHeader  "$responseObject" 'X-Request-Completed' 'true')"
+
+   
 
 }
 
@@ -192,6 +228,14 @@ SetBashletResponseBody() {
 
 }
 
+# parses the provided bashlet response object and returns the value of the specified header, or an empty string if the header is not present.
+ParseBashletResponseHeader() {
+  local response="$1"
+  local header_name="$2"
+  jq -r --arg header_name "$header_name" '.headers[$header_name] // empty' <<< "$response"
+}
+
+
 
 
 # -----------------------------------------------------public JSON utility functions---------------------------------------------------
@@ -304,6 +348,7 @@ ForwardBashletRequest(){
 
 }
 
+
 # Actually undertakes the work of fowarding the request to the specified path, by delegating the request to the root-handler, 
 # which will cause the request to re-enter the Mocktail Server routing system, as if it was received, afresh, from a remote client.
 DoForwardBashletRequest(){
@@ -346,6 +391,21 @@ DoForwardBashletRequest(){
   # routing system, as if it was received, afresh, from a remote client.
   DelegateRequest "$forwardPath" "$reqMethod" "$reqProtocol" "$bashletRequest"-
 
+}
+
+
+# Immediately sends an error response to the client, using the provided status code, content and short content type.
+SendErrorResponse() {
+    local status_code="$1"
+    local content="$2"
+    local short_content_type="$3"
+
+    local error_response
+    error_response=$(BuildBashletErrorResponse "$status_code" "$content" "$short_content_type")
+    DispatchBashletResponse "$error_response" 
+    
+    # mark the request as completed, this will prevent the BashletEngine from attempting to send a second response to the client.
+    #bashletRequest="$(SetRequestHeader "$bashletRequest" 'X-Request-Completed' 'true')"
 }
 
 requestAcceptsHtml() {

@@ -198,13 +198,22 @@ DelegateRequestToBashletEngine() {
     # to enable the callee to load the response as a namedref and augment it as necesary.
     "$func_name" "$bashletRequest" "$bashletResponseVarName"
 
+    # firstly ensure that a response has not already been returned to the client as indicated by the presence of the 
+    # X-Request-Completed header in the response object, where it has we log this and return early.
+    local xRequestCompletedHeader
+    echo "RESPONSE IS: $bashletResponse" >&2
+    xRequestCompletedHeader="$(ParseBashletResponseHeader "$bashletResponse" 'X-Request-Completed')"
+    if [[ -n "$xRequestCompletedHeader" ]]; then
+        echo "BashletEngine: Request has already been completed by the bashlet function, no further response will be sent to the client." >&2
+        return 0
+    fi
+    
+
     # before attempting to dispatch a response we check for the existence of the X-FORWARD-TO header in the request
     # if it exists then this indicates that the user, in their bashlet handler function, has requested that the request 
     # be forwarded to another route for further processing, thus we will not dispatch a response to the client here.
     xForwardToHeader="$(ParseBashletRequestHeader "$bashletRequest" 'X-Forward-To')"
     if [[ -z "$xForwardToHeader" ]]; then
-
-       echo "REQUEST WAS: $bashletRequest" >&2
 
        # where the X-FORWARD-TO header does not exist, we can safely dispatch the response object to the caller.
        echo "BashletEngine: Dispatching response to client..." >&2

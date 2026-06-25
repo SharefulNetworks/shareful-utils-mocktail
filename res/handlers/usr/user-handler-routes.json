@@ -13,7 +13,7 @@
 
         },
         {
-            "Title": "General System UI Resources, Static Wildcard Route. This allows requests forwarded to the system handler's UIs to be served with the required static resources.",
+            "Title": "General System UI Resources For use by the Example Route. This allows requests forwarded to the system handler's UIs to be served with the required static resources.",
             "Path": "/example/api/profiles/assets/*",
             "Type": "static",
             "FilePath": "/res/handlers/sys/.files/ui/assets",

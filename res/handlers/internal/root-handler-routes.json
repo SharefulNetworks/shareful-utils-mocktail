@@ -13,6 +13,13 @@
             "Description": "A wildcard route for serving static web resources from the www directory."
         },
         {
+            "Title": "General System UI Resources for use by the default Mocktail Server Index Page.",
+            "Path": "/assets/*",
+            "Type": "static",
+            "FilePath": "/res/handlers/sys/.files/ui/assets",
+            "Description": "The wildcard path for serving system assets such as CSS, JS, images etc for by the default Mocktail Server index page. This route will attempt to match any request starting with /assets/ and serve the corresponding static file from the .files/ui directory. This allows for easy referencing of static resources in the HTML files served by the system handler, ensuring that the necessary assets are available for the UI to function properly.Note: Where a wildcard Path is used (i.e /assets/*)  the FilePath MUST refer to the base internal directory that the files should be served from such that [BASE_DIR]/[Relative_Request_Path_Reveived_To_Handler] resolves to the file on disk, failure to set this path correctly will result in 404 Not Found errors being returned to the client."
+        },
+        {
             "Title": "Redirect to User Sub Handler",
             "Path": "/usr",
             "Type": "sub-handler",

@@ -1,11 +1,18 @@
 #!/bin/bash
 
 
-#declare globals
+# declare globals
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOCAT_PID=""
+
+# declare default server configuration globals, these WILL be overridden by values read from the main server configuration JSON file.
 MAX_PROCESSES=50
+MAX_PROCESS_RUNTIME=10
 LISTEN_PORT=3333
-SOCAT_PID="" 
+
+
+# source the config utils script to enable us to read and parse the server configuration JSON file.
+source "${SCRIPT_DIR}/res/utils/config-utils"
 
 
 # trap exit
@@ -14,6 +21,7 @@ trap teardown EXIT INT TERM
 
 startup() {
   acquireScriptDependencies
+  configureServer
   exportSharedVariables # export shared variables that the handler (sub)  scripts may need to reference.
   initialiseBashletEngine # call private helper function to initialise the BashletEngine.
   startListening 
@@ -107,6 +115,34 @@ acquireScriptDependencies() {
   echo "All dependencies are satisfied." >&2
 }
 
+# configures server settings based on the main JSON system configuration file, setting global variables accordingly.
+configureServer() {
+  echo "Configuring Mocktail server..." >&2
+
+  # check if the configuration file exists, if not create a default one.
+  if [[ ! -f "$SCRIPT_DIR/res/config.json" ]]; then
+    echo "Configuration file not found at $SCRIPT_DIR/res/config.json, creating a default configuration file..." >&2
+
+    # create the config file.
+    createDefaultConfigFile
+
+    # pause for a breif moment to allow file to be written to the file system before we attempt to read it.
+    sleep 1
+  fi
+
+ 
+
+  # read the configuration from the JSON file and set the global variables accordingly.
+  local config_json
+  config_json=$(ReadServerJSONConfig ".") || exit 1
+
+  MAX_PROCESSES=$(ParseJSONConfigGeneralSetting "$config_json" "MaxConcurrentProcesses") || exit 1
+  MAX_PROCESS_RUNTIME=$(ParseJSONConfigGeneralSetting "$config_json" "MaxHandlerProcessRuntime") || exit 1
+  LISTEN_PORT=$(ParseJSONConfigGeneralSetting "$config_json" "ListeningPort") || exit 1
+
+  echo "Mocktail server configured with MaxProcesses=$MAX_PROCESSES, MaxProcessRuntime=$MAX_PROCESS_RUNTIME, and ListenPort=$LISTEN_PORT" >&2
+}
+
 
 initialiseBashletEngine() {
   echo "Mocktail: Initialising Bashlet Engine..." >&2
@@ -119,8 +155,37 @@ initialiseBashletEngine() {
 exportSharedVariables() {
   export SCRIPT_DIR
   export MAX_PROCESSES
+  export LISTEN_PORT
 }
 
+
+# called to create a default configuration file at res/config.json if it does not already exist,
+# for example if it was deleted in error or otherwise removed from the host file system.
+createDefaultConfigFile(){
+
+  cat > "$SCRIPT_DIR/res/config.json" <<EOL
+{
+  "Name": "Mocktail System Configuration",
+  "Description": "Defines various Mocktail Server configuration properties and settings.",
+  "Version": "1.0",
+  "GeneralSettings": {
+      "ListeningPort": 3333,
+      "MaxConcurrentProcesses": 55,
+      "MaxHandlerProcessRuntime": 11
+  },
+  "SecuritySettings": {
+      "Passphrase": "",
+      "AuthenticationMethod": "passphrase-and-token",
+      "TokenExpirationMinutes": 60,
+      "EnableCORS": false,
+      "AllowedOrigins": ["*"]
+  }
+
+}
+EOL
+
+  echo "Default configuration file created at $SCRIPT_DIR/res/config.json" >&2
+}
 
 
 

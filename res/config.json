@@ -1,0 +1,18 @@
+{
+  "Name": "Mocktail System Configuration",
+  "Description": "Defines various Mocktail Server configuration properties and settings.",
+  "Version": "1.0",
+  "GeneralSettings": {
+      "ListeningPort": 3333,
+      "MaxConcurrentProcesses": 55,
+      "MaxHandlerProcessRuntime": 11
+  },
+  "SecuritySettings": {
+      "Passphrase": "",
+      "AuthenticationMethod": "passphrase-and-token",
+      "TokenExpirationMinutes": 60,
+      "EnableCORS": false,
+      "AllowedOrigins": ["*"]
+  }
+
+}

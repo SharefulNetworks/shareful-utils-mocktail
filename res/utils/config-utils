@@ -1,0 +1,54 @@
+
+#!/bin/bash
+
+# A collection of helper functions to simplify the process of working with 
+# the main server configuration JSON file.
+
+
+# reads entire JSON config file using jq.
+ReadServerJSONConfig() {
+    jq -r "$1" res/config.json
+}
+
+# reads a specific value from the JSON config file using jq a reference
+# to the config JSON must be provided as the first argument, and the key to read 
+# must be provided as the second argument.
+ParseJSONConfigField() {
+    local json="$1"
+    local path="$2"
+    jq -cr "$path" <<< "$json"
+}
+
+SetJSONConfigField() {
+    local json="$1"
+    local path="$2"
+    local value="$3"
+    jq -cr "$path = $value" <<< "$json"
+}
+
+ParseJSONConfigGeneralSetting() {
+    local json="$1"
+    local setting="$2"
+    jq -cr ".GeneralSettings.$setting" <<< "$json"
+}
+
+ParseJSONConfigSecuritySetting() {
+    local json="$1"
+    local setting="$2"
+    jq -cr ".SecuritySettings.$setting" <<< "$json"
+}
+
+# Replaces the entire general setttings object with the supplied object.
+SetJSONConfigGeneralSettings(){
+    local json="$1"
+    local newGeneralSettings="$2"
+    jq -cr ".GeneralSettings = $newGeneralSettings" <<< "$json"
+}
+
+SetJSONConfigSecuritySettings(){
+    local json="$1"
+    local newSecuritySettings="$2"
+    jq -cr ".SecuritySettings = $newSecuritySettings" <<< "$json"
+}
+
+

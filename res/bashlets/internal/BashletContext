@@ -79,13 +79,19 @@ DispatchBashletResponse(){
     local responseObject="$1"
     local status_code=$(jq -r '.status_code' <<< "$responseObject")
     local status_message=$(jq -r '.status_message' <<< "$responseObject")
-    local headers=$(jq -r '.headers' <<< "$responseObject")
+    local headers=$(jq -c '.headers // {}' <<< "$responseObject")
     local content_type=$(jq -r '.content_type' <<< "$responseObject")
     local content=$(jq -r '.body' <<< "$responseObject")
 
-     printf "HTTP/1.1 $status_code $status_message\r\n"
-     printf "Content-Type: %s\r\n" "$content_type"
-     printf "Content-Length: %s\r\n" "${#content}"
+    printf "HTTP/1.1 $status_code $status_message\r\n"
+    printf "Content-Type: %s\r\n" "$content_type"
+    printf "Content-Length: %s\r\n" "${#content}"
+
+    while IFS= read -r header_line; do
+      [[ -z "$header_line" ]] && continue
+      printf "%s\r\n" "$header_line"
+    done < <(jq -r 'to_entries[]? | "\(.key): \(.value)"' <<< "$headers")
+
      printf "Connection: close\r\n"
      printf "\r\n"
      printf "%s" "$content"
@@ -105,6 +111,19 @@ DispatchBashletResponse(){
 
    
 
+}
+
+DispatchBashletRedirectResponse() {
+    local redirect_url="$1"
+    local status_code=302
+    local status_message="$(GetStatusMsgForCode $status_code)"
+    local headers="{\"Location\": \"$redirect_url\"}"
+    local content_type="text/html"
+    local content="<html><body><p>$status_code $status_message</p><p>Redirecting to <a href=\"$redirect_url\">$redirect_url</a></p></body></html>"
+
+    local responseObject
+    responseObject=$(BuildDefaultBashletResponseObject "$status_code" "$headers" "$content_type" "$content")
+    DispatchBashletResponse "$responseObject"
 }
 
 
@@ -403,9 +422,7 @@ SendErrorResponse() {
     local error_response
     error_response=$(BuildBashletErrorResponse "$status_code" "$content" "$short_content_type")
     DispatchBashletResponse "$error_response" 
-    
-    # mark the request as completed, this will prevent the BashletEngine from attempting to send a second response to the client.
-    #bashletRequest="$(SetRequestHeader "$bashletRequest" 'X-Request-Completed' 'true')"
+   
 }
 
 requestAcceptsHtml() {

@@ -68,10 +68,16 @@ DelegateRequestToBashletEngine() {
     if [[ -z "${ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC[$route_path]}" ]]; then
         echo "BashletEngine: A non-existent or invalid bashlet path was specified for route: $route_path" >&2
 
-        # build appropriate error response object
-        local error_response
-        error_response="$(BuildBashletErrorResponse 500 " A non-existent or invalid bashlet path was specified for route: $route_path")"
-        DispatchBashletResponse "$error_response"
+        local err_status_code=500
+        local err_status_message="$(GetStatusMsgForCode $err_status_code)"
+        local err_content="A non-existent or invalid bashlet path was specified for route: $route_path"
+        #if the client making the request accepts HTML, we redirect them to a user friendly, html-based error page, otherwise we return a JSON error response.
+         if requestAcceptsHtml "$bashletRequest"; then
+           DispatchBashletRedirectResponse "/sys/ui/errors-dynamic.html?status=$err_status_code&message=$err_status_message&content=$err_content"
+        else
+            SendErrorResponse "$err_status_code" "$err_content"
+        fi
+        
         return 1
     fi
 
@@ -82,11 +88,19 @@ DelegateRequestToBashletEngine() {
     # return a 404 error to the client to indicate that the specified bashlet could not be found. 
     if [[ ! -f "$absolute_bashlet_file_path" || ! -r "$absolute_bashlet_file_path" ]]; then
         echo "BashletEngine: Bashlet file not found or is unreadable: $absolute_bashlet_file_path" >&2
-        local error_response
-        error_response="$(BuildBashletErrorResponse 404 "Bashlet file not found or is unreadable: $absolute_bashlet_file_path")"
-        DispatchBashletResponse "$error_response"
+        
+        local err_status_code=404
+        local err_status_message="$(GetStatusMsgForCode $err_status_code)"
+        local err_content="Bashlet file not found or is unreadable: $absolute_bashlet_file_path"
+        #if the client making the request accepts HTML, we redirect them to a user friendly, html-based error page, otherwise we return a JSON error response.
+        if requestAcceptsHtml "$bashletRequest"; then
+           DispatchBashletRedirectResponse "/sys/ui/errors-dynamic.html?status=$err_status_code&message=$err_status_message&content=$err_content"
+        else
+            SendErrorResponse "$err_status_code" "$err_content"
+        fi
         return 1
     fi
+        
 
     echo "BashletEngine: Delegating request to bashlet: $absolute_bashlet_file_path" >&2
 
@@ -201,7 +215,6 @@ DelegateRequestToBashletEngine() {
     # firstly ensure that a response has not already been returned to the client as indicated by the presence of the 
     # X-Request-Completed header in the response object, where it has we log this and return early.
     local xRequestCompletedHeader
-    echo "RESPONSE IS: $bashletResponse" >&2
     xRequestCompletedHeader="$(ParseBashletResponseHeader "$bashletResponse" 'X-Request-Completed')"
     if [[ -n "$xRequestCompletedHeader" ]]; then
         echo "BashletEngine: Request has already been completed by the bashlet function, no further response will be sent to the client." >&2

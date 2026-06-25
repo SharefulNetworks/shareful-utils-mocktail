@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
-  <title>403 &mdash; Stisla</title>
+  <title></title>
 
   <!-- General CSS Files -->
   <link rel="stylesheet" href="assets/modules/bootstrap/css/bootstrap.min.css">
@@ -23,7 +23,38 @@
 
   gtag('config', 'UA-94034622-3');
 </script>
-<!-- /END GA --></head>
+<!-- /END GA -->
+
+<!-- Get Error Page Status, Status Message, and Error Content From the URL parameters -->
+<script>
+
+
+  // Get the URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const status = urlParams.get('status');
+  const message = urlParams.get('message');
+  const content = urlParams.get('content');
+
+  // Update the page with the error information
+  document.addEventListener('DOMContentLoaded', () => {
+    if (status) {
+      document.querySelector('.page-error h1').textContent = status;
+    }
+    if (message) {
+      document.querySelector('.page-description').textContent = message;
+    }
+    if (content) {
+      document.querySelector('.error-content').textContent = content;
+    }
+
+    //set page title to status and message
+    if (status && message) {
+      document.title = `Mocktail - Error ${status} - ${message}`;
+    } 
+  });
+
+</script>
+</head>
 
 <body>
   <div id="app">
@@ -37,9 +68,12 @@
             </div>
         <div class="page-error">
           <div class="page-inner">
-            <h1>403</h1>
+            <h1 style="color: rgb(172, 83, 101);">500</h1>
             <div class="page-description">
-            	You do not have access to this page.
+            	Internal Server Error.
+            </div>
+            <div class="error-content">
+            	A general internal server error has occurred.
             </div>
             <div class="page-search">
               <form>              	

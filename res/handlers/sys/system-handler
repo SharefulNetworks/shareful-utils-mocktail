@@ -27,7 +27,7 @@ handleRequest(){
    if [[ -n "$route_info" ]]; then
        HandleRequestAccordingToRoute "$route_info" "$RELATIVE_PATH" "$METHOD" "$PROTOCOL" "$REQUEST_JSON_OBJECT"
    else
-     DispatchErrorResponse 404  "$FULL_PATH" "$METHOD" "$PROTOCOL"
+     DispatchErrorResponse 404 "The requested resource was not found" "application/json" "$FULL_PATH" "$METHOD" "$REQUEST_JSON_OBJECT"
    fi
 
 

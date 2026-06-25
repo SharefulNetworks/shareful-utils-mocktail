@@ -35,7 +35,7 @@ DelegateRequest(){
     if [[ -n "$route_info" ]]; then
         HandleRequestAccordingToRoute "$route_info" "$delegate_req_path" "$delegate_req_method" "$delegate_req_protocol" "$delegate_req_json"
     else
-      DispatchErrorResponse 404  "$delegate_req_path" "$delegate_req_method" "$delegate_req_protocol"
+      DispatchErrorResponse 404 "The requested resource was not found" "application/json" "$delegate_req_path" "$delegate_req_method" "$delegate_req_json"
     fi
 
 
@@ -73,7 +73,7 @@ handleRequest(){
     if [[ -n "$route_info" ]]; then
         HandleRequestAccordingToRoute "$route_info" "$path" "$method" "$protocol" "$requestJSON"
     else
-      DispatchErrorResponse 404  "$path" "$method" "$protocol"
+      DispatchErrorResponse 404 "The requested resource was not found" "application/json" "$path" "$method" "$requestJSON"
     fi
 
 }
@@ -89,6 +89,7 @@ checkProcessLimit() {
     echo "root-handler: Current processes: $current_processes" >&2
     if (( current_processes > MAX_PROCESSES )); then
       echo "root-handler: Maximum process limit reached ($current_processes), refusing connection." >&2
+      DispatchErrorResponse 429 "Max concurrent request limit reached" "application/json" "$path" "$method" "$requestJSON" 
       exit 1
     fi
   fi

@@ -165,7 +165,7 @@ HandleRequestAccordingToRoute() {
         ;;
     *)
         echo "root-handler: Unsupported route type: $route_type for path: $path, sending error response." >&2
-        dispatchErrorResponse 1 "$path" "$method" "$protocol"
+        DispatchErrorResponse 500 "Unsupported route type: $route_type for path: $path" "application/json" "$path" "$method" "$request_json_object"
         echo "root-handler: Default response sent for path: $path, closing connection." >&2
         ;;
   esac
@@ -173,13 +173,71 @@ HandleRequestAccordingToRoute() {
 }
 
 
+DispatchResponse(){
+
+    local statusCode="$1"
+    local content="$2"
+    local contentType="$3"
+
+    printf "HTTP/1.1 %s %s\r\n" "$statusCode" "$(StatusMsgForCode "$statusCode")"
+    printf "Content-Type: %s\r\n" "$contentType"
+    printf "Content-Length: %s\r\n" "${#content}"
+    printf "Connection: close\r\n"
+    printf "\r\n"
+    printf "%s" "$content"
+
+}
+
+DispatchRedirectResponse() {
+    local redirect_url="$1"
+    local status_code=302
+    local status_message="$(GetStatusMsgForCode $status_code)"
+    local headers="{\"Location\": \"$redirect_url\"}"
+    local content_type="text/html"
+    local content="<html><body><p>$status_code $status_message</p><p>Redirecting to <a href=\"$redirect_url\">$redirect_url</a></p></body></html>"
+
+    printf "HTTP/1.1 %s %s\r\n" "$status_code" "$status_message"
+    printf "Content-Type: %s\r\n" "$content_type"
+    printf "Content-Length: %s\r\n" "${#content}"
+    printf "Connection: close\r\n"
+    printf "Location: %s\r\n" "$redirect_url"
+    printf "\r\n"
+    printf "%s" "$content"
+}
+
 
 # PUBLIC FUNCTION: dispatches an error response to the client based on the provided error code, path, method and protocol. 
 # The response will include a JSON body with details of the error.
-# Note: This is just a wrapper around the private variant of this function.
 DispatchErrorResponse(){
-   #simply delegate to the private variant of this function, which is defined below, passing in the provided parameters.
-   dispatchErrorResponse "$1" "$2" "$3" "$4"
+
+   local statusCode="$1"
+   local content="$2"
+   local contentType="$3"
+   local path="$4"
+   local method="$5"
+   local fullRequestObject="$6"
+
+    local statusMessage="$(GetStatusMsgForCode $statusCode)"
+   
+  
+   # esnure that the status code begins with a 4 or 5 to indicate a client or server error respectively, 
+   # if not we default to a 500 internal server error.
+    if [[ ! "$statusCode" =~ ^[45] ]]; then
+        echo "handler-utils: Invalid error status code: $statusCode, defaulting to 500 Internal Server Error." >&2
+        statusCode=500
+        content="Internal Server Error - An invalid error status code was provided. The path was: $path. The  method was: $method. The original error status code was: $1. The original error content was: $content"
+    fi
+
+   # if the client that initated the request accepts HTML, we will return an HTML error page, otherwise we will return a JSON error response.
+   if reqAcceptsHtml "$fullRequestObject"; then
+       DispatchRedirectResponse "/sys/ui/errors-dynamic.html?status=$statusCode&message=$statusMessage&content=$content | Request Path: $path Request Method: $method"
+   else
+       # delegate to the default dispatch response function.
+       body='{"status":"'"$statusMessage"'","method":"'"$method"'","path":"'"$path"'","details":"'"$content"'"}'
+       DispatchResponse "$statusCode" "$body" "$contentType"
+   fi
+
+
 }
 
 
@@ -221,7 +279,7 @@ handleSubHandlerRouteRequest() {
     return $?
   else
     echo "handler-utils: Unsupported route type: $route_type or script definition for SubHandler route type associated with path: $request_path, sending default response." >&2
-    dispatchErrorResponse 1 "$request_path" "$request_method" "$request_protocol"
+    DispatchErrorResponse 500 "Unsupported route type: $route_type for path: $request_path" "application/json" "$request_path" "$request_method" "$request_json_object"
   fi
 }
 
@@ -301,7 +359,7 @@ handleStaticRouteRequest() {
       content_type=$(getMimeType "$absolute_file_path")
       dispatchFileResponse "$absolute_file_path" "$content_type"
 
-      echo "handler-utils: Static resource response sent for path: $path, closing connection." >&2
+    echo "handler-utils: Static resource response sent for path: $path, closing connection." >&2
     elif [[ -d "$absolute_file_path" ]]; then
       echo "handler-utils: Static resource path is a directory for path: $path at file path: $route_file_path, looking for default index file..." >&2
       # Check if there's an index.html file in the directory
@@ -309,15 +367,15 @@ handleStaticRouteRequest() {
         dispatchFileResponse "$absolute_file_path/index.html" "text/html"
         echo "handler-utils: Static resource response sent for path: $path, found index.html, closing connection." >&2
       else
-        dispatchErrorResponse 404 "$path" "$method" "$protocol"
+        DispatchErrorResponse 404 "The provided path references a directory that DOES NOT contain an index.html file" "application/json" "$request_path" "$request_method" "$request_json_object"
       fi
     else
       echo "handler-utils: Static resource file not found for path: $path at file path: $route_file_path, the absolute file path was: $absolute_file_path, sending error response." >&2
-      dispatchErrorResponse 404 "$path" "$method" "$protocol"
+      DispatchErrorResponse 404 "The requested resource was not found" "application/json" "$request_path" "$request_method" "$request_json_object"
     fi
   else
     echo "handler-utils: Unsupported route type: $route_type or file path definition for Static route type associated with path: $path, sending error response." >&2
-    dispatchErrorResponse 1 "$path" "$method" "$protocol"
+    DispatchErrorResponse 500 "Unsupported route type: $route_type for path: $path" "application/json" "$request_path" "$request_method" "$request_json_object"
   fi    
   
 }
@@ -343,7 +401,7 @@ handleBashletRouteRequest() {
     DelegateRequestToBashletEngine "$route_path" "$request_json_object" "$request_path"
   else
     echo "handler-utils: Unsupported route type: $route_type or missing request object for Bashlet route type associated with path: $request_path, sending error response." >&2
-    dispatchErrorResponse 1 "$request_path" "$request_method" "$request_protocol"
+    DispatchErrorResponse 500 "Unsupported route type: $route_type for path: $request_path" "application/json" "$request_path" "$request_method" "$request_json_object"
   fi    
 
 }
@@ -359,33 +417,20 @@ handleJsonResponseRouteRequest(){
 # dispatches an error response to the client based on the provided error code, path, method and protocol. 
 # The response will include a JSON body with details of the error.
 dispatchErrorResponse(){
-    local errorCode="$1"
-    local path="$2"
-    local method="$3"
-    local protocol="$4"
+   local statusCode="$1"
+   local content="$2"
+   local contentType="$3"
+   local acceptsHtml="$4"
 
-    body='{"status":"Not Found","method":"'"$method"'","path":"'"$path"'","protocol":"'"$protocol"'"}'
+   # if the client accepts HTML, we will return an HTML error page, otherwise we will return a JSON error response.
+    if [[ "$acceptsHtml" == "true" ]]; then
+        local errorPageContent="<html><head><title>Error $statusCode</title></head><body><h1>Error $statusCode</h1><p>$content</p></body></html>"
+        dispatchResponse "$statusCode" "$errorPageContent" "text/html"
+    else
+       DispatchResponse "$statusCode" "$content" "$contentType"
+    fi
 
-    # we generate the error status line based on the provided error code, defaulting to 500 if no valid code is provided.
-    case "$errorCode" in
-        404)
-            printf "HTTP/1.1 404 Not Found\r\n"
-            ;;
-        400)
-            printf "HTTP/1.1 400 Bad Request\r\n"
-            ;;
-        *)
-            printf "HTTP/1.1 500 Internal Server Error\r\n"
-            ;;
-    esac
-
-    # ....then the rest of the response which will be the same regardless of the specific error code, 
-    printf "Content-Type: application/json\r\n"
-    printf "Content-Length: %s\r\n" "${#body}"
-    printf "Connection: close\r\n"
-    printf "\r\n"
-    printf "%s" "$body"
-
+   
 
 }
 
@@ -399,8 +444,9 @@ dispatchSuccessResponse(){
      printf "Connection: close\r\n"
      printf "\r\n"
      printf "%s" "$content"
-
 }
+
+
 
 
 dispatchFileResponse(){
@@ -519,4 +565,94 @@ parseRequestQueryStringParam() {
 parseRequestBody() {
   local request="$1"
   jq -r '.body' <<< "$request"
+}
+
+
+StatusMsgForCode() {
+
+    local status_code="$1"
+
+    case "$status_code" in
+    100) printf "Continue" ;;
+    101) printf "Switching Protocols" ;;
+    102) printf "Processing" ;;
+    103) printf "Early Hints" ;;
+
+    200) printf "OK" ;;
+    201) printf "Created" ;;
+    202) printf "Accepted" ;;
+    203) printf "Non-Authoritative Information" ;;
+    204) printf "No Content" ;;
+    205) printf "Reset Content" ;;
+    206) printf "Partial Content" ;;
+    207) printf "Multi-Status" ;;
+    208) printf "Already Reported" ;;
+    226) printf "IM Used" ;;
+
+    300) printf "Multiple Choices" ;;
+    301) printf "Moved Permanently" ;;
+    302) printf "Found" ;;
+    303) printf "See Other" ;;
+    304) printf "Not Modified" ;;
+    305) printf "Use Proxy" ;;
+    307) printf "Temporary Redirect" ;;
+    308) printf "Permanent Redirect" ;;
+
+    400) printf "Bad Request" ;;
+    401) printf "Unauthorized" ;;
+    402) printf "Payment Required" ;;
+    403) printf "Forbidden" ;;
+    404) printf "Not Found" ;;
+    405) printf "Method Not Allowed" ;;
+    406) printf "Not Acceptable" ;;
+    407) printf "Proxy Authentication Required" ;;
+    408) printf "Request Timeout" ;;
+    409) printf "Conflict" ;;
+    410) printf "Gone" ;;
+    411) printf "Length Required" ;;
+    412) printf "Precondition Failed" ;;
+    413) printf "Payload Too Large" ;;
+    414) printf "URI Too Long" ;;
+    415) printf "Unsupported Media Type" ;;
+    416) printf "Range Not Satisfiable" ;;
+    417) printf "Expectation Failed" ;;
+    418) printf "I'm a Teapot" ;;
+    421) printf "Misdirected Request" ;;
+    422) printf "Unprocessable Content" ;;
+    423) printf "Locked" ;;
+    424) printf "Failed Dependency" ;;
+    425) printf "Too Early" ;;
+    426) printf "Upgrade Required" ;;
+    428) printf "Precondition Required" ;;
+    429) printf "Too Many Requests" ;;
+    431) printf "Request Header Fields Too Large" ;;
+    451) printf "Unavailable For Legal Reasons" ;;
+
+    500) printf "Internal Server Error" ;;
+    501) printf "Not Implemented" ;;
+    502) printf "Bad Gateway" ;;
+    503) printf "Service Unavailable" ;;
+    504) printf "Gateway Timeout" ;;
+    505) printf "HTTP Version Not Supported" ;;
+    506) printf "Variant Also Negotiates" ;;
+    507) printf "Insufficient Storage" ;;
+    508) printf "Loop Detected" ;;
+    510) printf "Not Extended" ;;
+    511) printf "Network Authentication Required" ;;
+
+    *)
+        printf "Unknown Status"
+        ;;
+esac
+
+}   
+
+
+reqAcceptsHtml() {
+    local request="$1"
+    local accept
+
+    accept="$(ParseBashletRequestHeader "$request" 'Accept')"
+
+    [[ "$accept" == *text/html* ]]
 }

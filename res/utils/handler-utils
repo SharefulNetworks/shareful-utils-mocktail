@@ -268,8 +268,9 @@ handleStaticRouteRequest() {
         # remainder => modules/x.css, final => [SCRIPT_DIR]/[FilePath]/modules/x.css
         local stripped_request_path
         stripped_request_path=$(stripPrefixFromPath "$request_path" "$route_path")
+
+        # Use realpath -m to normalize duplicate slashes and path segments
         if command -v realpath >/dev/null 2>&1; then
-          # Use realpath -m to normalize duplicate slashes and path segments
           absolute_file_path=$(realpath -m "${SCRIPT_DIR}/${route_file_path#/}/${stripped_request_path#/}")
         else
           # Fallback: manually strip trailing slash from base and join
@@ -301,6 +302,15 @@ handleStaticRouteRequest() {
       dispatchFileResponse "$absolute_file_path" "$content_type"
 
       echo "handler-utils: Static resource response sent for path: $path, closing connection." >&2
+    elif [[ -d "$absolute_file_path" ]]; then
+      echo "handler-utils: Static resource path is a directory for path: $path at file path: $route_file_path, looking for default index file..." >&2
+      # Check if there's an index.html file in the directory
+      if [[ -f "$absolute_file_path/index.html" ]]; then
+        dispatchFileResponse "$absolute_file_path/index.html" "text/html"
+        echo "handler-utils: Static resource response sent for path: $path, found index.html, closing connection." >&2
+      else
+        dispatchErrorResponse 404 "$path" "$method" "$protocol"
+      fi
     else
       echo "handler-utils: Static resource file not found for path: $path at file path: $route_file_path, the absolute file path was: $absolute_file_path, sending error response." >&2
       dispatchErrorResponse 404 "$path" "$method" "$protocol"

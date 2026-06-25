@@ -5,20 +5,28 @@
     "Version": "1.0",
     "Routes": [
 
+         {
+            "Title": "Root Wildcard Route for serving static web resources",
+            "Path": "/*",
+            "Type": "static",
+            "FilePath": "/res/www",
+            "Description": "A wildcard route for serving static web resources from the www directory."
+        },
         {
-            "Title": "Redirect to User Handler",
+            "Title": "Redirect to User Sub Handler",
             "Path": "/usr",
             "Type": "sub-handler",
             "SubHandlerScript": "/res/handlers/usr/user-handler",
             "Description": "The /usr* route handler, delegates handling of any requests to paths starting with /usr to the user-handler script located at ./res/handlers/usr/user-handler. This allows for modular handling of user-related routes and functionalities, keeping the root handler organized and focused on routing while the user-handler script can manage specific logic related to user operations."
         },
         {
-            "Title": "Redirect to System Handler",
+            "Title": "Redirect to System Sub Handler",
             "Path": "/sys",
             "Type": "sub-handler",
             "SubHandlerScript": "/res/handlers/sys/system-handler",
             "Description": "The /sys* route handler, delegates handling of any requests to paths starting with /sys to the system-handler script located at ./res/handlers/sys/system-handler. This allows for modular handling of system-related routes and functionalities, keeping the root handler organized and focused on routing while the system-handler script can manage specific logic related to system operations."
         }
+        
     ]
 
 }

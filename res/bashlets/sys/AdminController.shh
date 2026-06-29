@@ -9,80 +9,34 @@ source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
 
 
 
-# Tests standard GET route handling using mock login endpoint.
-# @route method=GeT path=/api/login secure=false
-doLogin(){
+
+# @route method=post path=/doSignin secure=false
+doSignin(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside doLogin..." >&2
+    echo "AdminController: inside doSignin..." >&2
 
     #update the response body to indicate that the login was successful, 200 is assigned by default.
     SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
 
-    # parse body from the request, for GET method, we expect it to be empty
-    requestBody="$(ParseBashletRequestBody "$request")"
-    echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
-  
-}
+    # parse body from the request, see the POST method for the expected body format.
+    # requestBody="$(ParseBashletRequestBody "$request")"
+    # echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
 
-
-# @route method=post path=/api/login secure=false
-doLoginPost(){
-    request="$1"
-    response="$2"
-
-    echo "AdminController: inside doLoginPost..." >&2
-
-    #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
-
-    # parse body from the request, for the purpose of the test the body is expected to take the following form:
-    #{
-    #"guid": "AB36C78D87A886E868F686F86F86842A32424B24AAA42A4A", 
-    #"firstName": "Giles", 
-    #"surnname": "Thompson", 
-    #"age": 35, 
-    #"addresses": [
-    #    {
-    #     "streetNumber": 21,
-    #     "streetname": "Sutcliffe Avenue",
-    #     "area": "Longsight",
-    #     "city": "Manchester",
-    #     "county": "Lancashire",
-    #     "postcode": "M125TN"
-    #    },
-    #
-    #    { 
-    #      "streetNumber": 37,
-    #      "streetname": "Hobart Street",
-    #      "area": "Gorton",
-    #      "city": "Manchester",
-    #      "county": "Lancashire",
-    #      "postcode": "M375RF"
-    #    }
-    #
-    #    ]
-    #}
-
-
-
-    requestBody="$(ParseBashletRequestBody "$request")"
-    echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
+    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
 
     # next parse specifc fields from the request body, we'll parse one top-level field
     # and a nested field from and object in the  addresses array to confirm that nested
     # parsing functionality is working as expected.
 
     # first the top-level guid field, which is a string.
-    guid="$(ParseJSONField "$requestBody" '.guid')"
-    echo "THE PARSED GUID FIELD: $guid" >&2
+    #guid="$(ParseJSONField "$requestBody" '.guid')"
+    #echo "THE PARSED GUID FIELD: $guid" >&2
 
     # next the nested streetname field from the first address object in the addresses array.
-    streetname="$(ParseJSONField "$requestBody" '.addresses[0].streetname')"
-    echo "THE PARSED STREETNAME FIELD: $streetname" >&2
-
-
+    #streetname="$(ParseJSONField "$requestBody" '.addresses[0].streetname')"
+    #echo "THE PARSED STREETNAME FIELD: $streetname" >&2
 
 }
 

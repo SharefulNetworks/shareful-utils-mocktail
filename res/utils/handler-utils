@@ -24,6 +24,8 @@ ReadAndParseRequest(){
   local body=''
   local query_raw
   local query_json='{}'
+  local content_type #we store this as we may to do additional parsing of the body based on this value. e.g where its: "application/x-www-form-urlencoded" 
+  local form_data_json='{}'
 
   read -r -t 5 method path protocol || return 1
 
@@ -45,6 +47,11 @@ ReadAndParseRequest(){
       [[ -z "$header" ]] && break 
       local name=${header%%:*}
       local value=${header#*: }
+
+      # if the current header is "Content-Type" we store it in a variable for later use, 
+      # as we may need to do additional parsing of the body based on this value. e.g where its: "application/x-www-form-urlencoded" 
+      [[ $name == "Content-Type" ]] && content_type=$value
+
       
       headers=$(
           jq \
@@ -78,6 +85,26 @@ ReadAndParseRequest(){
       done
     fi
 
+  # if the request content-type header is equal to: "application/x-www-form-urlencoded" then the
+  # body of the request will be a series of name-value pairs separated by the "&" character, 
+  #we will parse these into a json object of key value pairs, taking care to handle the case where the request may not have any body parameters.
+  if [[ "$content_type" == "application/x-www-form-urlencoded" && -n "$body" ]]; then
+      IFS='&' read -ra body_params <<< "$body"
+      local body_json='{}'
+      for param in "${body_params[@]}"; do
+        local name=${param%%=*}
+        local value=${param#*=}
+        body_json=$(
+          jq \
+            --arg name "$name" \
+            --arg value "$(urlDecode "$value")" \
+            '. + {($name): $value}' \
+            <<< "$body_json"
+        )
+      done
+      form_data_json="$body_json"
+  fi
+
   jq -n \
       --arg method "$method" \
       --arg path "$path" \
@@ -85,13 +112,15 @@ ReadAndParseRequest(){
         --arg body "$body" \
         --argjson headers "$headers" \
         --argjson query_string "$query_json" \
+        --argjson form_data "$form_data_json" \
       '{
           method: $method,
           path: $path,
           protocol: $protocol,
           headers: $headers,
           query_string: $query_string,
-          body: $body
+          body: $body,
+          form_data: $form_data
       }'
 
 }
@@ -482,6 +511,14 @@ stripPrefixFromPath() {
     fi
 }
 
+
+# provided with a URL encoded string, this function will decode it and return the resultant decoded string.
+urlDecode() {
+    local encoded="$1"
+    local decoded
+    decoded=$(printf '%b' "${encoded//%/\\x}")
+    echo "$decoded"
+}
 
 
 

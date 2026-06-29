@@ -269,9 +269,20 @@ DispatchErrorResponse(){
 
 }
 
+# Genertes a SHA-512 hash of the provided input string and returns the hash value.
+ToSha512() {
+    local input="$1"
+    echo -n "$input" | sha512sum
+}
 
 
-
+ComputePassphrase() {
+    local email="$1"
+    local password="$2"
+    local passphrase
+    passphrase="$(ToSha512 "$email-$password")"
+    echo "$passphrase"
+}
 
 
 #-------------------------------- PRIVATE HELPER/UTILITY FUNCTION IMPLEMENTATIONS ---------------------------------
@@ -604,6 +615,16 @@ parseRequestBody() {
   jq -r '.body' <<< "$request"
 }
 
+ParseFormData() {
+  local request="$1"
+  jq -r '.form_data' <<< "$request"
+}
+
+ParseFormDataParam() {
+  local request="$1"
+  local parameter_name="$2"
+  jq -r --arg parameter_name "$parameter_name" '.form_data[$parameter_name] // empty' <<< "$request"
+}
 
 StatusMsgForCode() {
 

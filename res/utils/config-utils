@@ -7,7 +7,8 @@
 
 # reads entire JSON config file using jq.
 ReadServerJSONConfig() {
-    jq -r "$1" res/config.json
+    local filter="${1:-.}"
+    jq -r "$filter" res/config.json
 }
 
 # reads a specific value from the JSON config file using jq a reference
@@ -23,7 +24,7 @@ SetJSONConfigField() {
     local json="$1"
     local path="$2"
     local value="$3"
-    jq -cr "$path = $value" <<< "$json"
+    jq -cr --arg path "$path" --arg value "$value" 'setpath($path[1:] | split("." ); $value)' <<< "$json"
 }
 
 ParseJSONConfigGeneralSetting() {
@@ -49,6 +50,27 @@ SetJSONConfigSecuritySettings(){
     local json="$1"
     local newSecuritySettings="$2"
     jq -cr ".SecuritySettings = $newSecuritySettings" <<< "$json"
+}
+
+SetJSONConfigSecuritySetting(){
+    local json="$1"
+    local setting="$2"
+    local value="$3"
+    jq -cr --arg setting "$setting" --arg value "$value" '.SecuritySettings[$setting] = $value' <<< "$json"
+}
+
+UpdateConfigFile() {
+    local newConfig="$1"
+    local configPath="res/config.json"
+    local tempFile
+
+    tempFile="$(mktemp "${configPath}.tmp.XXXXXX")" || return 1
+    if ! jq '.' <<< "$newConfig" > "$tempFile"; then
+        rm -f "$tempFile"
+        echo "UpdateConfigFile: refusing to write invalid JSON to $configPath" >&2
+        return 1
+    fi
+    mv "$tempFile" "$configPath"
 }
 
 

@@ -7,17 +7,28 @@
 # import/source the BashletContext helper functions to support parsing of the incoming request object and constructing the response object.
 source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
 
+# import/source the config-utils helper functions to support reading and writing to the main server configuration JSON file.
+source "$SCRIPT_DIR/res/utils/config-utils"
 
 
 
-# @route method=post path=/doSignin secure=false
+
+# @route method=post path=/doSignin
 doSignin(){
     request="$1"
     response="$2"
 
     echo "AdminController: inside doSignin..." >&2
 
-    #update the response body to indicate that the login was successful, 200 is assigned by default.
+    # first and foremost parse the autentication credentials that were posted via the login form
+    email="$(ParseFormDataParam "$request" 'email')"
+    password="$(ParseFormDataParam "$request" 'password')"
+
+    # produce a passphrase from the provided email and password.
+    passphrase="$(ComputePassphrase "$email" "$password")"
+
+
+    # update the response body to indicate that the login was successful, 200 is assigned by default.
     SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
 
     # parse body from the request, see the POST method for the expected body format.
@@ -25,18 +36,44 @@ doSignin(){
     # echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
 
     echo "THE RECEIVED REQUEST OBJECT: $request" >&2
+   
+}
 
-    # next parse specifc fields from the request body, we'll parse one top-level field
-    # and a nested field from and object in the  addresses array to confirm that nested
-    # parsing functionality is working as expected.
+# @route method=post path=/doSignup
+doSignup(){
+    request="$1"
+    response="$2"
 
-    # first the top-level guid field, which is a string.
-    #guid="$(ParseJSONField "$requestBody" '.guid')"
-    #echo "THE PARSED GUID FIELD: $guid" >&2
+    echo "AdminController: inside doSignup..." >&2
 
-    # next the nested streetname field from the first address object in the addresses array.
-    #streetname="$(ParseJSONField "$requestBody" '.addresses[0].streetname')"
-    #echo "THE PARSED STREETNAME FIELD: $streetname" >&2
+    # read current server configuration data from the JSON config file.
+    configData="$(ReadServerJSONConfig)"
+
+    # only a single admin signup is permitted thus if a passphrase already exists in the config file, 
+    # we will reject any further signup attempts.
+    existingPassphrase="$(ParseJSONConfigSecuritySetting "$configData" "Passphrase")"
+    if [ -n "$existingPassphrase" ]; then
+        echo "AdminController: signup attempt rejected - admin user already exists." >&2
+        DispatchErrorResponse 403 "Forbidden - An existing admin user already exists; only one admin user can be created. Please login to the existing account, if you have forgotten your password please visit the password reset page. " "application/json" "/doSignup" "post" "$request"
+        return 1
+    fi
+
+    # first and foremost parse the autentication credentials that were posted via the signup form
+    # we do quite extensive input validation on the client-side and thus here we will assume that the input is 
+    # valid and well-formed, for now.
+    email="$(ParseFormDataParam "$request" 'email')"
+    password="$(ParseFormDataParam "$request" 'password')"
+
+    # compute a passphrase from the provided email and password.
+    passphrase="$(ComputePassphrase "$email" "$password")"
+
+    # store passphrase to the config file, we firstly load the current config, update the passphrase field in the SecuritySettings object, 
+    # and then write the updated config back to the file.
+    updatedConfigData="$(SetJSONConfigSecuritySetting "$configData" "Passphrase" "$passphrase")"
+    UpdateConfigFile "$updatedConfigData"
+
+     #update the response body to indicate that the login was successful, 200 is assigned by default.
+    SetBashletResponseBody "$response" '{"status": "success", "message": "signup successful", "endpoint": "/doSignup", "method": "POST"}'
 
 }
 
@@ -75,31 +112,6 @@ doLoginPut(){
 
 }
 
-# @route method=head path=/api/login secure=false
-doLoginHead(){
-    request="$1"
-    response="$2"
 
-    echo "AdminController: inside doLoginHead..." >&2
 
-    #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" "{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}"
-
-    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
-  
-
-}
-
-# @route method=GeT path=/api/login/extended secure=false
-doLoginWithOptions(){
-    request="$1"
-    response="$2"
-
-    echo "AdminController: inside doLoginWithOptions..." >&2
-
-    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
-
-    #NOTE: this is just a test route to validate that the BashletEngine is correctly parsing the route annotations and routing requests to the correct bashlet function.
-
-}
 

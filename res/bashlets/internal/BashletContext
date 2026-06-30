@@ -582,7 +582,7 @@ SetCookieInBashletResponse() {
 
 }
 
-GetCookieInBashletrequest() {
+GetCookieInBashletRequest() {
     local request="$1"
     local cookie_name="$2"
     jq -r --arg cookie_name "$cookie_name" '.cookies[$cookie_name] // empty' <<< "$request"
@@ -606,7 +606,15 @@ ExpireBashletResponseCookie() {
     local cookieName="$2"
 
     # Set the cookie's expiration date to a past date to expire it.
-    responseObject="$(jq --arg cookieName "$cookieName" '(.cookies[] | select(.name == $cookieName) | .expires) = "Thu, 01 Jan 1970 00:00:00 GMT"' <<< "$responseObject")"
+    # If the response does not already contain a matching cookie, append a deletion cookie instead.
+    responseObject="$(jq --arg cookieName "$cookieName" '
+      .cookies //= []
+      | if any(.cookies[]?; .name == $cookieName) then
+          (.cookies[] | select(.name == $cookieName) | .expires) = "Thu, 01 Jan 1970 00:00:00 GMT"
+        else
+          .cookies += [{name: $cookieName, value: "", path: "/", expires: "Thu, 01 Jan 1970 00:00:00 GMT"}]
+        end
+    ' <<< "$responseObject")"
 }
 
 

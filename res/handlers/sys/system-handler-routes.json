@@ -42,13 +42,6 @@
             "Description": "The /check-auth route handler, dynamically checks the authentication status of the user and forwards them to either /sign-in or /manage-ui based on their authentication status and account type. This allows for a seamless user experience by directing users to the appropriate interface based on their login status and permissions."
         },
         {
-            "Title": "Management UI",
-            "Path": "/manage*",
-            "Type": "static",
-            "FilePath": "/res/handlers/sys/.files/ui/mocktail-dashboard.html",
-            "Description": "The /manage-ui route handler, serves the manage-ui.html file from the .files directory. this is the main interface utlised buy the user to add,configure and manage routes"
-        },
-        {
             "Title": "Sign-In UI",
             "Path": "/signin*",
             "Type": "static",

@@ -20,9 +20,9 @@ doSignin(){
 
     echo "AdminController: inside doSignin..." >&2
 
-    # first and foremost attempt to parse existing auth cookie from the request, 
+    # first and foremost attempt to get existing auth cookie from the request, 
     # if it exists then we will automatically consider the user to be logged in and return a success response.
-    authCookie="$(ParseBashletRequestCookiesParam "$request" 'mocktail_auth_token')"
+    authCookie="$(getAuthCookieFromRequest "$request")"
     if [[ -n "$authCookie" ]]; then
         echo "AdminController: existing auth cookie found, user is already logged in." >&2
         SetBashletResponseBody "$response" '{"status": "success", "message": "user is already logged in", "endpoint": "/doSignin", "method": "POST"}'
@@ -137,40 +137,58 @@ doSignup(){
 
 }
 
-# @route method=put path=/api/login secure=false
-doLoginPut(){
+
+# Signs admin user out by expiring the auth cookie in the response object which is ultimately sent back to the client.
+# @route method=get path=/doSignout
+doSignout(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside doLoginPut..." >&2
+    echo "AdminController: inside doSignout..." >&2
+ 
+    # firstly validate the user is actually logged in by checking for the presence of the auth cookie in the request, 
+    # if it is not present we will return an error to the user.
+    authCookie="$(getAuthCookieFromRequest "$request")"
+    if [[ -z "$authCookie" ]]; then
 
-    #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
-  
-     # parse body from the request, see the POST method for the expected body format.
-    requestBody="$(ParseBashletRequestBody "$request")"
-    echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
+        echo "AdminController: signout attempt rejected - user is not currently logged in." >&2
 
-    # first the top-level guid field, which is a string.
-    guid="$(ParseJSONField "$requestBody" '.guid')"
-    echo "THE PARSED GUID FIELD: $guid" >&2
+        local err_status_code=400
+        local err_content="Bad Request - User is not currently logged in."
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
 
-    # next obtain the addresses array and iterate over each address object, parsing each field as we go.
-    # for each object we should be able to call ParseJSONField with the appropriate path to extract the fields we need.
-   while IFS= read -r address; do
-    streetNumber="$(ParseJSONField "$address" '.streetNumber')"
-    streetname="$(ParseJSONField "$address" '.streetname')"
-    area="$(ParseJSONField "$address" '.area')"
-    city="$(ParseJSONField "$address" '.city')"
-    county="$(ParseJSONField "$address" '.county')"
-    postcode="$(ParseJSONField "$address" '.postcode')"
+    expireAuthCookieInResponse "$response"
 
-    echo "Parsed Address: $streetNumber, $streetname, $area, $city, $county, $postcode" >&2
-   done < <(ParseJSONField "$requestBody" '.addresses[]')
-    
-
-
+    SetBashletResponseBody "$response" '{"status": "success", "message": "signout successful", "endpoint": "/doSignout", "method": "GET"}'
 }
+
+# Navigates to the main admin dashboard which is only accessible to authenticated users.
+# @route method=get path=/dashboard secure=true
+viewAdminDashboard(){
+    request="$1"
+    response="$2"
+
+    echo "AdminController: inside viewAdminDashboard..." >&2
+
+    # first and foremost validate the user is logged in by checking for the presence of the auth cookie in the request, 
+    # if it is not present we will return an error to the user.
+    #authCookie="$(getAuthCookieFromRequest "$request")"
+    #if [[ -z "$authCookie" ]]; then
+#
+    #    echo "AdminController: access to admin dashboard rejected - user is not currently logged in." >&2
+#
+    #    local err_status_code=401
+    #    local err_content="Unauthorized - User is not currently logged in."
+    #    SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+    #    return 1
+    #fi
+#
+    #SetBashletResponseBody "$response" '{"status": "success", "message": "access granted to admin dashboard", "endpoint": "/viewAdminDashboard", "method": "GET"}'
+}
+
+
 
 
 
@@ -192,7 +210,15 @@ getAuthCookieFromRequest() {
     local request="$1"
     local cookieName="mocktail_auth_token"
 
-    ParseCookieFromBashletRequest "$request" "$cookieName"
+    ac="$(GetCookieInBashletRequest "$request" "$cookieName")"
+    echo "$ac"
+}
+
+expireAuthCookieInResponse() {
+    local response="$1"
+    local cookieName="mocktail_auth_token"
+
+    ExpireBashletResponseCookie "$response" "$cookieName"
 }
 
 

@@ -30,13 +30,13 @@ SetJSONConfigField() {
 ParseJSONConfigGeneralSetting() {
     local json="$1"
     local setting="$2"
-    jq -cr ".GeneralSettings.$setting" <<< "$json"
+    jq -cr --arg setting "$setting" '.GeneralSettings[$setting] // empty' <<< "$json"
 }
 
 ParseJSONConfigSecuritySetting() {
     local json="$1"
     local setting="$2"
-    jq -cr ".SecuritySettings.$setting" <<< "$json"
+    jq -cr --arg setting "$setting" '.SecuritySettings[$setting] // empty' <<< "$json"
 }
 
 # Replaces the entire general setttings object with the supplied object.

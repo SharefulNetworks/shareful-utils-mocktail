@@ -243,7 +243,10 @@ createProfiles2(){
     if [[ -z $id ]]; then
         
         echo "ExampleBashlet: missing required query string parameter 'id', returning 400 Bad Request error response to client..." >&2
-        SendErrorResponse "400" "Bad Request - Missing required query string parameter 'id'" "json"
+       
+        local err_status_code=400
+        local err_content="Bad Request - Missing required query string parameter 'id'"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
        
      fi
 

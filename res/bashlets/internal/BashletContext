@@ -52,7 +52,7 @@ BuildBashletErrorResponse(){
 
   # if the short content type is not provided, we will default to html.
   if [[ -z $short_content_type ]]; then
-      short_content_type=".html"
+      short_content_type=".json"
   fi
 
   # next we use yhe short content type (case insensitive) to look up the full content type, via the mime-utils helper functions.
@@ -413,25 +413,27 @@ DoForwardBashletRequest(){
 }
 
 
-# Immediately sends an error response to the client, using the provided status code, content and short content type.
-SendErrorResponse() {
-    local status_code="$1"
-    local content="$2"
-    local short_content_type="$3"
 
-    local error_response
-    error_response=$(BuildBashletErrorResponse "$status_code" "$content" "$short_content_type")
-    DispatchBashletResponse "$error_response" 
-   
-}
+# Top-level function that Bashlets and the BashletEngine uses to send error responses to clients.
+# Where the client making the request supports the html mime-type (like most browsers) then 
+# a user friendly html-based error page is returned otherwise a json based error response is returned.
+SendBashletErrorResponse(){
 
-requestAcceptsHtml() {
-    local request="$1"
-    local accept
+   local err_status_code="$1"
+   local err_content="$2"
+   local full_request_object="$3"
+   local short_content_type="$4"
 
-    accept="$(ParseBashletRequestHeader "$request" 'Accept')"
+   local err_status_message="$(GetStatusMsgForCode $err_status_code)"
+   if requestAcceptsHtml "$full_request_object"; then
+        echo "SendBashletErrorResponse: client accepts HTML, redirecting to user friendly error page..." >&2
+        DispatchBashletRedirectResponse "/sys/ui/errors-dynamic.html?status=$err_status_code&message=$err_status_message&content=$err_content"
+   else
+       echo "SendBashletErrorResponse: client does not accept HTML, sending JSON error response..." >&2
+       sendErrorResponse "$err_status_code" "$err_content" "$short_content_type"
+   fi    
+   return 1
 
-    [[ "$accept" == *text/html* ]]
 }
 
 
@@ -535,4 +537,30 @@ GetStatusMsgForCode() {
         ;;
 esac
 
-}   
+} 
+
+
+# ------------------------------------------private generic utility functions------------------------------------------
+
+
+# Immediately sends an error response to the client, using the provided status code, content and short content type.
+sendErrorResponse() {
+    local status_code="$1"
+    local content="$2"
+    local short_content_type="$3"
+
+    local error_response
+    error_response=$(BuildBashletErrorResponse "$status_code" "$content" "$short_content_type")
+    DispatchBashletResponse "$error_response" 
+   
+}
+
+
+requestAcceptsHtml() {
+    local request="$1"
+    local accept
+
+    accept="$(ParseBashletRequestHeader "$request" 'Accept')"
+
+    [[ "$accept" == *text/html* ]]
+}

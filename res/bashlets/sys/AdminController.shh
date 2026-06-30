@@ -27,15 +27,46 @@ doSignin(){
     # produce a passphrase from the provided email and password.
     passphrase="$(ComputePassphrase "$email" "$password")"
 
+    # attempt to read the current server configuration data from the JSON config file.
+    configData="$(ReadServerJSONConfig)"
+    if [[ -z "$configData" ]]; then
+        echo "AdminController: failed to read server configuration data from config file." >&2
 
-    # update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
+        local err_status_code=500
+        local err_content="Internal Server Error - Failed to read server configuration data from config file (config.json). If the file exists its likely corrupted, please delete it and restart the server."
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+
+    # attempt to obtain the stored passphrase from the config file, where this fails we will reject the login attempt and return an error to the user.
+    storedPassphrase="$(ParseJSONConfigSecuritySetting "$configData" "Passphrase")"
+    if [ -z "$storedPassphrase" ]; then
+        echo "AdminController: No stored auth passphrase found in config file, login attempt rejected." >&2
+
+        local err_status_code=403
+        local err_content="Forbidden - No stored auth passphrase found in config file, login attempt rejected. Please ensure that an admin user has been created via the signup process, BEFORE attempting to login."
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # Next, compare the computed passphrase with the stored passphrase, if they match then the login is successful, otherwise return an error to the user.
+    if [ "$passphrase" == "$storedPassphrase" ]; then
+        echo "AdminController: login successful." >&2
+        SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/doSignin", "method": "POST"}'
+    else
+        echo "AdminController: login failed - invalid credentials." >&2
+
+        local err_status_code=401
+        local err_content="Unauthorized - Invalid credentials provided, login failed. Please try again."
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
 
     # parse body from the request, see the POST method for the expected body format.
     # requestBody="$(ParseBashletRequestBody "$request")"
     # echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
-
-    echo "THE RECEIVED REQUEST OBJECT: $request" >&2
+    # echo "THE RECEIVED REQUEST OBJECT: $request" >&2
    
 }
 
@@ -48,13 +79,24 @@ doSignup(){
 
     # read current server configuration data from the JSON config file.
     configData="$(ReadServerJSONConfig)"
+    if [[ -z "$configData" ]]; then
+        echo "AdminController: failed to read server configuration data from config file." >&2
+
+        local err_status_code=500
+        local err_content="Internal Server Error - Failed to read server configuration data from config file (config.json). If the file exists its likely corrupted, please delete it and restart the server."
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
 
     # only a single admin signup is permitted thus if a passphrase already exists in the config file, 
     # we will reject any further signup attempts.
     existingPassphrase="$(ParseJSONConfigSecuritySetting "$configData" "Passphrase")"
     if [ -n "$existingPassphrase" ]; then
         echo "AdminController: signup attempt rejected - admin user already exists." >&2
-        DispatchErrorResponse 403 "Forbidden - An existing admin user already exists; only one admin user can be created. Please login to the existing account, if you have forgotten your password please visit the password reset page. " "application/json" "/doSignup" "post" "$request"
+
+        local err_status_code=403
+        local err_content="Forbidden - An existing admin user already exists; only one admin user can be created. Please login to the existing account, if you have forgotten your password please visit the password reset page. "
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
         return 1
     fi
 
@@ -70,6 +112,14 @@ doSignup(){
     # store passphrase to the config file, we firstly load the current config, update the passphrase field in the SecuritySettings object, 
     # and then write the updated config back to the file.
     updatedConfigData="$(SetJSONConfigSecuritySetting "$configData" "Passphrase" "$passphrase")"
+    if [[ -z "$updatedConfigData" ]]; then
+        echo "AdminController: failed to update config data with new passphrase." >&2
+
+        local err_status_code=500
+        local err_content="Internal Server Error - Failed to update config data with the new passphrase."
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
     UpdateConfigFile "$updatedConfigData"
 
      #update the response body to indicate that the login was successful, 200 is assigned by default.

@@ -69,15 +69,8 @@ DelegateRequestToBashletEngine() {
         echo "BashletEngine: A non-existent or invalid bashlet path was specified for route: $route_path" >&2
 
         local err_status_code=500
-        local err_status_message="$(GetStatusMsgForCode $err_status_code)"
         local err_content="A non-existent or invalid bashlet path was specified for route: $route_path"
-        #if the client making the request accepts HTML, we redirect them to a user friendly, html-based error page, otherwise we return a JSON error response.
-         if requestAcceptsHtml "$bashletRequest"; then
-           DispatchBashletRedirectResponse "/sys/ui/errors-dynamic.html?status=$err_status_code&message=$err_status_message&content=$err_content"
-        else
-            SendErrorResponse "$err_status_code" "$err_content"
-        fi
-        
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$bashletRequest"
         return 1
     fi
 
@@ -90,14 +83,8 @@ DelegateRequestToBashletEngine() {
         echo "BashletEngine: Bashlet file not found or is unreadable: $absolute_bashlet_file_path" >&2
         
         local err_status_code=404
-        local err_status_message="$(GetStatusMsgForCode $err_status_code)"
         local err_content="Bashlet file not found or is unreadable: $absolute_bashlet_file_path"
-        #if the client making the request accepts HTML, we redirect them to a user friendly, html-based error page, otherwise we return a JSON error response.
-        if requestAcceptsHtml "$bashletRequest"; then
-           DispatchBashletRedirectResponse "/sys/ui/errors-dynamic.html?status=$err_status_code&message=$err_status_message&content=$err_content"
-        else
-            SendErrorResponse "$err_status_code" "$err_content"
-        fi
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$bashletRequest"
         return 1
     fi
         
@@ -168,10 +155,12 @@ DelegateRequestToBashletEngine() {
     # to indicate that no function route in the bashlet matched the request path.
     if [[ -z "$route_metadata" ]]; then
         echo "BashletEngine: No function route in bashlet '$absolute_bashlet_file_path' matched request path '$sanitized_request_path'" >&2
-        local error_response
-        error_response="$(BuildBashletErrorResponse 404 "No function route in bashlet '$absolute_bashlet_file_path' matched request path '$sanitized_request_path' for method '$request_method'")"
-        DispatchBashletResponse "$error_response"
+        
+        local err_status_code=404
+        local err_content="No handler function route in Bashlet: $absolute_bashlet_file_path matched request path: $sanitized_request_path for method: $request_method"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$bashletRequest"
         return 1
+        
     fi
 
     local func_name
@@ -181,9 +170,10 @@ DelegateRequestToBashletEngine() {
     # to indicate that the bashlet is misconfigured and cannot be invoked.
     if [[ -z "$func_name" ]]; then
         echo "BashletEngine: No function name found in route metadata." >&2
-        local error_response
-        error_response="$(BuildBashletErrorResponse 500 "No function name found in route configuration for bashlet '$absolute_bashlet_file_path'")"
-        DispatchBashletResponse "$error_response"
+
+        local err_status_code=500
+        local err_content="No function name found in route configuration for bashlet '$absolute_bashlet_file_path'"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$bashletRequest"
         return 1
     fi
 
@@ -191,9 +181,10 @@ DelegateRequestToBashletEngine() {
     # to indicate that the bashlet is misconfigured and cannot be invoked.
     if [[ "$(type -t "$func_name")" != "function" ]]; then
         echo "BashletEngine: Function '$func_name' not found in bashlet '$absolute_bashlet_file_path'" >&2
-        local error_response
-        error_response="$(BuildBashletErrorResponse 500 "Function '$func_name' not found in bashlet '$absolute_bashlet_file_path'")"
-        DispatchBashletResponse "$error_response"
+        
+        local err_status_code=500
+        local err_content="Function '$func_name' not found in bashlet '$absolute_bashlet_file_path'"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$bashletRequest"
         return 1
     fi
 

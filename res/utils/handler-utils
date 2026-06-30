@@ -26,6 +26,8 @@ ReadAndParseRequest(){
   local query_json='{}'
   local content_type #we store this as we may to do additional parsing of the body based on this value. e.g where its: "application/x-www-form-urlencoded" 
   local form_data_json='{}'
+  local cookies_raw=''
+  local cookies_json='{}'
 
   read -r -t 5 method path protocol || return 1
 
@@ -52,7 +54,10 @@ ReadAndParseRequest(){
       # as we may need to do additional parsing of the body based on this value. e.g where its: "application/x-www-form-urlencoded" 
       [[ $name == "Content-Type" ]] && content_type=$value
 
-      
+      # if the current header is "Cookie" we store it in a variable for later use, as we may need to do additional parsing of 
+      # the cookies name value pairs  e.g where its: "session_id=abc123; path=/; secure; HttpOnly; SameSite=Strict"
+      [[ $name == "Cookie" ]] && cookies_raw=$value
+
       headers=$(
           jq \
               --arg name "$name" \
@@ -87,7 +92,7 @@ ReadAndParseRequest(){
 
   # if the request content-type header is equal to: "application/x-www-form-urlencoded" then the
   # body of the request will be a series of name-value pairs separated by the "&" character, 
-  #we will parse these into a json object of key value pairs, taking care to handle the case where the request may not have any body parameters.
+  # we will parse these into a json object of key value pairs, taking care to handle the case where the request may not have any body parameters.
   if [[ "$content_type" == "application/x-www-form-urlencoded" && -n "$body" ]]; then
       IFS='&' read -ra body_params <<< "$body"
       local body_json='{}'
@@ -105,6 +110,29 @@ ReadAndParseRequest(){
       form_data_json="$body_json"
   fi
 
+  #  next if one or more cookies have been provided in the request we parse each one into a json object of key value pairs, taking care to 
+  # handle the case where the request may not have any cookies, and return the cookies as a json object.
+  if [[ -n "$cookies_raw" ]]; then
+      IFS=';' read -ra cookie_params <<< "$cookies_raw"
+      for cookie in "${cookie_params[@]}"; do
+        cookie="${cookie#${cookie%%[![:space:]]*}}"
+        cookie="${cookie%${cookie##*[![:space:]]}}"
+        [[ -z "$cookie" ]] && continue
+
+        local name=${cookie%%=*}
+        local value=${cookie#*=}
+
+        cookies_json=$(
+          jq \
+            --arg name "$name" \
+            --arg value "$value" \
+            '. + {($name): $value}' \
+            <<< "$cookies_json"
+        )
+      done
+  fi
+
+
   jq -n \
       --arg method "$method" \
       --arg path "$path" \
@@ -113,6 +141,7 @@ ReadAndParseRequest(){
         --argjson headers "$headers" \
         --argjson query_string "$query_json" \
         --argjson form_data "$form_data_json" \
+        --argjson cookies "$cookies_json" \
       '{
           method: $method,
           path: $path,
@@ -120,7 +149,8 @@ ReadAndParseRequest(){
           headers: $headers,
           query_string: $query_string,
           body: $body,
-          form_data: $form_data
+          form_data: $form_data,
+          cookies: $cookies
       }'
 
 }
@@ -624,6 +654,17 @@ ParseFormDataParam() {
   local request="$1"
   local parameter_name="$2"
   jq -r --arg parameter_name "$parameter_name" '.form_data[$parameter_name] // empty' <<< "$request"
+}
+
+parseRequestCookies() {
+  local request="$1"
+  jq -r '.cookies' <<< "$request"
+}
+
+parseRequestCookiesParam() {
+  local request="$1"
+  local cookie_name="$2"
+  jq -r --arg cookie_name "$cookie_name" '.cookies[$cookie_name] // empty' <<< "$request"
 }
 
 StatusMsgForCode() {

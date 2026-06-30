@@ -87,12 +87,36 @@ DispatchBashletResponse(){
     printf "Content-Type: %s\r\n" "$content_type"
     printf "Content-Length: %s\r\n" "${#content}"
 
+    # next grab references to the headers array in the response object and iterate over each header,
+    # constructing a header line for each one.
     while IFS= read -r header_line; do
       [[ -z "$header_line" ]] && continue
       printf "%s\r\n" "$header_line"
     done < <(jq -r 'to_entries[]? | "\(.key): \(.value)"' <<< "$headers")
 
-     printf "Connection: close\r\n"
+
+    # next grab  references to the cookies array in the response object and iterate over each cookie, 
+    # constructing the Set-Cookie header for each one.
+    while IFS= read -r cookie_line; do
+      [[ -z "$cookie_line" ]] && continue
+      printf "Set-Cookie: %s\r\n" "$cookie_line"
+    done < <(jq -r '
+      .cookies[]? |
+      [
+        "\(.name)=\(.value)",
+        (if .path then "Path=\(.path)" else empty end),
+        (if .domain then "Domain=\(.domain)" else empty end),
+        (if .expires then "Expires=\(.expires)" else empty end),
+        (if .maxAge != null then "Max-Age=\(.maxAge)" else empty end),
+        (if .secure == true then "Secure" else empty end),
+        (if .httpOnly == true then "HttpOnly" else empty end),
+        (if .sameSite then "SameSite=\(.sameSite)" else empty end),
+        (if .partitioned == true then "Partitioned" else empty end)
+      ]
+      | join("; ")
+    ' <<< "$responseObject")
+
+     printf "Connection: close\r\n" # write final connection close header.
      printf "\r\n"
      printf "%s" "$content"
 
@@ -104,13 +128,6 @@ DispatchBashletResponse(){
      responseObject="$(jq --arg header_name "$header_name" --arg header_value "$header_value" '.headers[$header_name] = $header_value' <<< "$responseObject")"
      bashletResponse="$responseObject" # update the response object in the BashletEngine context to include the X-Request-Completed header, this will prevent the BashletEngine from attempting to send a second response to the client.
     
-     #echo "RESPONSE OBJECT FROM INSIDE DISPATCH FUNCTION: $responseObject" >&2
-     #echo "***Response variable name: $bashletResponseVarName" >&2
-     #local -n responseObject="$bashletResponseVarName"
-     #responseObject="$(SetBashletResponseHeader  "$responseObject" 'X-Request-Completed' 'true')"
-
-   
-
 }
 
 DispatchBashletRedirectResponse() {
@@ -187,6 +204,18 @@ DeleteRequestHeader() {
   local request="$1"
   local header_name="$2"
   jq -c --arg header_name "$header_name" 'del(.headers[$header_name])' <<< "$request"
+}
+
+
+ParseBashletRequestCookies() {
+  local request="$1"
+  jq -r '.cookies' <<< "$request"
+}
+
+ParseBashletRequestCookiesParam() {
+  local request="$1"
+  local cookie_name="$2"
+  jq -r --arg cookie_name "$cookie_name" '.cookies[$cookie_name] // empty' <<< "$request"
 }
 
 # -----------------------------------------------------public bashlet response setter functions---------------------------------------------------
@@ -456,6 +485,128 @@ EnsureLeadingSlash() {
     [[ "$path" == /* ]] || path="/$path"
 
     printf '%s' "$path"
+}
+
+
+# Adds cookie to the provided bashlet response object, with the specified name and value, and optional attributes
+# and returns the updated response object. The optional attributes can be specified as key=value pairs, e.g:
+# SetCookieInBashletResponse "$response" "session_id" "abc123" path=/ secure=true httpOnly=true sameSite=Strict
+# Note: Only reponseObject, cookieName and cookieValue are required, all other attributes are optional.
+SetCookieInBashletResponse() {
+
+    local -n responseObject="$1"
+    local cookieName="$2"
+    local cookieValue="$3"
+
+    shift 3
+
+    #
+    # Build the cookie JSON object.
+    #
+    local cookieJson
+    cookieJson="$(
+        jq -n \
+            --arg name "$cookieName" \
+            --arg value "$cookieValue" \
+            '{
+                name: $name,
+                value: $value
+            }'
+    )"
+
+    #
+    # Parse optional key=value arguments.
+    #
+    while (($#)); do
+
+        local key="${1%%=*}"
+        local value="${1#*=}"
+
+        case "$key" in
+
+            path)
+                cookieJson="$(jq --arg v "$value" '.path = $v' <<<"$cookieJson")"
+                ;;
+
+            domain)
+                cookieJson="$(jq --arg v "$value" '.domain = $v' <<<"$cookieJson")"
+                ;;
+
+            expires)
+                cookieJson="$(jq --arg v "$value" '.expires = $v' <<<"$cookieJson")"
+                ;;
+
+            maxAge)
+                cookieJson="$(jq --argjson v "$value" '.maxAge = $v' <<<"$cookieJson")"
+                ;;
+
+            secure)
+                cookieJson="$(jq --argjson v "$value" '.secure = $v' <<<"$cookieJson")"
+                ;;
+
+            httpOnly)
+                cookieJson="$(jq --argjson v "$value" '.httpOnly = $v' <<<"$cookieJson")"
+                ;;
+
+            sameSite)
+                cookieJson="$(jq --arg v "$value" '.sameSite = $v' <<<"$cookieJson")"
+                ;;
+
+            partitioned)
+                cookieJson="$(jq --argjson v "$value" '.partitioned = $v' <<<"$cookieJson")"
+                ;;
+
+            *)
+                echo "Unknown cookie option: $key" >&2
+                return 1
+                ;;
+
+        esac
+
+        shift
+
+    done
+
+    #
+    # Ensure the cookies array exists, then append.
+    #
+    responseObject="$(
+        jq \
+            --argjson cookie "$cookieJson" \
+            '
+            .cookies //= []
+            | .cookies += [$cookie]
+            ' <<<"$responseObject"
+    )"
+
+
+}
+
+GetCookieInBashletrequest() {
+    local request="$1"
+    local cookie_name="$2"
+    jq -r --arg cookie_name "$cookie_name" '.cookies[$cookie_name] // empty' <<< "$request"
+}
+
+
+GetBashletResponseCookies() {
+    local responseObject="$1"
+    jq -c '.cookies // []' <<< "$responseObject"
+}
+
+DeleteBashletResponseCookie() {
+    local -n responseObject="$1"
+    local cookieName="$2"
+
+    responseObject="$(jq --arg cookieName "$cookieName" 'del(.cookies[] | select(.name == $cookieName))' <<< "$responseObject")"
+}
+
+ExpireBashletResponseCookie() {
+    local -n responseObject="$1"
+    local cookieName="$2"
+
+    # Set the cookie's expiration date to a past date to expire it.
+    responseObject="$(jq --arg cookieName "$cookieName" '(.cookies[] | select(.name == $cookieName) | .expires) = "Thu, 01 Jan 1970 00:00:00 GMT"' <<< "$responseObject")"
 }
 
 

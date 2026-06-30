@@ -20,7 +20,16 @@ doSignin(){
 
     echo "AdminController: inside doSignin..." >&2
 
-    # first and foremost parse the autentication credentials that were posted via the login form
+    # first and foremost attempt to parse existing auth cookie from the request, 
+    # if it exists then we will automatically consider the user to be logged in and return a success response.
+    authCookie="$(ParseBashletRequestCookiesParam "$request" 'mocktail_auth_token')"
+    if [[ -n "$authCookie" ]]; then
+        echo "AdminController: existing auth cookie found, user is already logged in." >&2
+        SetBashletResponseBody "$response" '{"status": "success", "message": "user is already logged in", "endpoint": "/doSignin", "method": "POST"}'
+        return 0
+    fi
+
+    # parse the autentication credentials that were posted via the login form
     email="$(ParseFormDataParam "$request" 'email')"
     password="$(ParseFormDataParam "$request" 'password')"
 
@@ -53,6 +62,10 @@ doSignin(){
     # Next, compare the computed passphrase with the stored passphrase, if they match then the login is successful, otherwise return an error to the user.
     if [ "$passphrase" == "$storedPassphrase" ]; then
         echo "AdminController: login successful." >&2
+
+        # call into our helper function to set the auth cookie in the response object, which will be sent back to the client.
+        setAuthcookieInResponse "$response" "$passphrase"
+
         SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/doSignin", "method": "POST"}'
     else
         echo "AdminController: login failed - invalid credentials." >&2
@@ -63,10 +76,7 @@ doSignin(){
         return 1
     fi
 
-    # parse body from the request, see the POST method for the expected body format.
-    # requestBody="$(ParseBashletRequestBody "$request")"
-    # echo "THE RECEIVED REQUEST BODY: $requestBody" >&2
-    # echo "THE RECEIVED REQUEST OBJECT: $request" >&2
+   
    
 }
 
@@ -162,6 +172,28 @@ doLoginPut(){
 
 }
 
+
+
+
+
+# ---------------------------------------------private utlity/ helper funnctions-------------------------------------------
+
+setAuthCookieInResponse() {
+    local response="$1"
+    local cookieValue="$2"
+    local cookieName="mocktail_auth_token"
+    
+    
+    SetCookieInBashletResponse "$response" "$cookieName" "$cookieValue" "path=/" "secure=true" "httpOnly=true" "sameSite=lax"
+
+}
+
+getAuthCookieFromRequest() {
+    local request="$1"
+    local cookieName="mocktail_auth_token"
+
+    ParseCookieFromBashletRequest "$request" "$cookieName"
+}
 
 
 

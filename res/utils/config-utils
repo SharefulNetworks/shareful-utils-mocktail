@@ -58,6 +58,11 @@ SetJSONConfigSecuritySetting(){
     jq -cr --arg setting "$setting" --arg value "$value" '.SecuritySettings[$setting] = $value' <<< "$json"
 }
 
+
+# Higher-level utility functions.
+
+# Updates the config file with the provided JSON string. If the provided JSON is invalid, 
+# the function will refuse to write it to the config file and will return an error.
 UpdateConfigFile() {
     local newConfig="$1"
     local configPath="res/config.json"
@@ -70,6 +75,16 @@ UpdateConfigFile() {
         return 1
     fi
     mv "$tempFile" "$configPath"
+}
+
+# Retrieves the stored passphrase from the config JSON, where it exists in the SecuritySettings object. 
+# If the passphrase is not found, the function will return an empty string. This is a shorthand
+# utility function that combines reading the config JSON from the host file system and parsing 
+# the passphrase setting.
+GetStoredPassphraseFromConfig() {
+    local readConfig
+    readConfig="$(ReadServerJSONConfig)"
+    ParseJSONConfigSecuritySetting "$readConfig" "Passphrase"
 }
 
 

@@ -173,7 +173,17 @@ DelegateRequestToBashletEngine() {
 
         # check if the user is authenticated by checking for the presence of the auth cookie in the request object.
         authCookie="$(GetCookieInBashletRequest "$bashletRequest" "$AUTH_TOKEN_COOKIE_NAME")"
-        if [[ -z "$authCookie" ]]; then
+
+        # where an auth cookie exists we check thats its valid, we'll need the stored passphrase from
+        # the config file to do this, where the passphrase is not found an empty string will be returned
+        # and the check will subsequently fail, thus we don't need to explicitly check for the passphrase here, 
+        # we just check if the auth cookie is valid.
+        storedPassphrase="$(GetStoredPassphraseFromConfig)"
+
+
+        # if the auth cookoie does not exist or is invalid we redirect the user to the signin page, 
+        # passing the original request path as a query parameter for redirection after successful signin.
+        if [[ -z "$authCookie" ]] || ! CheckAuthSessionToken "$authCookie" "$storedPassphrase"; then
             echo "BashletEngine: Received request to secure route: $sanitized_request_path, but user is not currently authenticated, redirecting to signin page..." >&2
 
             # parse the route handler function path from the route_metadata.

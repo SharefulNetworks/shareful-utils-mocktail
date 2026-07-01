@@ -22,19 +22,9 @@ doSignin(){
 
     # 0) PREAMBLE: Ensure we have loaded in the data required to undertake the signin process.
 
-    # attempt to read the current server configuration data from the JSON config file.
-    configData="$(ReadServerJSONConfig)"
-    if [[ -z "$configData" ]]; then
-        echo "AdminController: failed to read server configuration data from config file." >&2
-
-        local err_status_code=500
-        local err_content="Internal Server Error - Failed to read server configuration data from config file (config.json). If the file exists its likely corrupted, please delete it and restart the server."
-        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
-        return 1
-    fi
-
-    # attempt to obtain the stored passphrase from the config file, where this fails we will reject the login attempt and return an error to the user.
-    storedPassphrase="$(ParseJSONConfigSecuritySetting "$configData" "Passphrase")"
+    # attempt to obtain the stored passphrase from the config file, where this fails we will reject 
+    # the login attempt and return an error to the user.
+    storedPassphrase="$(GetStoredPassphraseFromConfig)"
     if [ -z "$storedPassphrase" ]; then
         echo "AdminController: No stored auth passphrase found in config file, login attempt rejected." >&2
 
@@ -59,13 +49,13 @@ doSignin(){
 
 
 
-    # 1 )IF AN AUTH COOKIE ALrEADY EXISTS: and is valid then we may short-circuit the login process and redirect user
+    # 1 )IF AN AUTH COOKIE ALREADY EXISTS: and is valid then we may short-circuit the login process and redirect user
     # to the server home page.
     authCookie="$(getAuthCookieFromRequest "$request")"
     if [[ -n "$authCookie" ]]; then
         if CheckAuthSessionToken "$authCookie" "$storedPassphrase"; then
             
-            echo "AdminController: user is already logged in to a valid session, redirecting to: hom" >&2
+            echo "AdminController: user is already logged in to a valid session, redirecting to: home" >&2
             
             # redirect user to the provided "signin success" url.
             DispatchBashletRedirectResponse "/" "$response"
@@ -77,7 +67,7 @@ doSignin(){
 
 
 
-    #2) OTHERWISE: We accepts the authentication credentials from the user, compute the passphrase and validate it
+    #2) OTHERWISE: We accept the authentication credentials from the user, compute the passphrase and validate it
     # against the stored passphrase we extracted from the config file above...w
 
     # parse the autentication credentials that were posted via the login form

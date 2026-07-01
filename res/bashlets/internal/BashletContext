@@ -141,13 +141,15 @@ DispatchBashletRedirectResponse() {
   local content="<html><body><p>$status_code $status_message</p><p>Redirecting to <a href=\"$redirect_url\">$redirect_url</a></p></body></html>"
 
   if [[ -n "$response_ref" ]]; then
+
     local -n responseObject="$response_ref"
-    echo "Existing Response Object: $responseObject" >> ./response.log
     SetBashletResponseStatusCode "$response_ref" "$status_code"
     SetBashletResponseHeader "$response_ref" "Location" "$redirect_url"
     SetBashletResponseContentType "$response_ref" "$content_type"
     SetBashletResponseBody "$response_ref" "$content"
     DispatchBashletResponse "$responseObject"
+    # echo "Updated Response Object: $responseObject" >> ./response.log
+
   else
     local responseObject
     responseObject=$(BuildDefaultBashletResponseObject "$status_code" "$headers" "$content_type" "$content")
@@ -628,6 +630,60 @@ ExpireBashletResponseCookie() {
         end
     ' <<< "$responseObject")"
 }
+
+# Generates an admin session token, which is a JSON object containing a timestamp, a random salt value and a token signature.
+GenerateAuthSessionToken(){
+    local userPassphrase="$1"
+
+    # build up a session token signature using the user passphrase, current timestamp and a random salt value.
+    local timestamp
+    timestamp=$(date +%s)
+    local randomSalt
+    randomSalt=$(openssl rand -hex 16)
+    local sessionTokenSignature
+    sessionTokenSignature=$(echo -n "${userPassphrase}${timestamp}${randomSalt}" | openssl dgst -sha512 | awk '{print $2}')
+
+    # utilise JQ to create the session token JSON object, which will be returned to the caller. 
+    # critically we omit the passphrase thereby making it almost imposible for an attacker to spoof a valid
+    # session token by simply recreating the signature, as to do so they would need to know/brute force the 512-bit passphrase,
+    # used to generate it... :) 
+    jq -nc --arg tokenSignature "$sessionTokenSignature" --arg timestamp "$timestamp" --arg randSalt "$randomSalt" \
+        '{
+            timestamp: $timestamp,
+            randSalt: $randSalt,
+            tokenSignature: $tokenSignature,
+        }'    
+    
+}
+
+# Check the validity of the provided session token, by re-generating the expected token signature 
+# using a secret (i.e. the user passphrase), timestamp and random salt, and comparing it with the 
+# provided token signature.
+CheckAuthSessionToken() {
+    local sessionToken="$1"
+    local userPassphrase="$2"
+
+    # extract the timestamp, random salt and token signature from the session token JSON object.
+    local timestamp
+    timestamp=$(jq -r '.timestamp' <<< "$sessionToken")
+    local randomSalt
+    randomSalt=$(jq -r '.randSalt' <<< "$sessionToken")
+    local tokenSignature
+    tokenSignature=$(jq -r '.tokenSignature' <<< "$sessionToken")
+
+    # re-generate the expected token signature using the provided user passphrase, timestamp and random salt.
+    local expectedTokenSignature
+    expectedTokenSignature=$(echo -n "${userPassphrase}${timestamp}${randomSalt}" | openssl dgst -sha512 | awk '{print $2}')
+
+    # compare the provided token signature with the expected token signature.
+    if [[ "$tokenSignature" == "$expectedTokenSignature" ]]; then
+        return 0  # valid
+    else
+        return 1  # invalid
+    fi
+
+}
+
 
 
 

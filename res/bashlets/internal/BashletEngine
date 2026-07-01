@@ -149,7 +149,7 @@ DelegateRequestToBashletEngine() {
             ' <<< "$BASHLET_ANNOTATION_METADATA_FROM_PARENT_PROC"
     )"
 
-    #echo "ROUTE DATA IS: $route_metadata" >&2
+    echo "ROUTE DATA IS: $route_metadata" >&2
 
     # if no route metadata was found for the specified request path, we return a 404 error to the client 
     # to indicate that no function route in the bashlet matched the request path.
@@ -163,6 +163,38 @@ DelegateRequestToBashletEngine() {
         
     fi
 
+    # firstly ascertain if the route is marked as secure if so and the user has not been authenticated we redirect the 
+    # user to the main system signin page, the path to the resource they was attempting to access is passed as a query parameter 
+    # to the signin page so that they can be redirected back to it after successful authentication.
+    if [[ "$(jq -r '.Secure // false' <<< "$route_metadata")" == "true" ]]; then
+
+        echo "BashletEngine: Route is marked as secure, checking if user has authenticated on the server..." >&2
+
+
+        # check if the user is authenticated by checking for the presence of the auth cookie in the request object.
+        authCookie="$(GetCookieInBashletRequest "$bashletRequest" "$AUTH_TOKEN_COOKIE_NAME")"
+        if [[ -z "$authCookie" ]]; then
+            echo "BashletEngine: Received request to secure route: $sanitized_request_path, but user is not currently authenticated, redirecting to signin page..." >&2
+
+            # parse the route handler function path from the route_metadata.
+            local routeHandlerPath="$(jq -r '.Path // empty' <<< "$route_metadata")"
+            
+            # build the redirect URL to the signin page, including the original request path as a 
+            # query parameter for redirection after successful signin. We also  include a warning
+            # message to indicate to the user that they must sign in to access the requested resource.
+            # NOTE: The signin success path MUST be absolute as the redirect will be peformed by the browser as a brand new request.
+            absoluteSigninSuccessRedirectPath="$(realpath -m "/sys/$relative_request_path")"
+            absoluteSigninSuccessRedirectPath="$(UrlEncode "$absoluteSigninSuccessRedirectPath")"
+            warningMessageVal="$(UrlEncode "You must be logged in to access the requested resource.")"
+            local redirect_url="/sys/signin?redirect=$absoluteSigninSuccessRedirectPath&warningMessage=$warningMessageVal"
+
+            # redirect the user to the signin page.
+            DispatchBashletRedirectResponse "$redirect_url"
+            return 0
+        fi
+    fi
+
+    # parse the function name from the JSON route metadata.
     local func_name
     func_name="$(jq -r '.Function // empty' <<< "$route_metadata")"
 
@@ -181,7 +213,7 @@ DelegateRequestToBashletEngine() {
     # to indicate that the bashlet is misconfigured and cannot be invoked.
     if [[ "$(type -t "$func_name")" != "function" ]]; then
         echo "BashletEngine: Function '$func_name' not found in bashlet '$absolute_bashlet_file_path'" >&2
-        
+
         local err_status_code=500
         local err_content="Function '$func_name' not found in bashlet '$absolute_bashlet_file_path'"
         SendBashletErrorResponse "$err_status_code" "$err_content" "$bashletRequest"

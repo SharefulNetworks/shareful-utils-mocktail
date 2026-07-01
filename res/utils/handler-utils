@@ -132,16 +132,15 @@ ReadAndParseRequest(){
       done
   fi
 
-
   jq -n \
       --arg method "$method" \
       --arg path "$path" \
       --arg protocol "$protocol" \
-        --arg body "$body" \
-        --argjson headers "$headers" \
-        --argjson query_string "$query_json" \
-        --argjson form_data "$form_data_json" \
-        --argjson cookies "$cookies_json" \
+      --arg body "$body" \
+      --argjson headers "$headers" \
+      --argjson query_string "$query_json" \
+      --argjson form_data "$form_data_json" \
+      --argjson cookies "$cookies_json" \
       '{
           method: $method,
           path: $path,
@@ -559,6 +558,14 @@ urlDecode() {
     local decoded
     decoded=$(printf '%b' "${encoded//%/\\x}")
     echo "$decoded"
+}
+
+# provided with a string, this function will URL encode it and return the resultant encoded string.
+urlEncode(){
+  local value="$1"
+  local encoded
+  encoded=$(jq -nr --arg v "$value" '$v|@uri')
+  echo "$encoded"
 }
 
 

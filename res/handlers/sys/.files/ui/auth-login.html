@@ -24,7 +24,46 @@
 
   gtag('config', 'UA-94034622-3');
 </script>
-<!-- /END GA --></head>
+<!-- /END GA -->
+
+<!-- Get redirect URL -->
+<script>
+ 
+  document.addEventListener("DOMContentLoaded", function () {
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectURL = urlParams.get('redirect');
+    const errorMessage = urlParams.get('errorMessage');
+    const warningMessage = urlParams.get('warningMessage');
+
+
+    if (errorMessage) {
+      const errorDiv = document.getElementById('error-message');
+      errorDiv.textContent = errorMessage;
+      errorDiv.style.display = 'block';
+    }
+
+    if (warningMessage) {
+      const warningDiv = document.getElementById('warning-message');
+      warningDiv.textContent = warningMessage;
+      warningDiv.style.display = 'block';
+    }
+
+    if (redirectURL) {
+      const form = document.querySelector('form');
+      const actionUrl = new URL(form.getAttribute('action'), window.location.href);
+      const normalizedRedirectURL = redirectURL.replace(/^\/+/, '/');
+      actionUrl.searchParams.set('redirect', normalizedRedirectURL);
+      form.action = actionUrl.toString();
+    }
+
+  })
+
+
+
+</script>
+
+</head>
 
 <body>
   <div id="app">
@@ -37,10 +76,14 @@
             </div>
 
             <div class="card card-primary">
-              <div class="card-header"><h4>Login</h4></div>
+              <div class="card-header">
+                <h4>Login</h4>
+              </div>
 
               <div class="card-body">
-                <form method="POST" action="admin/doSignin" class="needs-validation" novalidate="">
+                <div id="error-message" class="text-danger" style="display: none; font-weight: bold; padding-bottom: 5px; text-align: center;"></div>
+                <div id="warning-message" class="text-warning" style="display: none; font-weight: bold; padding-bottom: 5px; text-align: center;"></div>
+                <form method="POST" action="admin/doSignin?" class="needs-validation" novalidate="">
                   <div class="form-group">
                     <label for="email">Email</label>
                     <input id="email" type="email" class="form-control" name="email" tabindex="1" required autofocus>

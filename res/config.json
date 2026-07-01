@@ -11,6 +11,7 @@
     "Passphrase": "5fe29cd136e8b48124fd9c15cef6454707f070c5a094c9abff7e67050c0cc0d580f1252638b5c510debe04b74fcc836575e7d3063ca44ea093f6d2f459b4e1e0  -",
     "AuthenticationMethod": "passphrase-and-token",
     "TokenExpirationMinutes": 60,
+    "AuthTokenCookieName": "mocktail_auth_token",
     "EnableCORS": false,
     "AllowedOrigins": [
       "*"

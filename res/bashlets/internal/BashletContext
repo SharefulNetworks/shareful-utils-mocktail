@@ -116,6 +116,7 @@ DispatchBashletResponse(){
       | join("; ")
     ' <<< "$responseObject")
 
+
      printf "Connection: close\r\n" # write final connection close header.
      printf "\r\n"
      printf "%s" "$content"
@@ -131,16 +132,27 @@ DispatchBashletResponse(){
 }
 
 DispatchBashletRedirectResponse() {
-    local redirect_url="$1"
-    local status_code=302
-    local status_message="$(GetStatusMsgForCode $status_code)"
-    local headers="{\"Location\": \"$redirect_url\"}"
-    local content_type="text/html"
-    local content="<html><body><p>$status_code $status_message</p><p>Redirecting to <a href=\"$redirect_url\">$redirect_url</a></p></body></html>"
+  local redirect_url="$1"
+  local response_ref="${2:-}"
+  local status_code=302
+  local status_message="$(GetStatusMsgForCode $status_code)"
+  local headers="{\"Location\": \"$redirect_url\"}"
+  local content_type="text/html"
+  local content="<html><body><p>$status_code $status_message</p><p>Redirecting to <a href=\"$redirect_url\">$redirect_url</a></p></body></html>"
 
+  if [[ -n "$response_ref" ]]; then
+    local -n responseObject="$response_ref"
+    echo "Existing Response Object: $responseObject" >> ./response.log
+    SetBashletResponseStatusCode "$response_ref" "$status_code"
+    SetBashletResponseHeader "$response_ref" "Location" "$redirect_url"
+    SetBashletResponseContentType "$response_ref" "$content_type"
+    SetBashletResponseBody "$response_ref" "$content"
+    DispatchBashletResponse "$responseObject"
+  else
     local responseObject
     responseObject=$(BuildDefaultBashletResponseObject "$status_code" "$headers" "$content_type" "$content")
     DispatchBashletResponse "$responseObject"
+  fi
 }
 
 
@@ -697,6 +709,23 @@ GetStatusMsgForCode() {
 esac
 
 } 
+
+
+# provided with a URL encoded string, this function will decode it and return the resultant decoded string.
+UrlDecode() {
+    local encoded="$1"
+    local decoded
+    decoded=$(printf '%b' "${encoded//%/\\x}")
+    echo "$decoded"
+}
+
+# provided with a string, this function will URL encode it and return the resultant encoded string.
+UrlEncode(){
+  local value="$1"
+  local encoded
+  encoded=$(jq -nr --arg v "$value" '$v|@uri')
+  echo "$encoded"
+}
 
 
 # ------------------------------------------private generic utility functions------------------------------------------

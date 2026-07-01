@@ -9,6 +9,7 @@ SOCAT_PID=""
 MAX_PROCESSES=50
 MAX_PROCESS_RUNTIME=10
 LISTEN_PORT=3333
+AUTH_TOKEN_COOKIE_NAME="auth_token"
 
 
 # source the config utils script to enable us to read and parse the server configuration JSON file.
@@ -139,6 +140,7 @@ configureServer() {
   MAX_PROCESSES=$(ParseJSONConfigGeneralSetting "$config_json" "MaxConcurrentProcesses") || exit 1
   MAX_PROCESS_RUNTIME=$(ParseJSONConfigGeneralSetting "$config_json" "MaxHandlerProcessRuntime") || exit 1
   LISTEN_PORT=$(ParseJSONConfigGeneralSetting "$config_json" "ListeningPort") || exit 1
+  AUTH_TOKEN_COOKIE_NAME=$(ParseJSONConfigSecuritySetting "$config_json" "AuthTokenCookieName") || exit 1
 
   echo "Mocktail server configured with MaxProcesses=$MAX_PROCESSES, MaxProcessRuntime=$MAX_PROCESS_RUNTIME, and ListenPort=$LISTEN_PORT" >&2
 }
@@ -156,6 +158,7 @@ exportSharedVariables() {
   export SCRIPT_DIR
   export MAX_PROCESSES
   export LISTEN_PORT
+  export AUTH_TOKEN_COOKIE_NAME
 }
 
 

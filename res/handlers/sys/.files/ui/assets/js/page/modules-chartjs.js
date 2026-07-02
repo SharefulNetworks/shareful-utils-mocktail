@@ -29,7 +29,7 @@ var myChart = new Chart(ctx, {
         },
         ticks: {
           beginAtZero: true,
-          stepSize: 2
+          stepSize: 5
         }
       }],
       xAxes: [{

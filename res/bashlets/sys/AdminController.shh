@@ -39,10 +39,10 @@ doSignin(){
     # we will redirect the user to this URL, otherwise we will redirect the user back to the signin page
     # and include the provided redirect URL as a query parameter so that the user can be redirected to the 
     # intended page after any subsequent successful login. Where no success redirect URL is provided we 
-    # will default to the server home page ("/").
+    # will default to the main server dashboard ("/sys/admin/dashboard").
     successredirectURL="$(ParseBashletRequestQueryStringParam "$request" 'redirect')"
     if [ -z "$successredirectURL" ]; then
-        successredirectURL="/"
+        successredirectURL="/sys/admin/dashboard"
     fi
     successredirectURL="$(UrlDecode "$successredirectURL")"
    
@@ -62,7 +62,7 @@ doSignin(){
             echo "AdminController: user is already logged in to a valid session, redirecting to: home" >&2
             
             # redirect user to the provided "signin success" url.
-            DispatchBashletRedirectResponse "/" "$response"
+            DispatchBashletRedirectResponse "$successredirectURL" "$response"
             return 1
         fi
     fi
@@ -222,7 +222,9 @@ viewAdminDashboard(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside viewAdminDashboard..." >&2
+    echo "AdminController: inside viewAdminDashboard, forwarding to admin dashboard..." >&2
+
+     ForwardBashletRequest "/sys/ui/mocktail-dashboard.html"
 
     # first and foremost validate the user is logged in by checking for the presence of the auth cookie in the request, 
     # if it is not present we will return an error to the user.

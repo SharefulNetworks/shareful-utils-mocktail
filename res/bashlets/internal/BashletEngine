@@ -211,7 +211,7 @@ DelegateRequestToBashletEngine() {
 
             # redirect the user to the signin page.
             DispatchBashletRedirectResponse "$redirect_url"
-            return 0
+            return 1
         fi
     fi
 

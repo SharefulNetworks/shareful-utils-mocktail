@@ -444,7 +444,7 @@ handleStaticRouteRequest() {
     fi
   else
     echo "handler-utils: Unsupported route type: $route_type or file path definition for Static route type associated with path: $path, sending error response." >&2
-    DispatchErrorResponse 500 "Unsupported route type: $route_type for path: $path" "application/json" "$request_path" "$request_method" "$request_json_object"
+    DispatchErrorResponse 500 "Unsupported route type: $route_type or file path definition for Static route type associated with path: $path" "application/json" "$request_path" "$request_method" "$request_json_object"
   fi    
   
 }

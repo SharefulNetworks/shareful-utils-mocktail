@@ -212,6 +212,10 @@ doSignout(){
     SetBashletResponseBody "$response" '{"status": "success", "message": "signout successful", "endpoint": "/doSignout", "method": "GET"}'
 }
 
+
+
+
+
 # Navigates to the main admin dashboard which is only accessible to authenticated users.
 # @route method=get path=/dashboard secure=true
 viewAdminDashboard(){

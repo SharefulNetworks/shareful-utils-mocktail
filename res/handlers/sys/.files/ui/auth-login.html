@@ -35,6 +35,7 @@
     const redirectURL = urlParams.get('redirect');
     const errorMessage = urlParams.get('errorMessage');
     const warningMessage = urlParams.get('warningMessage');
+    const infoMessage = urlParams.get('infoMessage');
 
 
     if (errorMessage) {
@@ -47,6 +48,12 @@
       const warningDiv = document.getElementById('warning-message');
       warningDiv.textContent = warningMessage;
       warningDiv.style.display = 'block';
+    }
+
+    if (infoMessage) {
+      const infoDiv = document.getElementById('info-message');
+      infoDiv.textContent = infoMessage;
+      infoDiv.style.display = 'block';
     }
 
     if (redirectURL) {
@@ -83,6 +90,7 @@
               <div class="card-body">
                 <div id="error-message" class="text-danger" style="display: none; font-weight: bold; padding-bottom: 5px; text-align: center;"></div>
                 <div id="warning-message" class="text-warning" style="display: none; font-weight: bold; padding-bottom: 5px; text-align: center;"></div>
+                <div id="info-message" class="text-info" style="display: none; font-weight: bold; padding-bottom: 5px; text-align: center;"></div>
                 <form method="POST" action="admin/doSignin?" class="needs-validation" novalidate="">
                   <div class="form-group">
                     <label for="email">Email</label>

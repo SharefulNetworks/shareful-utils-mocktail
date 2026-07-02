@@ -29,7 +29,7 @@ doSignin(){
         echo "AdminController: No stored auth passphrase found in config file, login attempt rejected." >&2
 
         local err_status_code=403
-        local err_content="Forbidden - No stored auth passphrase found in config file, login attempt rejected. Please ensure that an admin user has been created via the signup process, BEFORE attempting to login."
+        local err_content="Forbidden - No stored auth passphrase found in config file, login attempt rejected. <a href='/sys/signup'><u><b>Please create an System Admin account</b></u></a>,before attempting to signin."
         SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
         return 1
     fi
@@ -38,8 +38,12 @@ doSignin(){
     # parse the any provided redirect URL from the request query parameters, where the login is successful
     # we will redirect the user to this URL, otherwise we will redirect the user back to the signin page
     # and include the provided redirect URL as a query parameter so that the user can be redirected to the 
-    # intended page after any subsequent successful login.
+    # intended page after any subsequent successful login. Where no success redirect URL is provided we 
+    # will default to the server home page ("/").
     successredirectURL="$(ParseBashletRequestQueryStringParam "$request" 'redirect')"
+    if [ -z "$successredirectURL" ]; then
+        successredirectURL="/"
+    fi
     successredirectURL="$(UrlDecode "$successredirectURL")"
    
     # Prerequisites data loaded, we may now begin the signin process...................
@@ -137,7 +141,7 @@ doSignup(){
         echo "AdminController: signup attempt rejected - admin user already exists." >&2
 
         local err_status_code=403
-        local err_content="Forbidden - An existing admin user already exists; only one admin user can be created. Please login to the existing account, if you have forgotten your password please visit the password reset page. "
+        local err_content="Forbidden - An existing admin user already exists; only one admin user can be created. <a href='/sys/signin'><u><b>Please login to the existing account</b></u></a>, if you have forgotten your password please visit the password reset page. "
         SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
         return 1
     fi
@@ -162,10 +166,22 @@ doSignup(){
         SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
         return 1
     fi
-    UpdateConfigFile "$updatedConfigData"
+    UpdateConfigFile "$updatedConfigData" # actually update the config file on disk.
 
-     #update the response body to indicate that the login was successful, 200 is assigned by default.
-    SetBashletResponseBody "$response" '{"status": "success", "message": "signup successful", "endpoint": "/doSignup", "method": "POST"}'
+   
+    # if we have arrived here the signup was successful, we will redirect the user to the signin page with a query parameter 
+    # indicating that the signup was successful and that they should login with their credentials....
+
+    # prep the success info_message we will display to the user on the signin page, which will be passed as a query parameter in the redirect URL.
+    local info_message="Congratulations! Your System Admin account has been created. Please login for the first time using your credentials."
+    
+    # full redirect url
+    local signinPageRedirectURL="/sys/signin?infoMessage=$(UrlEncode "$info_message")"
+
+    # redirect user back to the signin page with the info message as a query parameter.
+    DispatchBashletRedirectResponse "$signinPageRedirectURL"
+    return 0
+
 
 }
 

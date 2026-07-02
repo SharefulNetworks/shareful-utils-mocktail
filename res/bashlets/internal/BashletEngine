@@ -179,23 +179,34 @@ DelegateRequestToBashletEngine() {
         # and the check will subsequently fail, thus we don't need to explicitly check for the passphrase here, 
         # we just check if the auth cookie is valid.
         storedPassphrase="$(GetStoredPassphraseFromConfig)"
-
+        CheckAuthSessionToken "$authCookie" "$storedPassphrase"
+        authCookieValid="$?"
 
         # if the auth cookoie does not exist or is invalid we redirect the user to the signin page, 
         # passing the original request path as a query parameter for redirection after successful signin.
-        if [[ -z "$authCookie" ]] || ! CheckAuthSessionToken "$authCookie" "$storedPassphrase"; then
+        if [[ -z "$authCookie" ]] || [[ "$authCookieValid" -eq 1 ]]; then
             echo "BashletEngine: Received request to secure route: $sanitized_request_path, but user is not currently authenticated, redirecting to signin page..." >&2
 
             # parse the route handler function path from the route_metadata.
             local routeHandlerPath="$(jq -r '.Path // empty' <<< "$route_metadata")"
             
-            # build the redirect URL to the signin page, including the original request path as a 
-            # query parameter for redirection after successful signin. We also  include a warning
-            # message to indicate to the user that they must sign in to access the requested resource.
+            # Build up the signin success path, this is the location we will redirect the user to after successful signin, which is the original request path they were attempting to access.
             # NOTE: The signin success path MUST be absolute as the redirect will be peformed by the browser as a brand new request.
             absoluteSigninSuccessRedirectPath="$(realpath -m "/sys/$relative_request_path")"
             absoluteSigninSuccessRedirectPath="$(UrlEncode "$absoluteSigninSuccessRedirectPath")"
-            warningMessageVal="$(UrlEncode "You must be logged in to access the requested resource.")"
+            
+            # build warning message acording to whether or not the user had a prior valid session
+            # that has now expired.
+            local warningMessageVal
+            if  [[ -n "$authCookie" ]]  &&  [[ "$authCookieValid" -eq 1 ]]; then
+                warningMessageVal="$(UrlEncode "Your session has expired, please sign in again to access the requested resource.")"
+            else
+                warningMessageVal="$(UrlEncode "You must be logged in to access the requested resource.")"
+            fi
+
+            # build the redirect URL to the signin page, including the original request path as a 
+            # query parameter for redirection after successful signin. We also  include a warning
+            # message to indicate to the user that they must sign in to access the requested resource.
             local redirect_url="/sys/signin?redirect=$absoluteSigninSuccessRedirectPath&warningMessage=$warningMessageVal"
 
             # redirect the user to the signin page.

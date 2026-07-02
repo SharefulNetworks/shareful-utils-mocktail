@@ -637,7 +637,7 @@ GenerateAuthSessionToken(){
 
     # build up a session token signature using the user passphrase, current timestamp and a random salt value.
     local timestamp
-    timestamp=$(date +%s)
+    timestamp=$(getTimestamp)
     local randomSalt
     randomSalt=$(openssl rand -hex 16)
     local sessionTokenSignature
@@ -671,7 +671,21 @@ CheckAuthSessionToken() {
     local tokenSignature
     tokenSignature=$(jq -r '.tokenSignature' <<< "$sessionToken")
 
-    # re-generate the expected token signature using the provided user passphrase, timestamp and random salt.
+    # first check if the token hss expired, by comparing the current timestamp with the timestamp in the session token.
+    local currentTimestamp
+    currentTimestamp=$(getTimestamp)
+    local tokentimestampDelta
+    tokentimestampDelta=$(computeTimestampDelta "$timestamp" "$currentTimestamp")
+
+    # check if the token has expired based on the configured expiration time.
+    # we multiply the expiration time in minutes by 60 to convert it to seconds, as the timestamp is in seconds.
+    if [[ $tokentimestampDelta -gt $((AUTH_TOKEN_EXPIRATION_MINUTES * 60)) ]]; then
+        return 1  # invalid - token has expired
+    fi
+
+    # providing the token has not expired, we proceed to validate the token signature.
+    # re-generate the expected token signature using the provided timestamp and random salt plus 
+    # the secret (i.e. the user passphrase) and compare it with the provided token signature.
     local expectedTokenSignature
     expectedTokenSignature=$(echo -n "${userPassphrase}${timestamp}${randomSalt}" | openssl dgst -sha512 | awk '{print $2}')
 
@@ -807,4 +821,16 @@ requestAcceptsHtml() {
     accept="$(ParseBashletRequestHeader "$request" 'Accept')"
 
     [[ "$accept" == *text/html* ]]
+}
+
+getTimestamp() {
+    date +%s
+}
+
+computeTimestampDelta() {
+    local start_timestamp="$1"
+    local end_timestamp="$2"
+
+    local delta=$((end_timestamp - start_timestamp))
+    echo "$delta"
 }

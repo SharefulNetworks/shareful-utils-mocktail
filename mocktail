@@ -10,6 +10,7 @@ MAX_PROCESSES=50
 MAX_PROCESS_RUNTIME=10
 LISTEN_PORT=3333
 AUTH_TOKEN_COOKIE_NAME="auth_token"
+AUTH_TOKEN_EXPIRATION_MINUTES=30
 
 
 # source the config utils script to enable us to read and parse the server configuration JSON file.
@@ -141,8 +142,8 @@ configureServer() {
   MAX_PROCESS_RUNTIME=$(ParseJSONConfigGeneralSetting "$config_json" "MaxHandlerProcessRuntime") || exit 1
   LISTEN_PORT=$(ParseJSONConfigGeneralSetting "$config_json" "ListeningPort") || exit 1
   AUTH_TOKEN_COOKIE_NAME=$(ParseJSONConfigSecuritySetting "$config_json" "AuthTokenCookieName") || exit 1
-
-  echo "Mocktail server configured with MaxProcesses=$MAX_PROCESSES, MaxProcessRuntime=$MAX_PROCESS_RUNTIME, and ListenPort=$LISTEN_PORT" >&2
+  AUTH_TOKEN_EXPIRATION_MINUTES=$(ParseJSONConfigSecuritySetting "$config_json" "TokenExpirationMinutes") || exit 1
+  echo "Mocktail server configured with MaxProcesses=$MAX_PROCESSES, MaxProcessRuntime=$MAX_PROCESS_RUNTIME, ListenPort=$LISTEN_PORT, AuthTokenExpirationMinutes=$AUTH_TOKEN_EXPIRATION_MINUTES" >&2
 }
 
 
@@ -159,6 +160,7 @@ exportSharedVariables() {
   export MAX_PROCESSES
   export LISTEN_PORT
   export AUTH_TOKEN_COOKIE_NAME
+  export AUTH_TOKEN_EXPIRATION_MINUTES
 }
 
 
@@ -179,6 +181,7 @@ createDefaultConfigFile(){
   "SecuritySettings": {
       "Passphrase": "",
       "AuthenticationMethod": "passphrase-and-token",
+      "AuthTokenCookieName": "mocktail_auth_token",
       "TokenExpirationMinutes": 60,
       "EnableCORS": false,
       "AllowedOrigins": ["*"]

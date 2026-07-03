@@ -213,10 +213,7 @@ doSignout(){
 }
 
 
-
-
-
-# Navigates to the main admin dashboard which is only accessible to authenticated users.
+# Navigates to the main admin dashboard which is only accessible to authenticated users, hence the secure route attribute.
 # @route method=get path=/dashboard secure=true
 viewAdminDashboard(){
     request="$1"
@@ -224,22 +221,40 @@ viewAdminDashboard(){
 
     echo "AdminController: inside viewAdminDashboard, forwarding to admin dashboard..." >&2
 
-     ForwardBashletRequest "/sys/ui/mocktail-dashboard.html"
+    ForwardBashletRequest "/sys/ui/mocktail-dashboard.html"
 
-    # first and foremost validate the user is logged in by checking for the presence of the auth cookie in the request, 
-    # if it is not present we will return an error to the user.
-    #authCookie="$(getAuthCookieFromRequest "$request")"
-    #if [[ -z "$authCookie" ]]; then
-#
-    #    echo "AdminController: access to admin dashboard rejected - user is not currently logged in." >&2
-#
-    #    local err_status_code=401
-    #    local err_content="Unauthorized - User is not currently logged in."
-    #    SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
-    #    return 1
-    #fi
-#
-    #SetBashletResponseBody "$response" '{"status": "success", "message": "access granted to admin dashboard", "endpoint": "/viewAdminDashboard", "method": "GET"}'
+}
+
+
+
+
+
+
+# ----------------API endpoint routes they return a JSON-based response, they are intended to be called from within the context of system UI pages---------------
+
+
+# API endpoint to return server stats, such as current process count, uptime, last login time etc.
+# @route method=get path=/api/serverstats
+apiGetServerStats(){
+    request="$1"
+    response="$2"
+
+    echo "AdminController: inside apiGetServerStats..." >&2
+
+    # the current process count may be obtained by the root-handler exported function: GetCurrentServerProcessCount
+    local processCount=$(GetCurrentServerProcessCount)
+
+    # the max process limit is obtained from the environment variable MAX_PROCESSES, which is set in the root-handler.
+    local maxProcessLimit="$MAX_PROCESSES"
+
+    # the server uptime is obtained by computing the delta between the current time and the server start timestamp.
+    local serverStartTimestamp="$SERVER_START_TIMESTAMP"
+    local serverUptime=$(( $(date +%s) - serverStartTimestamp ))
+
+    echo "AdminController: current process count: $processCount, max process limit: $maxProcessLimit, server uptime: $serverUptime" >> serverstats.log
+
+
+
 }
 
 

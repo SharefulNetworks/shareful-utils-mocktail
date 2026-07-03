@@ -5,6 +5,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOCAT_PID=""
 
+
 # declare default server configuration globals, these WILL be overridden by values read from the main server configuration JSON file.
 MAX_PROCESSES=50
 MAX_PROCESS_RUNTIME=10
@@ -161,6 +162,7 @@ exportSharedVariables() {
   export LISTEN_PORT
   export AUTH_TOKEN_COOKIE_NAME
   export AUTH_TOKEN_EXPIRATION_MINUTES
+  export SERVER_START_TIMESTAMP="$(date +%s)"
 }
 
 
@@ -194,7 +196,28 @@ EOL
 }
 
 
+startProcessUsageMonitor(){
 
-#call script entry point.
+  # check if the process usage count history (hidden) fle exists, if not create it. 
+  if [[ ! -f "$SCRIPT_DIR/.process-usage-history.log" ]]; then
+    echo "Process usage history log not found at $SCRIPT_DIR/.process-usage-history.log, creating it..." >&2
+    touch "$SCRIPT_DIR/.process-usage-history.log"
+  
+    # 
+
+  fi
+
+
+  while true; do
+    minute=$(date '+%M')
+    processCounts[$minute]=$(getProcessCount)
+
+    sleep $((60 - $(date '+%S')))
+  done
+
+}
+
+
+# call script entry point.
 startup
 

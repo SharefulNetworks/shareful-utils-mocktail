@@ -1,13 +1,13 @@
 "use strict";
 
 //grab reference to the UI element to render the chart to.
-var ctx = document.getElementById("myChart").getContext('2d');
+var processUtilizationChartContext = document.getElementById("myChart").getContext('2d');
 
 //chart data obtained from the server stats API endpoint.
 var chartData = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,5,0,0,0,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 
 //Instantiate and configure a nw line chart to visualize the process usage stats over the last hour.
-var myChart = new Chart(ctx, {
+var processUtilisationChart = new Chart(processUtilizationChartContext, {
   type: 'line',
   data: {
     //labels should be minutes in an hour, so there should be 60 labels.
@@ -50,8 +50,8 @@ var myChart = new Chart(ctx, {
   }
 });
 
-var ctx = document.getElementById("myChart2").getContext('2d');
-var myChart = new Chart(ctx, {
+var processUtilizationChartContext = document.getElementById("myChart2").getContext('2d');
+var processUtilisationChart = new Chart(processUtilizationChartContext, {
   type: 'bar',
   data: {
     labels: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
@@ -93,8 +93,8 @@ var myChart = new Chart(ctx, {
   }
 });
 
-var ctx = document.getElementById("myChart3").getContext('2d');
-var myChart = new Chart(ctx, {
+var processUtilizationChartContext = document.getElementById("myChart3").getContext('2d');
+var processUtilisationChart = new Chart(processUtilizationChartContext, {
   type: 'doughnut',
   data: {
     datasets: [{
@@ -130,8 +130,8 @@ var myChart = new Chart(ctx, {
   }
 });
 
-var ctx = document.getElementById("myChart4").getContext('2d');
-var myChart = new Chart(ctx, {
+var processUtilizationChartContext = document.getElementById("myChart4").getContext('2d');
+var processUtilisationChart = new Chart(processUtilizationChartContext, {
   type: 'pie',
   data: {
     datasets: [{

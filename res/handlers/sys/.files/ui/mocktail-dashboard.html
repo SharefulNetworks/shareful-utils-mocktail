@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
-  <title>General Dashboard &mdash; Stisla</title>
+  <title>Mocktail - Server Dashboard</title>
 
   <!-- General CSS Files -->
   <link rel="stylesheet" href="assets/modules/bootstrap/css/bootstrap.min.css">
@@ -18,16 +18,24 @@
   <!-- Template CSS -->
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/components.css">
-<!-- Start GA -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-94034622-3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
 
-  gtag('config', 'UA-94034622-3');
-</script>
-<!-- /END GA --></head>
+  <!-- Start GA -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-94034622-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-94034622-3');
+  </script>
+  <!-- /END GA -->
+
+  <!-- Mocktail Dashboard Specific Scripts -->
+  <script src="assets/js/page/mocktail-dashboard.js"></script>
+   
+
+
+</head>
 
 <body>
   <div id="app">
@@ -414,7 +422,7 @@
                     <h4>Max Processes</h4>
                   </div>
                   <div class="card-body">
-                    55
+                    <span id="max-process-limit">--</span>
                   </div>
                 </div>
               </div>
@@ -429,7 +437,7 @@
                     <h4>Used Processes</h4>
                   </div>
                   <div class="card-body">
-                    42
+                    <span id="used-processes">--</span>
                   </div>
                 </div>
               </div>
@@ -444,7 +452,7 @@
                     <h4>Mock APIs</h4>
                   </div>
                   <div class="card-body">
-                    1
+                    <span id="mock-apis">--</span>
                   </div>
                 </div>
               </div>
@@ -459,7 +467,7 @@
                     <h4>Server Uptime</h4>
                   </div>
                   <div class="card-body">
-                    <span style="font-size: 13px;">00:00:00</span>
+                    <span id="server-uptime" style="font-size: 16px;">00:00:00</span>
                   </div>
                 </div>
               </div>
@@ -506,7 +514,11 @@
                     <h4>Server Process Utilisation (per minute)</h4>
                   </div>
                   <div class="card-body">
-                    <canvas id="myChart"></canvas>
+                    <div id="process-utilization-chart-scroll" style="overflow-x: auto; width: 100%;">
+                      <div style="min-width: 3200px; height: 320px;">
+                        <canvas id="myChart" style="width: 100%; height: 100%;"></canvas>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div> 
@@ -653,8 +665,7 @@
   <!-- Page Specific JS File -->
   <script src="assets/js/page/index-0.js"></script>
 
-  <!-- ChartJS -->
-  <script src="assets/js/page/modules-chartjs.js"></script>
+
 
   <!-- Template JS File -->
   <script src="assets/js/scripts.js"></script>

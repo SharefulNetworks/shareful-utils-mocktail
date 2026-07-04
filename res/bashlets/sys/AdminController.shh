@@ -241,8 +241,8 @@ apiGetServerStats(){
 
     echo "AdminController: inside apiGetServerStats..." >&2
 
-    # the current process count may be obtained by the root-handler exported function: GetCurrentServerProcessCount
-    local processCount=$(GetCurrentServerProcessCount)
+    # get the Mocktail server's process utilization history.
+    local processUtilizationHistory="$(getServerProcessUtilizationStats)"
 
     # the max process limit is obtained from the environment variable MAX_PROCESSES, which is set in the root-handler.
     local maxProcessLimit="$MAX_PROCESSES"
@@ -251,9 +251,14 @@ apiGetServerStats(){
     local serverStartTimestamp="$SERVER_START_TIMESTAMP"
     local serverUptime=$(( $(date +%s) - serverStartTimestamp ))
 
-    echo "AdminController: current process count: $processCount, max process limit: $maxProcessLimit, server uptime: $serverUptime" >> serverstats.log
-
-
+    # now that we have the raw system stats build up a json object to return to the client.
+    successResponseBody="{}"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.maxProcessLimit' "$maxProcessLimit")"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.serverUptime' "$serverUptime")"
+    successResponseBody="$(SetJSONField "$successResponseBody" '.processUtilizationHistory' "$processUtilizationHistory")"
+    
+    # set the response body to the JSON object we have built.
+    SetBashletResponseBody "$response" "$successResponseBody"
 
 }
 
@@ -288,6 +293,15 @@ expireAuthCookieInResponse() {
     local cookieName="$AUTH_TOKEN_COOKIE_NAME"
 
     ExpireBashletResponseCookie "$response" "$cookieName"
+}
+
+getServerProcessUtilizationStats(){
+    
+    # issue a call to the BashletContext helper method to pull the process utilization history from the 
+    # JSON file that is updated by the process usage monitor.
+    local processUtilizationHistory="$(GetServerProcessUtilizationHistory)"
+    echo "$processUtilizationHistory"
+    
 }
 
 

@@ -797,6 +797,24 @@ UrlEncode(){
   echo "$encoded"
 }
 
+# Here we read in the server process utilization history from the file system, which is a JSON array of 60 integers, 
+# each integer representing the process utilization at a specific point in time. (i.e max process utilization over a 1 minute interval, 
+# for the last 60 minutes). We retrun the array of integers to the caller,
+GetServerProcessUtilizationHistory() {
+    
+    local utilization_history_file="${SERVER_UTILIZATION_HISTORY_FILE:-$SCRIPT_DIR/res/.process_usage_history.json}"
+
+    if [[ ! -f "$utilization_history_file" ]]; then
+        echo "GetServerProcessUtilizationHistory: Utilization history file not found at $utilization_history_file" >&2
+        return 1
+    fi
+
+    local utilization_history
+    utilization_history=$(jq -c '.' "$utilization_history_file")
+    echo "$utilization_history"
+   
+}
+
 
 # ------------------------------------------private generic utility functions------------------------------------------
 

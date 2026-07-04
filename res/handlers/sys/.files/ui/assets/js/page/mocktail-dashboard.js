@@ -45,6 +45,7 @@ var processUtilisationChart;
   // Function to update the dashboard with fetched data
   function updateDashboard(data) {
     document.getElementById('max-process-limit').textContent = data.maxProcessLimit;
+    document.getElementById('current-process-usage').textContent = data.processUtilizationHistory[getCurrentMinute()];
     document.getElementById('server-uptime').textContent = formatUptime(data.serverUptime);
     updateProcessUtilizationChart(data.processUtilizationHistory);
   }
@@ -94,6 +95,10 @@ var processUtilisationChart;
   }
    
 
+ const getCurrentMinute = () => {
+    const now = new Date();
+    return now.getMinutes();
+  };
 
 
   const renderProcessUtilizationChart = () => {
@@ -153,7 +158,7 @@ var processUtilisationChart;
         }
      });
 
-        scrollProcessUtilizationChartToCurrentMinute();
+    scrollProcessUtilizationChartToCurrentMinute();
 
 
   }

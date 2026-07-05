@@ -44,6 +44,7 @@ var processUtilisationChart;
   
   // Function to update the dashboard with fetched data
   function updateDashboard(data) {
+    document.getElementById('admin-user-email').textContent = data.adminUserEmail;
     document.getElementById('max-process-limit').textContent = data.maxProcessLimit;
     document.getElementById('current-process-usage').textContent = data.processUtilizationHistory[getCurrentMinute()];
     document.getElementById('server-uptime').textContent = formatUptime(data.serverUptime);

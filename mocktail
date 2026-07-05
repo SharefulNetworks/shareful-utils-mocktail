@@ -12,6 +12,7 @@ MAX_PROCESS_RUNTIME=10
 LISTEN_PORT=3333
 AUTH_TOKEN_COOKIE_NAME="auth_token"
 AUTH_TOKEN_EXPIRATION_MINUTES=30
+ADMIN_USER_EMAIL=""
 
 
 # source the config utils script to enable us to read and parse the server configuration JSON file.
@@ -150,6 +151,7 @@ configureServer() {
   LISTEN_PORT=$(ParseJSONConfigGeneralSetting "$config_json" "ListeningPort") || exit 1
   AUTH_TOKEN_COOKIE_NAME=$(ParseJSONConfigSecuritySetting "$config_json" "AuthTokenCookieName") || exit 1
   AUTH_TOKEN_EXPIRATION_MINUTES=$(ParseJSONConfigSecuritySetting "$config_json" "TokenExpirationMinutes") || exit 1
+  ADMIN_USER_EMAIL=$(ParseJSONConfigSecuritySetting "$config_json" "Email") || exit 1
   echo "Mocktail server configured with MaxProcesses=$MAX_PROCESSES, MaxProcessRuntime=$MAX_PROCESS_RUNTIME, ListenPort=$LISTEN_PORT, AuthTokenExpirationMinutes=$AUTH_TOKEN_EXPIRATION_MINUTES" >&2
 }
 
@@ -169,6 +171,7 @@ exportSharedVariables() {
   export AUTH_TOKEN_COOKIE_NAME
   export AUTH_TOKEN_EXPIRATION_MINUTES
   export SERVER_START_TIMESTAMP="$(date +%s)"
+  export ADMIN_USER_EMAIL
 }
 
 
@@ -187,6 +190,7 @@ createDefaultConfigFile(){
       "MaxHandlerProcessRuntime": 11
   },
   "SecuritySettings": {
+      "Email": "",
       "Passphrase": "",
       "AuthenticationMethod": "passphrase-and-token",
       "AuthTokenCookieName": "mocktail_auth_token",

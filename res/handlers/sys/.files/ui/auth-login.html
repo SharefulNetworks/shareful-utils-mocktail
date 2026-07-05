@@ -36,6 +36,7 @@
     const errorMessage = urlParams.get('errorMessage');
     const warningMessage = urlParams.get('warningMessage');
     const infoMessage = urlParams.get('infoMessage');
+    const successMessage = urlParams.get('successMessage');
 
 
     if (errorMessage) {
@@ -54,6 +55,12 @@
       const infoDiv = document.getElementById('info-message');
       infoDiv.textContent = infoMessage;
       infoDiv.style.display = 'block';
+    }
+
+    if (successMessage) {
+      const successDiv = document.getElementById('success-message');
+      successDiv.textContent = successMessage;
+      successDiv.style.display = 'block';
     }
 
     if (redirectURL) {
@@ -91,6 +98,7 @@
                 <div id="error-message" class="text-danger" style="display: none; font-weight: bold; padding-bottom: 5px; text-align: center;"></div>
                 <div id="warning-message" class="text-warning" style="display: none; font-weight: bold; padding-bottom: 5px; text-align: center;"></div>
                 <div id="info-message" class="text-info" style="display: none; font-weight: bold; padding-bottom: 5px; text-align: center;"></div>
+                <div id="success-message" class="text-success" style="display: none; font-weight: bold; padding-bottom: 5px; text-align: center;"></div>
                 <form method="POST" action="admin/doSignin?" class="needs-validation" novalidate="">
                   <div class="form-group">
                     <label for="email">Email</label>

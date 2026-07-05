@@ -12,7 +12,7 @@ source "$SCRIPT_DIR/res/utils/config-utils"
 
 
 
-
+# Attempts to sign user in as a System Administrator using the specified credentials.
 # @route method=post path=/doSignin
 doSignin(){
     request="$1"
@@ -116,6 +116,9 @@ doSignin(){
    
 }
 
+
+# Attempts to sign up a new System Admin user, a single admin user is permitted, 
+# thus if an existing admin user already exists the signup attempt will be rejected.
 # @route method=post path=/doSignup
 doSignup(){
     request="$1"
@@ -158,6 +161,10 @@ doSignup(){
     # store passphrase to the config file, we firstly load the current config, update the passphrase field in the SecuritySettings object, 
     # and then write the updated config back to the file.
     updatedConfigData="$(SetJSONConfigSecuritySetting "$configData" "Passphrase" "$passphrase")"
+
+    # store email to the config file.
+    updatedConfigData="$(SetJSONConfigSecuritySetting "$updatedConfigData" "Email" "$email")"
+
     if [[ -z "$updatedConfigData" ]]; then
         echo "AdminController: failed to update config data with new passphrase." >&2
 
@@ -207,9 +214,15 @@ doSignout(){
         return 1
     fi
 
+    # critically we expire the auth cookie in the response returned to the client, which effectively signs the user out of the system.
     expireAuthCookieInResponse "$response"
 
-    SetBashletResponseBody "$response" '{"status": "success", "message": "signout successful", "endpoint": "/doSignout", "method": "GET"}'
+    # next we redirect to the sign in page with a success message indicating that the user has been signed out successfully.
+    local success_message="You have been signed out successfully."
+    local signinPageRedirectURL="/sys/signin?successMessage=$(UrlEncode "$success_message")"
+
+    # redirect user back to the signin page with the success message.
+    DispatchBashletRedirectResponse "$signinPageRedirectURL"
 }
 
 
@@ -247,6 +260,9 @@ apiGetServerStats(){
     # the max process limit is obtained from the environment variable MAX_PROCESSES, which is set in the root-handler.
     local maxProcessLimit="$MAX_PROCESSES"
 
+    # get the admin account email from environment variable which is set when the server is started.
+    local adminUserEmail="$ADMIN_USER_EMAIL"
+
     # the server uptime is obtained by computing the delta between the current time and the server start timestamp.
     local serverStartTimestamp="$SERVER_START_TIMESTAMP"
     local serverUptime=$(( $(date +%s) - serverStartTimestamp ))
@@ -254,6 +270,7 @@ apiGetServerStats(){
     # now that we have the raw system stats build up a json object to return to the client.
     successResponseBody="{}"
     successResponseBody="$(SetJSONString "$successResponseBody" '.maxProcessLimit' "$maxProcessLimit")"
+    successResponseBody="$(SetJSONString "$successResponseBody" '.adminUserEmail' "$adminUserEmail")"
     successResponseBody="$(SetJSONString "$successResponseBody" '.serverUptime' "$serverUptime")"
     successResponseBody="$(SetJSONField "$successResponseBody" '.processUtilizationHistory' "$processUtilizationHistory")"
     

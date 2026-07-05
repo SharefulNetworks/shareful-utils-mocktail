@@ -8,7 +8,8 @@
     "MaxHandlerProcessRuntime": 11
   },
   "SecuritySettings": {
-    "Passphrase": "966504b178a70d34fd439b3e175217aa7424b6966377fd3d0fe7e924e31feacc55eddc957a4afaa0db397d6bf4257e92d6c0ef393ffa76561cbfec19beed98b3  -",
+    "Email": "gilest@hotmail.co.uk",
+    "Passphrase": "5fe29cd136e8b48124fd9c15cef6454707f070c5a094c9abff7e67050c0cc0d580f1252638b5c510debe04b74fcc836575e7d3063ca44ea093f6d2f459b4e1e0  -",
     "AuthenticationMethod": "passphrase-and-token",
     "TokenExpirationMinutes": 30,
     "AuthTokenCookieName": "mocktail_auth_token",

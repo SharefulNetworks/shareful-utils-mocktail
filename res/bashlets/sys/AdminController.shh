@@ -222,7 +222,7 @@ doSignout(){
     local signinPageRedirectURL="/sys/signin?successMessage=$(UrlEncode "$success_message")"
 
     # redirect user back to the signin page with the success message.
-    DispatchBashletRedirectResponse "$signinPageRedirectURL"
+    DispatchBashletRedirectResponse "$signinPageRedirectURL" "$response"
 }
 
 

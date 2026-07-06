@@ -3,39 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
-  <title>Mocktail - Server Dashboard</title>
+  <title>Settings &mdash; Stisla</title>
 
   <!-- General CSS Files -->
   <link rel="stylesheet" href="assets/modules/bootstrap/css/bootstrap.min.css">
   <link rel="stylesheet" href="assets/modules/fontawesome/css/all.min.css">
 
   <!-- CSS Libraries -->
-  <link rel="stylesheet" href="assets/modules/jqvmap/dist/jqvmap.min.css">
-  <link rel="stylesheet" href="assets/modules/weather-icon/css/weather-icons.min.css">
-  <link rel="stylesheet" href="assets/modules/weather-icon/css/weather-icons-wind.min.css">
-  <link rel="stylesheet" href="assets/modules/summernote/summernote-bs4.css">
 
   <!-- Template CSS -->
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/components.css">
+<!-- Start GA -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-94034622-3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
 
-  <!-- Start GA -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-94034622-3"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-  
-    gtag('config', 'UA-94034622-3');
-  </script>
-  <!-- /END GA -->
-
-  <!-- Mocktail Dashboard Specific Scripts -->
-  <script src="assets/js/page/mocktail-dashboard.js"></script>
-   
-
-
-</head>
+  gtag('config', 'UA-94034622-3');
+</script>
+<!-- /END GA --></head>
 
 <body>
   <div id="app">
@@ -111,13 +99,11 @@
           </div>
         </form>
         <ul class="navbar-nav navbar-right">
-        
-        
           <li class="dropdown"><a href="#" data-toggle="dropdown" class="nav-link dropdown-toggle nav-link-lg nav-link-user">
             <img alt="image" src="assets/img/avatar-1.png" class="rounded-circle mr-1">
-            <div class="d-sm-none d-lg-inline-block" id="admin-user-email">-</div></a>
+            <div class="d-sm-none d-lg-inline-block" id="settings-user-email">-</div></a>
             <div class="dropdown-menu dropdown-menu-right">
-              <div class="dropdown-title">Logged in as Admin.</div>
+              <div class="dropdown-title" id="settings-user-title">Logged in as Admin.</div>
               <a href="features-profile.html" class="dropdown-item has-icon">
                 <i class="far fa-user"></i> Profile
               </a>
@@ -138,43 +124,38 @@
       <div class="main-sidebar sidebar-style-2">
         <aside id="sidebar-wrapper">
           <div class="sidebar-brand">
-            
-          </div>
-          <div class="sidebar-brand">
-             <img src="assets/img/mocktail-logo-new-trans.png" alt="logo" width="220" style="top: -65px; position:relative">
+            <img src="assets/img/mocktail-logo-new-trans.png" alt="logo" width="220" style="top: -65px; position:relative">
           </div>
           <ul class="sidebar-menu">
             <li class="menu-header">Dashboard</li>
-            <li class="dropdown active">
+            <li class="dropdown">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-fire"></i><span>Dashboard</span></a>
               <ul class="dropdown-menu">
-                <li class=active><a class="nav-link" href="index-0.html">General Dashboard</a></li>
+                <li><a class="nav-link" href="index-0.html">General Dashboard</a></li>
                 <li><a class="nav-link" href="index.html">API Mocking Dashboard</a></li>
               </ul>
             </li>
-           
-        
             <li class="menu-header">Settings</li>
             <li class="dropdown active">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-th-large"></i> <span>Settings</span></a>
               <ul class="dropdown-menu">
-                <li class=active><a class="nav-link" id="general-settings-link" href="general-settings.html">General Settings</a></li>
+                <li class=active><a class="nav-link" href="general-settings.html">General Settings</a></li>
                 <li><a class="nav-link" href="general-advanced-settings.html">API Mocking Settings</a></li>
               </ul>
             </li>
-           
+
             <li class="menu-header">Docs</li>
             <li class="dropdown">
               <a href="#" class="nav-link has-dropdown"><i class="far fa-user"></i> <span>Getting Started</span></a>
               <ul class="dropdown-menu">
-                <li><a href="auth-forgot-password.html">Installation</a></li> 
-                <li><a href="auth-login.html">Configuration</a></li> 
+                <li><a href="auth-forgot-password.html">Installation</a></li>
+                <li><a href="auth-login.html">Configuration</a></li>
               </ul>
             </li>
             <li class="dropdown">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-exclamation"></i> <span>Static Web Hosting</span></a>
               <ul class="dropdown-menu">
-                <li><a class="nav-link" href="errors-503.html">Setup</a></li> 
+                <li><a class="nav-link" href="errors-503.html">Setup</a></li>
               </ul>
             </li>
             <li class="dropdown">
@@ -195,7 +176,25 @@
                 <li><a class="nav-link" href="utilities-invoice.html">Options</a></li>
                 <li><a href="utilities-subscribe.html">Support</a></li>
               </ul>
+            </li>
           </ul>
+
+          <script>
+            (function () {
+              const params = new URLSearchParams(window.location.search);
+              const email = params.get('email') || '-';
+              const emailElement = document.getElementById('settings-user-email');
+              const titleElement = document.getElementById('settings-user-title');
+
+              if (emailElement) {
+                emailElement.textContent = email;
+              }
+
+              if (titleElement) {
+                titleElement.textContent = email !== '-' ? `Logged in as ${email}` : 'Logged in as Admin.';
+              }
+            }());
+          </script>
 
           <div class="mt-4 mb-4 p-3 hide-sidebar-mini">
             <a href="doSignout" class="btn btn-primary btn-lg btn-block btn-icon-split">
@@ -208,183 +207,57 @@
       <div class="main-content">
         <section class="section">
           <div class="section-header">
-            <h1>Server Dashboard</h1>
+            <h1>General Settings</h1>
+            <div class="section-header-breadcrumb">
+              <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
+              <div class="breadcrumb-item">General Settings</div>
+            </div>
           </div>
-          <div class="row">
-            <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-              <div class="card card-statistic-1">
-                <div class="card-icon bg-primary">
-                <i class="fas fa-thermometer-half"></i>
-                </div>
-                <div class="card-wrap">
-                  <div class="card-header">
-                    <h4>Current Process Usage</h4>
+
+          <div class="section-body">
+            <h2 class="section-title">Overview</h2>
+            <p class="section-lead">
+              Adjust all general Mocktail Server settings.
+            </p>
+
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="card card-large-icons">
+                  <div class="card-icon bg-primary text-white">
+                    <i class="fas fa-cog"></i>
                   </div>
                   <div class="card-body">
-                    <span id="current-process-usage">--</span>
+                    <h4>System</h4>
+                    <p>Configure general Mocktail Server settings. </p>
+                    <a href="features-setting-detail.html" class="card-cta">Change Setting <i class="fas fa-chevron-right"></i></a>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-              <div class="card card-statistic-1">
-                <div class="card-icon bg-danger">
-                  <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="card-wrap">
-                  <div class="card-header">
-                    <h4>Max Processes</h4>
-                  </div>
-                  <div class="card-body">
-                    <span id="max-process-limit">--</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-              <div class="card card-statistic-1">
-                <div class="card-icon bg-warning">
-                  <i class="fas fa-server"></i>
-                </div>
-                <div class="card-wrap">
-                  <div class="card-header">
-                    <h4>Mock APIs</h4>
-                  </div>
-                  <div class="card-body">
-                    <span id="mock-apis">--</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-              <div class="card card-statistic-1">
-                <div class="card-icon bg-success">
-                  <i class="far fa-clock"></i>
-                </div>
-                <div class="card-wrap">
-                  <div class="card-header">
-                    <h4>Server Uptime</h4>
-                  </div>
-                  <div class="card-body">
-                    <span id="server-uptime" style="font-size: 20px;">00:00:00</span>
-                  </div>
-                </div>
-              </div>
-            </div>                  
-          </div>
-          <div class="row">
-            <div class="col-lg-8 col-md-12 col-12 col-sm-12">
-         
-            </div>
-            <div class="col-lg-4 col-md-12 col-12 col-sm-12">
              
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-lg-6 col-md-12 col-12 col-sm-12">
-        
-            </div>
-            <div class="col-lg-6 col-md-12 col-12 col-sm-12">
-         
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-lg-6 col-md-6 col-12">
             
-          
-          
-            </div>
-            <div class="col-lg-6 col-md-6 col-12">
-            
-             
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-lg-5 col-md-12 col-12 col-sm-12">
-              <form method="post" class="needs-validation" novalidate="">
+    
 
-              </form>
-            </div>
-
-              <!-- main mocktail stats chart-->
-              <div class="col-12 col-md-12 col-lg-12">
-                <div class="card">
-                  <div class="card-header">
-                    <h4>Process Utilisation (per minute)</h4>
+              <div class="col-lg-6">
+                <div class="card card-large-icons">
+                  <div class="card-icon bg-primary text-white">
+                    <i class="fas fa-lock"></i>
                   </div>
                   <div class="card-body">
-                    <div id="process-utilization-chart-scroll" style="overflow-x: auto; width: 100%;">
-                      <div style="min-width: 3200px; height: 320px;">
-                        <canvas id="myChart" style="width: 100%; height: 100%;"></canvas>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div> 
-          
-          
-           
-            <div class="col-lg-19 col-md-12 col-12 col-sm-12">
-              <div class="card">
-                <div class="card-header">
-                  <h4>Mock API Collections</h4>
-                  <div class="card-header-action" style="border: radius 30px; ">
-                    
-                    <a href="#" class="btn btn-primary" style="border-radius:0px;"><i class="fas fa-plus"></i> &nbsp; Add Route</a>
-                  
-                  
-                  </div>
-                </div>
-                <div class="card-body p-0">
-                  <div class="table-responsive">
-                    <table class="table table-striped mb-0">
-                      <thead>
-                        <tr>
-                          <th>Title</th>
-                          <th>Endpoint Count</th>
-                          <th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>                         
-                        <tr>
-                          <td>
-                            <a href="#" class="font-weight-600"> Example Mock API 1 (basic)</a>
-
-                          </td>
-                          <td>
-                              5
-                          </td>
-                          <td>
-                            <a class="btn btn-primary btn-action mr-1" data-toggle="tooltip" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                            <a class="btn btn-danger btn-action" data-toggle="tooltip" title="Delete" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')"><i class="fas fa-trash"></i></a>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                             <a href="#" class="font-weight-600"> Example Mock API 2 (advanced)</a>
-                           
-                          </td>
-                          <td>
-                              3
-                          </td>
-                          <td>
-                            <a class="btn btn-primary btn-action mr-1" data-toggle="tooltip" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                            <a class="btn btn-danger btn-action" data-toggle="tooltip" title="Delete" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')"><i class="fas fa-trash"></i></a>
-                          </td>
-                        </tr>
-                       
-                      </tbody>
-                    </table>
+                    <h4>Security</h4>
+                    <p>Configure Mocktail Server security settings.</p>
+                    <a href="features-setting-detail.html" class="card-cta">Change Setting <i class="fas fa-chevron-right"></i></a>
                   </div>
                 </div>
               </div>
+
+            
             </div>
           </div>
         </section>
       </div>
       <footer class="main-footer">
         <div class="footer-left">
-          Copyright &copy; 2026 - Erudite Ltd <div class="bullet"></div> Part of the <a href="https://github.com/sharefulnetworks">Shareful Networks OSS </a> project
+          Copyright &copy; 2018 <div class="bullet"></div> Design By <a href="https://nauval.in/">Muhamad Nauval Azhar</a>
         </div>
         <div class="footer-right">
           
@@ -403,18 +276,9 @@
   <script src="assets/js/stisla.js"></script>
   
   <!-- JS Libraies -->
-  <script src="assets/modules/simple-weather/jquery.simpleWeather.min.js"></script>
-  <script src="assets/modules/chart.min.js"></script>
-  <script src="assets/modules/jqvmap/dist/jquery.vmap.min.js"></script>
-  <script src="assets/modules/jqvmap/dist/maps/jquery.vmap.world.js"></script>
-  <script src="assets/modules/summernote/summernote-bs4.js"></script>
-  <script src="assets/modules/chocolat/dist/js/jquery.chocolat.min.js"></script>
 
   <!-- Page Specific JS File -->
-  <script src="assets/js/page/index-0.js"></script>
-
-
-
+  
   <!-- Template JS File -->
   <script src="assets/js/scripts.js"></script>
   <script src="assets/js/custom.js"></script>

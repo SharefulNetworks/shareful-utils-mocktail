@@ -232,6 +232,18 @@ monitorProcessUsage() {
             jq -n '[range(60) | 0]' > "$historyFile"
         fi
 
+        # if data values exists for values greater than the current minute, reset those values to 0 
+        # to ensure we only track the last hour of data. This could happen if the machine was suspended or t
+        # he script was paused for some reason, and then resumed after a period of time.
+        nextMinute=$((minute + 1))
+        nextValue=$(jq -r ".[$nextMinute]" "$historyFile")
+        if [[ "$nextValue" -ne 0 ]]; then
+            for ((i=nextMinute; i<60; i++)); do
+                jq --argjson index "$i" '.[$index] = 0' "$historyFile" > "$tmpFile" && mv "$tmpFile" "$historyFile"
+            done
+        fi
+
+
         # get the current process count across all Mocktail handlers.
         currentProcessCount=$(getServerProcessCount)
 

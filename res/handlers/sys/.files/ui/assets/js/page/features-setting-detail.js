@@ -94,10 +94,30 @@ const updateSettingsUI = (settings) => {
         return;
     }
 
-    // Update the UI elements with the fetched settings
+    // Update the UI elements with the fetched settings...
+
+    //first general settings
     document.getElementById('max-handler-processes').value = settings.GeneralSettings.MaxConcurrentProcesses || 'N/A';
     document.getElementById('max-handler-process-runtime').value = settings.GeneralSettings.MaxHandlerProcessRuntime || 'N/A';
     document.getElementById('listening-port').value = settings.GeneralSettings.ListeningPort || 'N/A';
+
+    //then security settings
+    //security-email
+    //security-passphrase
+    //security-authentication-method
+    //security-token-expiration
+    //security-token-cookie-name
+    //security-enable-cors
+    //security-allowed-origins
+    
+    document.getElementById('security-email').value = settings.SecuritySettings.Email || 'N/A';
+    document.getElementById('security-passphrase').value = settings.SecuritySettings.Passphrase || 'N/A';
+    document.getElementById('security-authentication-method').value = settings.SecuritySettings.AuthenticationMethod || 'N/A';
+    document.getElementById('security-token-expiration').value = settings.SecuritySettings.TokenExpirationMinutes || 'N/A';
+    document.getElementById('security-token-cookie-name').value = settings.SecuritySettings.AuthTokenCookieName || 'N/A';
+    document.getElementById('security-enable-cors').checked = settings.SecuritySettings.EnableCORS || false;
+    document.getElementById('security-allowed-origins').value = settings.SecuritySettings.AllowedOrigins || 'N/A';
+   
 }
 
 const prepareSettingsUI = async () => {

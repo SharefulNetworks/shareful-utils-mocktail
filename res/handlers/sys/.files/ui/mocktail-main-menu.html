@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
+  <title>Mocktail - Main Menu</title>
+
+  <link rel="stylesheet" href="assets/modules/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/modules/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+
+  <style>
+    html, body {
+      margin-top: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    .menu-frame-root {
+      min-height: 100vh;
+    }
+
+    .main-sidebar {
+      padding-top: 65px;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="app" class="menu-frame-root">
+    <div class="main-wrapper main-wrapper-1">
+      <div class="main-sidebar sidebar-style-2">
+        <aside id="sidebar-wrapper">
+          <div class="sidebar-brand">
+            <img src="assets/img/mocktail-logo-new-trans.png" alt="logo" width="240" style="position:relative; top: -65px;">
+          </div>
+          <ul class="sidebar-menu">
+            <li class="menu-header">Dashboard</li>
+            <li class="dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-fire"></i><span>Dashboard</span></a>
+              <ul class="dropdown-menu">
+                <li><a class="nav-link" href="index-0.html">General Dashboard</a></li>
+                <li><a class="nav-link" href="index.html">API Mocking Dashboard</a></li>
+              </ul>
+            </li>
+
+            <li class="menu-header">Settings</li>
+            <li class="dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-th-large"></i> <span>Settings</span></a>
+              <ul class="dropdown-menu">
+                <li><a class="nav-link" href="general-settings.html">General Settings</a></li>
+                <li><a class="nav-link" href="general-advanced-settings.html">API Mocking Settings</a></li>
+              </ul>
+            </li>
+
+            <li class="menu-header">Docs</li>
+            <li class="dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="far fa-user"></i> <span>Getting Started</span></a>
+              <ul class="dropdown-menu">
+                <li><a href="auth-forgot-password.html">Installation</a></li>
+                <li><a href="auth-login.html">Configuration</a></li>
+              </ul>
+            </li>
+            <li class="dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-exclamation"></i> <span>Static Web Hosting</span></a>
+              <ul class="dropdown-menu">
+                <li><a class="nav-link" href="errors-503.html">Setup</a></li>
+              </ul>
+            </li>
+            <li class="dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-bicycle"></i> <span>Dynamic Web Hosting</span></a>
+              <ul class="dropdown-menu">
+                <li><a class="nav-link" href="features-activities.html">Intro to Bashlets</a></li>
+                <li><a class="nav-link" href="features-post-create.html">Configuring Bashlets</a></li>
+                <li><a class="nav-link" href="features-posts.html">Coding Bashlets</a></li>
+                <li><a class="nav-link" href="features-profile.html">The Bashlet Context</a></li>
+                <li><a class="nav-link" href="features-settings.html">Examples</a></li>
+                <li><a class="nav-link" href="features-setting-detail.html">Support</a></li>
+              </ul>
+            </li>
+            <li class="dropdown">
+              <a href="#" class="nav-link has-dropdown"><i class="fas fa-ellipsis-h"></i> <span>API Mocking</span></a>
+              <ul class="dropdown-menu">
+                <li><a href="utilities-contact.html">Setup</a></li>
+                <li><a class="nav-link" href="utilities-invoice.html">Options</a></li>
+                <li><a href="utilities-subscribe.html">Support</a></li>
+              </ul>
+            </li>
+          </ul>
+
+          <div class="mt-4 mb-4 p-3 hide-sidebar-mini">
+            <a href="doSignout" class="btn btn-primary btn-lg btn-block btn-icon-split">
+              <i class="fas fa-user"></i> Sign Out
+            </a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const sidebarRoot = document.getElementById('sidebar-wrapper');
+      const activeHref = new URLSearchParams(window.location.search).get('active');
+
+      if (sidebarRoot) {
+        sidebarRoot.querySelectorAll('.active').forEach(function (item) {
+          item.classList.remove('active');
+        });
+
+        sidebarRoot.querySelectorAll('a.nav-link:not(.has-dropdown)').forEach(function (link) {
+          if (link.getAttribute('href') !== '#') {
+            link.target = '_top';
+          }
+        });
+
+        sidebarRoot.querySelectorAll('a[href="doSignout"]').forEach(function (link) {
+          link.target = '_top';
+        });
+
+        sidebarRoot.querySelectorAll('a.has-dropdown').forEach(function (link) {
+          link.addEventListener('click', function (event) {
+            event.preventDefault();
+            const parentItem = link.closest('li.dropdown');
+            if (!parentItem) {
+              return;
+            }
+
+            const isActive = parentItem.classList.contains('active');
+            sidebarRoot.querySelectorAll('li.dropdown').forEach(function (item) {
+              item.classList.remove('active');
+            });
+
+            if (!isActive) {
+              parentItem.classList.add('active');
+            }
+          });
+        });
+
+        if (activeHref) {
+          const activeLink = sidebarRoot.querySelector('a.nav-link[href="' + activeHref + '"]');
+          if (activeLink) {
+            const activeItem = activeLink.closest('li');
+            if (activeItem) {
+              activeItem.classList.add('active');
+            }
+
+            const activeDropdown = activeLink.closest('li.dropdown');
+            if (activeDropdown) {
+              activeDropdown.classList.add('active');
+            }
+
+            const nestedDropdown = activeLink.closest('.dropdown-menu');
+            if (nestedDropdown && nestedDropdown.parentElement && nestedDropdown.parentElement.classList.contains('dropdown')) {
+              nestedDropdown.parentElement.classList.add('active');
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

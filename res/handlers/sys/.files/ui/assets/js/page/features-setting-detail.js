@@ -24,6 +24,14 @@ document.addEventListener('DOMContentLoaded', function () {
       showGeneralSettingsPanel(securityBtn);
     });
   }
+
+    // Check URL for panel parameter and show the appropriate panel
+    const targetPanel = parseTargetPanelFromURL();
+    if (targetPanel === 'security') {
+      showGeneralSettingsPanel(securityBtn);
+    } else {
+      showGeneralSettingsPanel(systemBtn);
+    }
 });
 
 /**
@@ -51,3 +59,9 @@ const showGeneralSettingsPanel = (clickedElement) => {
     securitySettingsBtn.querySelector('.nav-link').classList.add('active');
   }
 };
+
+
+const parseTargetPanelFromURL = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('panel');
+}

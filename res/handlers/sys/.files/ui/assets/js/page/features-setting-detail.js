@@ -25,13 +25,18 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-    // Check URL for panel parameter and show the appropriate panel
-    const targetPanel = parseTargetPanelFromURL();
-    if (targetPanel === 'security') {
-      showGeneralSettingsPanel(securityBtn);
-    } else {
-      showGeneralSettingsPanel(systemBtn);
-    }
+   //prep the settings UI with data from the server
+   prepareSettingsUI();
+
+  // Check URL for panel parameter and show the appropriate panel
+  const targetPanel = parseTargetPanelFromURL();
+  if (targetPanel === 'security') {
+    showGeneralSettingsPanel(securityBtn);
+  } else {
+    showGeneralSettingsPanel(systemBtn);
+  }
+
+
 });
 
 /**
@@ -65,3 +70,39 @@ const parseTargetPanelFromURL = () => {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get('panel');
 }
+
+
+async function fetchServerSettings() {
+    try {
+        const response = await fetch('api/settings');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const settings = await response.json();
+        return settings;
+    } catch (error) {
+        console.error('Error fetching server settings:', error);
+        return null;
+    }
+
+}
+
+
+const updateSettingsUI = (settings) => {
+    if (!settings) {
+        console.error('No settings data available to update UI.');
+        return;
+    }
+
+    // Update the UI elements with the fetched settings
+    document.getElementById('max-handler-processes').value = settings.GeneralSettings.MaxConcurrentProcesses || 'N/A';
+    document.getElementById('max-handler-process-runtime').value = settings.GeneralSettings.MaxHandlerProcessRuntime || 'N/A';
+    document.getElementById('listening-port').value = settings.GeneralSettings.ListeningPort || 'N/A';
+}
+
+const prepareSettingsUI = async () => {
+    const settings = await fetchServerSettings();
+    updateSettingsUI(settings);
+}
+
+

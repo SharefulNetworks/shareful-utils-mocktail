@@ -258,6 +258,8 @@ viewGeneralSettingsDetail(){
 
     echo "AdminController: inside viewGeneralSettingsDetailPage, forwarding to general settings detail page..." >&2
 
+
+
     ForwardBashletRequest "/sys/ui/mocktail-general-settings-detail.html"
 
 }
@@ -303,8 +305,29 @@ apiGetServerStats(){
 
 }
 
+# API endpoint to return the current server configuration settings, such as max processes, security settings etc.
+# @route method=get path=/api/settings
+apiSettings(){
+    request="$1"
+    response="$2"
 
+    echo "AdminController: inside apiSettings..." >&2
 
+    # read current server configuration data from the JSON config file.
+    configData="$(ReadServerJSONConfig)"
+    if [[ -z "$configData" ]]; then
+        echo "AdminController: failed to read server configuration data from config file." >&2
+
+        local err_status_code=500
+        local err_content="Internal Server Error - Failed to read server configuration data from config file (config.json). If the file exists its likely corrupted, please delete it and restart the server."
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # set the response body to the JSON object we have built.
+    SetBashletResponseBody "$response" "$configData"
+
+}
 
 
 

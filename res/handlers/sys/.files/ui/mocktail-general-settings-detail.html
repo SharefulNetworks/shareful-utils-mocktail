@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
-  <title>General Settings &mdash; Stisla</title>
+  <title>Mocktail - General Settings Detail</title>
 
   <!-- General CSS Files -->
   <link rel="stylesheet" href="assets/modules/bootstrap/css/bootstrap.min.css">
@@ -218,66 +218,128 @@
                   </div>
                   <div class="card-body">
                     <ul class="nav nav-pills flex-column">
-                      <li class="nav-item"><a href="#" class="nav-link active">System</a></li>
-                      <li class="nav-item"><a href="#" class="nav-link">Security</a></li>
+                      <li id="system-settings-btn" class="nav-item"><a href="#" class="nav-link active">System</a></li>
+                      <li id="security-settings-btn" class="nav-item"><a href="#" class="nav-link">Security</a></li>
                     </ul>
                   </div>
                 </div>
               </div>
               <div class="col-md-8">
                 <form id="setting-form">
-                  <div class="card" id="settings-card">
+
+
+                  <!-- Start of System Settings  Card-->
+                  <div class="card" id="system-settings-card" style="display: block;">
                     <div class="card-header">
-                      <h4>General Settings</h4>
+                      <h4>System Settings</h4>
                     </div>
                     <div class="card-body">
-                      <p class="text-muted">General settings such as, site title, site description, address and so on.</p>
+                      <p class="text-muted">General system settings.</p>
                       <div class="form-group row align-items-center">
-                        <label for="site-title" class="form-control-label col-sm-3 text-md-right">Site Title</label>
+                        <label for="site-title" class="form-control-label col-sm-3 text-md-right">Listening Port:</label>
                         <div class="col-sm-6 col-md-9">
-                          <input type="text" name="site_title" class="form-control" id="site-title">
-                        </div>
-                      </div>
-                      <div class="form-group row align-items-center">
-                        <label for="site-description" class="form-control-label col-sm-3 text-md-right">Site Description</label>
-                        <div class="col-sm-6 col-md-9">
-                          <textarea class="form-control" name="site_description" id="site-description"></textarea>
+                          <input type="text" name="site_title" class="form-control" id="listening-port" value="">
                         </div>
                       </div>
                       <div class="form-group row align-items-center">
-                        <label class="form-control-label col-sm-3 text-md-right">Site Logo</label>
+                        <label for="site-description" class="form-control-label col-sm-3 text-md-right">Max Concurrent Handler Processes:</label>
                         <div class="col-sm-6 col-md-9">
-                          <div class="custom-file">
-                            <input type="file" name="site_logo" class="custom-file-input" id="site-logo">
-                            <label class="custom-file-label">Choose File</label>
-                          </div>
-                          <div class="form-text text-muted">The image must have a maximum size of 1MB</div>
+                           <input type="text" name="site_title" class="form-control" id="max-handler-processes" value="">
                         </div>
                       </div>
-                      <div class="form-group row align-items-center">
-                        <label class="form-control-label col-sm-3 text-md-right">Favicon</label>
+                    
+                       <div class="form-group row align-items-center">
+                        <label for="site-description" class="form-control-label col-sm-3 text-md-right">Max Handler Processes Runtime:</label>
                         <div class="col-sm-6 col-md-9">
-                          <div class="custom-file">
-                            <input type="file" name="site_favicon" class="custom-file-input" id="site-favicon">
-                            <label class="custom-file-label">Choose File</label>
-                          </div>
-                          <div class="form-text text-muted">The image must have a maximum size of 1MB</div>
+                           <input type="text" name="site_title" class="form-control" id="max-handler-processes" value="">
                         </div>
                       </div>
-                      <div class="form-group row">
-                        <label class="form-control-label col-sm-3 mt-3 text-md-right">Google Analytics Code</label>
-                        <div class="col-sm-6 col-md-9">
-                          <textarea class="form-control codeeditor" name="google_analytics_code"></textarea>
-                        </div>
-                      </div>
+                     
+                      
                     </div>
                     <div class="card-footer bg-whitesmoke text-md-right">
                       <button class="btn btn-primary" id="save-btn">Save Changes</button>
                       <button class="btn btn-secondary" type="button">Reset</button>
                     </div>
                   </div>
+                    <!-- End of System Settings  Card-->
+
+
+                    <!-- Start of Security Settings  Card-->
+                  <div class="card" id="security-settings-card" style="display: none;">
+                    <div class="card-header">
+                      <h4>Security Settings</h4>
+                    </div>
+                    <div class="card-body">
+                      <p class="text-muted">Security system settings.</p>
+
+                      <div class="form-group row align-items-center">
+                        <label for="site-title" class="form-control-label col-sm-3 text-md-right">Email:</label>
+                        <div class="col-sm-6 col-md-9">
+                          <input type="text" name="site_title" class="form-control" id="security-email" value="">
+                        </div>
+                      </div>
+
+                      <div class="form-group row align-items-center">
+                        <label for="site-description" class="form-control-label col-sm-3 text-md-right">Passphrase:</label>
+                        <div class="col-sm-6 col-md-9">
+                           <input type="text" name="site_title" class="form-control" id="security-passphrase" value="">
+                        </div>
+                      </div>
+                    
+                       <div class="form-group row align-items-center">
+                        <label for="site-description" class="form-control-label col-sm-3 text-md-right">Authentication Method:</label>
+                        <div class="col-sm-6 col-md-9">
+                           <input type="text" name="site_title" class="form-control" id="security-authentication-method" value="">
+                        </div>
+                      </div>
+
+                       <div class="form-group row align-items-center">
+                        <label for="site-description" class="form-control-label col-sm-3 text-md-right">Token Expiration Minutes:</label>
+                        <div class="col-sm-6 col-md-9">
+                           <input type="text" name="site_title" class="form-control" id="security-token-expiration" value="">
+                        </div>
+                      </div>
+
+                       <div class="form-group row align-items-center">
+                        <label for="site-description" class="form-control-label col-sm-3 text-md-right">Auth Token Cookie Name:</label>
+                        <div class="col-sm-6 col-md-9">
+                           <input type="text" name="site_title" class="form-control" id="security-token-cookie-name" value="">
+                        </div>
+                      </div>
+
+                       <div class="form-group row align-items-center">
+                        <label for="site-description" class="form-control-label col-sm-3 text-md-right">Enable CORS:</label>
+                        <div class="col-sm-6 col-md-9">
+                           <input type="text" name="site_title" class="form-control" id="security-enable-cors" value="">
+                        </div>
+                      </div>
+
+                        <div class="form-group row align-items-center">
+                        <label for="site-description" class="form-control-label col-sm-3 text-md-right">Allowed Origins:</label>
+                        <div class="col-sm-6 col-md-9">
+                           <input type="text" name="site_title" class="form-control" id="security-allowed-origins" value="">
+                        </div>
+                      </div>
+
+
+              
+                     
+                      
+                    </div>
+                    <div class="card-footer bg-whitesmoke text-md-right">
+                      <button class="btn btn-primary" id="save-btn">Save Changes</button>
+                      <button class="btn btn-secondary" type="button">Reset</button>
+                    </div>
+                  </div>
+                    <!-- End of Security Settings  Card-->
+
+
                 </form>
               </div>
+
+
+              
             </div>
   		    </div>
       	</section>

@@ -165,3 +165,26 @@ var processUtilisationChart;
   }
 
 
+  const showGeneralSettingsPanel = (clickedElement) => {
+    const systemSettingsCard = document.getElementById('system-settings-card');
+    const securitySettingsCard = document.getElementById('security-settings-card');
+
+    // Hide both cards initially
+    systemSettingsCard.style.display = 'none';
+    securitySettingsCard.style.display = 'none';
+
+    // Remove 'active' class from both buttons
+    document.getElementById('system-settings-btn').classList.remove('active');
+    document.getElementById('security-settings-btn').classList.remove('active');
+
+    // Show the appropriate card based on the clicked button and add 'active' class to it
+    if (clickedElement.id === 'system-settings-btn') {
+      systemSettingsCard.style.display = 'block';
+      clickedElement.classList.add('active');
+    } else if (clickedElement.id === 'security-settings-btn') {
+      securitySettingsCard.style.display = 'block';
+      clickedElement.classList.add('active');
+    }
+  }
+
+

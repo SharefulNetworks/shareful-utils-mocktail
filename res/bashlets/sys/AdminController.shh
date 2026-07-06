@@ -238,6 +238,30 @@ viewAdminDashboard(){
 
 }
 
+# Navigates to the general settings page which is only accessible to authenticated users, hence the secure route attribute.
+# @route method=get path=/settings secure=true
+viewGeneralSettings(){
+    request="$1"
+    response="$2"
+
+    echo "AdminController: inside viewGeneralSettingsPage, forwarding to general settings page..." >&2
+
+    ForwardBashletRequest "/sys/ui/mocktail-general-settings.html"
+
+}
+
+#  Navigates to the general settings detail page which is only accessible to authenticated users, hence the secure route attribute.
+# @route method=get path=/settings-detail secure=true
+viewGeneralSettingsDetail(){
+    request="$1"
+    response="$2"
+
+    echo "AdminController: inside viewGeneralSettingsDetailPage, forwarding to general settings detail page..." >&2
+
+    ForwardBashletRequest "/sys/ui/mocktail-general-settings-detail.html"
+
+}
+
 
 
 

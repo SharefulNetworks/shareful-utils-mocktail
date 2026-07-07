@@ -92,6 +92,7 @@ DelegateRequestToBashletEngine() {
     echo "BashletEngine: Delegating request to bashlet: $absolute_bashlet_file_path" >&2
 
     # Source the bashlet file to make its functions available in the current shell context
+    # shellcheck source=/dev/null
     source "$absolute_bashlet_file_path"
 
     # normalize the (relative) request path to ensure consistent routing behavior, removing any query strings and trailing slashes (except for root).
@@ -187,9 +188,6 @@ DelegateRequestToBashletEngine() {
         if [[ -z "$authCookie" ]] || [[ "$authCookieValid" -eq 1 ]]; then
             echo "BashletEngine: Received request to secure route: $sanitized_request_path, but user is not currently authenticated, redirecting to signin page..." >&2
 
-            # parse the route handler function path from the route_metadata.
-            local routeHandlerPath="$(jq -r '.Path // empty' <<< "$route_metadata")"
-            
             # Build up the signin success path, this is the location we will redirect the user to after successful signin, which is the original request path they were attempting to access.
             # NOTE: The signin success path MUST be absolute as the redirect will be peformed by the browser as a brand new request.
             absoluteSigninSuccessRedirectPath="$(realpath -m "/sys/$relative_request_path")"
@@ -507,16 +505,16 @@ exportVariablesForSubProcessesAsBase64() {
     # Export the Bashlet annotation metadata JSON as a Base64 encoded string
     # so that it can be safely passed through socat into child Bash processes.
 
-    export BASHLET_ANNOTATION_METADATA_BASE64="$(
-        printf '%s' "$BASHLET_ANNOTATION_METADATA" | base64 -w 0
-    )"
+    local bashlet_annotation_metadata_base64
+    bashlet_annotation_metadata_base64="$(printf '%s' "$BASHLET_ANNOTATION_METADATA" | base64 -w 0)"
+    export BASHLET_ANNOTATION_METADATA_BASE64="$bashlet_annotation_metadata_base64"
 
     # Export the route-to-bashlet associative array by serializing the entire
     # declare statement. This allows the array to be reconstructed later via eval.
 
-    export ROUTE_PATH_TO_BASHLET_PATH_DECLARATION_BASE64="$(
-        declare -p ROUTE_PATH_TO_BASHLET_PATH | base64 -w 0
-    )"
+    local route_path_to_bashlet_path_declaration_base64
+    route_path_to_bashlet_path_declaration_base64="$(declare -p ROUTE_PATH_TO_BASHLET_PATH | base64 -w 0)"
+    export ROUTE_PATH_TO_BASHLET_PATH_DECLARATION_BASE64="$route_path_to_bashlet_path_declaration_base64"
 }
 
 # undertakes the inverse operation of the immediately preceeding function: exportVariablesForSubProcessesAsBase64
@@ -572,8 +570,7 @@ importVariablesFromParentProcess() {
             fi
 
             # Keep raw declaration string available under the legacy name too
-            ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC_DECLARATION="$__decoded_decl"
-            ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC="$__decoded_decl"
+            export ROUTE_PATH_TO_BASHLET_PATH_FROM_PARENT_PROC_DECLARATION="$__decoded_decl"
         fi
     fi
 }

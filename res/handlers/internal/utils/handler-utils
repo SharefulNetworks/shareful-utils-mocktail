@@ -8,10 +8,11 @@
 echo "handler-utils: Loaded handler utility functions." >&2
 
 # import/source the mime type utility functions, which are used by the static route handling logic to determine the correct content type to return for static resources.
-source "$(dirname "${BASH_SOURCE[0]}")/mime-utils" #we use path relative to this script, the utilities both share the same parent "utils" directory.
+source "${SCRIPT_DIR}/res/handlers/internal/utils/mime-utils" #we use path relative to this script, the utilities both share the same parent "utils" directory.
+
 
 # import/source the BashletEngine so we can delegate to it for handling requests associated with Bashlet route types.
-source "$(dirname "${BASH_SOURCE[0]}")/../bashlets/internal/BashletEngine" #we use path relative to this script, the BashletEngine is located in the "
+source "${SCRIPT_DIR}/res/bashlets/internal/BashletEngine" #we use path relative to this script, the BashletEngine is located in the "
 
 # PUBLIC FUNCTION: reads and parses the request read from the socket into an array of headers and a body, taking care to handle the case where the 
 # request may not have a body, and return the headers and body as separate variables.

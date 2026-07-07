@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # import the handler utility functions, which are used by this handler to perform common tasks such as route resolution and response generation.
-source "$(dirname "${BASH_SOURCE[0]}")/../../utils/handler-utils"
+source "${SCRIPT_DIR}/res/handlers/internal/utils/handler-utils"
 
 
 # PUBLIC FUNCTION: DelegateRequest, similar to the handleRequest function, the principal difference is handlerRequest is 

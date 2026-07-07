@@ -16,7 +16,7 @@ ADMIN_USER_EMAIL=""
 
 
 # source the config utils script to enable us to read and parse the server configuration JSON file.
-source "${SCRIPT_DIR}/res/utils/config-utils"
+source "${SCRIPT_DIR}/res/handlers/internal/utils/config-utils"
 
 
 # trap exit
@@ -170,7 +170,9 @@ exportSharedVariables() {
   export LISTEN_PORT
   export AUTH_TOKEN_COOKIE_NAME
   export AUTH_TOKEN_EXPIRATION_MINUTES
-  export SERVER_START_TIMESTAMP="$(date +%s)"
+  local server_start_timestamp
+  server_start_timestamp="$(date +%s)"
+  export SERVER_START_TIMESTAMP="$server_start_timestamp"
   export ADMIN_USER_EMAIL
 }
 

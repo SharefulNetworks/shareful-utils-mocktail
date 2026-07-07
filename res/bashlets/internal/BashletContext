@@ -5,7 +5,7 @@ echo "BashletContext: Loaded BashletContext helper/utility functions... " >&2
 
 
 # souce the mime-utils library, which provides a set of utility functions for working with MIME types.
-source "${SCRIPT_DIR}/res/utils/mime-utils"
+source "${SCRIPT_DIR}/res/handlers/internal/utils/mime-utils"
 
 # constructs a baseline/default bashlet response object in JSON format, which will be 
 # returned to the caller, as-is, where the bashlet function being invoked does not 
@@ -77,11 +77,17 @@ BuildBashletErrorResponse(){
 DispatchBashletResponse(){
 
     local responseObject="$1"
-    local status_code=$(jq -r '.status_code' <<< "$responseObject")
-    local status_message=$(jq -r '.status_message' <<< "$responseObject")
-    local headers=$(jq -c '.headers // {}' <<< "$responseObject")
-    local content_type=$(jq -r '.content_type' <<< "$responseObject")
-    local content=$(jq -r '.body' <<< "$responseObject")
+  local status_code
+  local status_message
+  local headers
+  local content_type
+  local content
+
+  status_code=$(jq -r '.status_code' <<< "$responseObject")
+  status_message=$(jq -r '.status_message' <<< "$responseObject")
+  headers=$(jq -c '.headers // {}' <<< "$responseObject")
+  content_type=$(jq -r '.content_type' <<< "$responseObject")
+  content=$(jq -r '.body' <<< "$responseObject")
 
     printf "HTTP/1.1 $status_code $status_message\r\n"
     printf "Content-Type: %s\r\n" "$content_type"
@@ -127,7 +133,7 @@ DispatchBashletResponse(){
      local header_name="X-Request-Completed"
      local header_value="true"
      responseObject="$(jq --arg header_name "$header_name" --arg header_value "$header_value" '.headers[$header_name] = $header_value' <<< "$responseObject")"
-     bashletResponse="$responseObject" # update the response object in the BashletEngine context to include the X-Request-Completed header, this will prevent the BashletEngine from attempting to send a second response to the client.
+    export bashletResponse="$responseObject" # update the response object in the BashletEngine context to include the X-Request-Completed header, this will prevent the BashletEngine from attempting to send a second response to the client.
     
 }
 
@@ -135,7 +141,8 @@ DispatchBashletRedirectResponse() {
   local redirect_url="$1"
   local response_ref="${2:-}"
   local status_code=302
-  local status_message="$(GetStatusMsgForCode $status_code)"
+  local status_message
+  status_message="$(GetStatusMsgForCode $status_code)"
   local headers="{\"Location\": \"$redirect_url\"}"
   local content_type="text/html"
   local content="<html><body><p>$status_code $status_message</p><p>Redirecting to <a href=\"$redirect_url\">$redirect_url</a></p></body></html>"
@@ -467,7 +474,8 @@ SendBashletErrorResponse(){
    local full_request_object="$3"
    local short_content_type="$4"
 
-   local err_status_message="$(GetStatusMsgForCode $err_status_code)"
+    local err_status_message
+    err_status_message="$(GetStatusMsgForCode $err_status_code)"
    if requestAcceptsHtml "$full_request_object"; then
         echo "SendBashletErrorResponse: client accepts HTML, redirecting to user friendly error page..." >&2
         DispatchBashletRedirectResponse "/sys/ui/errors-dynamic.html?status=$err_status_code&message=$err_status_message&content=$err_content"

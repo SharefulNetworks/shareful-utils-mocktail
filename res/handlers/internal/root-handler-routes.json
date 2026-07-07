@@ -9,7 +9,7 @@
             "Title": "Root Wildcard Route for serving static web resources",
             "Path": "/*",
             "Type": "static",
-            "FilePath": "/res/www",
+            "FilePath": "/res/usr/www",
             "Description": "A wildcard route for serving static web resources from the www directory."
         },
         {

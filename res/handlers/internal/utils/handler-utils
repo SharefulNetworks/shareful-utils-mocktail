@@ -378,6 +378,7 @@ handleStaticRouteRequest() {
   local route_file_path="$(parseStaticRouteFilePath "$route_info")"
   if [[ "$route_type" == "static" && -n "$route_file_path" ]]; then 
     
+    # echo "&&&********* Called by: ${BASH_SOURCE[2]}" >&2
     # what we do next will depend on whether this is a wildcard static route or not as denoted
     # by a route Path that is suffixed with a wildcard i.e "*" character
     absolute_file_path=""
@@ -431,11 +432,18 @@ handleStaticRouteRequest() {
 
     echo "handler-utils: Static resource response sent for path: $path, closing connection." >&2
     elif [[ -d "$absolute_file_path" ]]; then
+      
+      #echo "absolute_file_path: $absolute_file_path, script file path: $SCRIPT_DIR" >> log.txt
+
       echo "handler-utils: Static resource path is a directory for path: $path at file path: $route_file_path, looking for default index file..." >&2
       # Check if there's an index.html file in the directory
       if [[ -f "$absolute_file_path/index.html" ]]; then
         dispatchFileResponse "$absolute_file_path/index.html" "text/html"
         echo "handler-utils: Static resource response sent for path: $path, found index.html, closing connection." >&2
+      #final check: if the provided path is the server www root and no index.html exist we return the default mocktail welcome page to the client.
+      elif [[ "$absolute_file_path" == "/home/gilesthompson/erudite/shareful-oss/shareful-utils-mocktail/res/usr/www" ]]; then
+        dispatchFileResponse "${SCRIPT_DIR}/res/handlers/internal/xmocktail-welcome-page.html" "text/html"
+        echo "handler-utils: Static resource response sent for path: $path, found index.htm, closing connection." >&2
       else
         DispatchErrorResponse 404 "The provided path references a directory that DOES NOT contain an index.html file" "application/json" "$request_path" "$request_method" "$request_json_object"
       fi

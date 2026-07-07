@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     systemSettingsSaveBtn.addEventListener('click', async function (e) {
       e.preventDefault();
-      // Implement save functionality here
+  
       console.log('System settings save button clicked');
 
       //grab system settings values from the UI
@@ -93,8 +93,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const result = await response.json();
-        console.log('Settings saved successfully:', result);
-        alert('Settings saved successfully.');
+        console.log('Settings saved successfully.', result);
+        alert('Settings saved successfully. The server may need to be restarted for some changes to take effect.');
         // Update cached settings with the new values
         CACHED_SETTINGS = updatedSettings;
       } catch (error) {
@@ -106,12 +106,64 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  //attach event listener function to the "save security settings" button...
   if (securitySettingsSaveBtn) {
     securitySettingsSaveBtn.addEventListener('click', async function (e) {
-      e.preventDefault();
-      // Implement save functionality here
-      console.log('Security settings save button clicked');
-      // You can call a function to save the settings to the server 
+          e.preventDefault();
+
+         console.log('Security settings save button clicked');
+
+        //grab security settings values from the UI
+        const email = document.getElementById('security-email').value;
+        const passphrase = document.getElementById('security-passphrase').value;
+        const authenticationMethod = document.getElementById('security-authentication-method').value;
+        const tokenExpiration = document.getElementById('security-token-expiration').value;
+        const tokenCookieName = document.getElementById('security-token-cookie-name').value;
+        const enableCORS = document.getElementById('security-enable-cors').checked;
+        const allowedOrigins = document.getElementById('security-allowed-origins').value.split(',');
+  
+        //validate supplied values before attempying to update the server settings
+        if (!email || !passphrase || !authenticationMethod || !tokenExpiration || !tokenCookieName) {
+          alert('Please fill in all required fields.');
+          return;
+        }
+
+        //make a copy of the cached settings to update with the new values
+        const updatedSettings = JSON.parse(JSON.stringify(CACHED_SETTINGS));
+
+        //update the copied settings with the new values from the UI
+        updatedSettings.SecuritySettings.Email = email;
+        updatedSettings.SecuritySettings.Passphrase = passphrase;
+        updatedSettings.SecuritySettings.AuthenticationMethod = authenticationMethod;
+        updatedSettings.SecuritySettings.TokenExpirationMinutes = parseInt(tokenExpiration);
+        updatedSettings.SecuritySettings.AuthTokenCookieName = tokenCookieName;
+        updatedSettings.SecuritySettings.EnableCORS = enableCORS;
+        updatedSettings.SecuritySettings.AllowedOrigins = allowedOrigins;
+
+        //send the updated settings to the server for saving
+        try {
+          const response = await fetch('api/settings', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedSettings)
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const result = await response.json();
+          console.log('Settings saved successfully:', result);
+          alert('Settings saved successfully. The server may need to be restarted for some changes to take effect.');
+          // Update cached settings with the new values
+          CACHED_SETTINGS = updatedSettings;
+        } catch (error) {
+          console.error('Error saving settings:', error);
+          alert('Error saving settings. Please try again.');
+        }
+
     });
   }
 

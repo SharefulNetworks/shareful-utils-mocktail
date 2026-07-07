@@ -35,14 +35,14 @@
       <div class="main-sidebar sidebar-style-2">
         <aside id="sidebar-wrapper">
           <div class="sidebar-brand">
-            <img src="assets/img/mocktail-logo-new-trans.png" alt="logo" width="240" style="position:relative; top: -65px;">
+            <img src="assets/img/mocktail-logo-new-trans.png" alt="logo" width="250" style="position:relative; top: -65px;">
           </div>
           <ul class="sidebar-menu">
             <li class="menu-header">Dashboard</li>
             <li class="dropdown">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-fire"></i><span>Dashboard</span></a>
               <ul class="dropdown-menu">
-                <li><a class="nav-link" href="index-0.html">General Dashboard</a></li>
+                <li><a class="nav-link" href="../../sys/admin/dashboard">General Dashboard</a></li>
                 <li><a class="nav-link" href="index.html">API Mocking Dashboard</a></li>
               </ul>
             </li>
@@ -51,7 +51,7 @@
             <li class="dropdown">
               <a href="#" class="nav-link has-dropdown"><i class="fas fa-th-large"></i> <span>Settings</span></a>
               <ul class="dropdown-menu">
-                <li><a class="nav-link" href="general-settings.html">General Settings</a></li>
+                <li><a class="nav-link" href="../../sys/admin/settings">General Settings</a></li>
                 <li><a class="nav-link" href="general-advanced-settings.html">API Mocking Settings</a></li>
               </ul>
             </li>
@@ -159,8 +159,65 @@
             }
           }
         }
+       
+        setActiveMenuItem();
       }
     });
+
+
+    //parse the parent view from the URL query parameters
+    function parseParentViewFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('parentView');
+    }
+
+    //set the active menu item based on the parent view, if the parent view
+    //is general_dash set the active menu item to the general dashboard, 
+    // if the parent view is general_settings set the active menu item to the general settings
+    function setActiveMenuItem() {
+
+        const parentView = parseParentViewFromURL();
+
+        const sidebarRoot = document.getElementById('sidebar-wrapper');
+        if (!sidebarRoot) {
+            return;
+        }
+    
+        sidebarRoot.querySelectorAll('.active').forEach(function (item) {
+            item.classList.remove('active');
+        });
+    
+        
+        if (parentView === 'general_dash') {
+            const generalDashboardLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/dashboard"]');
+            if (generalDashboardLink) {
+              const activeItem = generalDashboardLink.closest('li');
+              if (activeItem) {
+                activeItem.classList.add('active');
+              }
+
+              const activeDropdown = generalDashboardLink.closest('li.dropdown');
+              if (activeDropdown) {
+                activeDropdown.classList.add('active');
+              }
+            }
+        } else if (parentView === 'general_settings') {
+            const generalSettingsLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/settings"]');
+            if (generalSettingsLink) {
+              const activeItem = generalSettingsLink.closest('li');
+              if (activeItem) {
+                activeItem.classList.add('active');
+              }
+
+              const activeDropdown = generalSettingsLink.closest('li.dropdown');
+              if (activeDropdown) {
+                activeDropdown.classList.add('active');
+              }
+            }
+        }
+    }
+
+
   </script>
 </body>
 </html>

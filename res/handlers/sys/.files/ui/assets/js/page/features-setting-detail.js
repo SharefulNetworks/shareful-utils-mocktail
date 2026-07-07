@@ -1,10 +1,16 @@
+//stores the latest settings fetched from the API.
+var CACHED_SETTINGS = null; 
+
 /**
  * Handle tab switching between System and Security settings panels
  */
 document.addEventListener('DOMContentLoaded', function () {
+
   // Get button references
   const systemBtn = document.getElementById('system-settings-btn');
   const securityBtn = document.getElementById('security-settings-btn');
+  const systemSettingsSaveBtn = document.getElementById('system-settings-save-btn');
+  const securitySettingsSaveBtn = document.getElementById('security-settings-save-btn');
 
   // Get panel references
   const systemCard = document.getElementById('system-settings-card');
@@ -22,6 +28,90 @@ document.addEventListener('DOMContentLoaded', function () {
     securityBtn.querySelector('a').addEventListener('click', function (e) {
       e.preventDefault();
       showGeneralSettingsPanel(securityBtn);
+    });
+  }
+
+
+  //attach event listener function to the "save system settings" button...
+  if (systemSettingsSaveBtn) {
+
+    systemSettingsSaveBtn.addEventListener('click', async function (e) {
+      e.preventDefault();
+      // Implement save functionality here
+      console.log('System settings save button clicked');
+
+      //grab system settings values from the UI
+      const maxConcurrentProcesses = document.getElementById('max-handler-processes').value;
+      const maxHandlerProcessRuntime = document.getElementById('max-handler-process-runtime').value;
+      const listeningPort = document.getElementById('listening-port').value;
+
+      //validate supplied values before attempying to update the server settings
+      if (!maxConcurrentProcesses || !maxHandlerProcessRuntime || !listeningPort) {
+        alert('Please fill in all required fields.');
+        return;
+      }
+
+      //maxConcurrent process must be more than 1 and less than 1000
+      if (maxConcurrentProcesses < 1 || maxConcurrentProcesses > 1000) {
+        alert('Max Concurrent Processes must be between 1 and 1000.');
+        return;
+      }
+
+      //maxHandlerProcessRuntime must be more than or equal to 1 and less than 600 seconds (10 minutes)`
+      if (maxHandlerProcessRuntime < 1 || maxHandlerProcessRuntime > 3600) {
+        alert('Max Handler Process Runtime must be between 1 and 3600 seconds.');
+        return;
+      }
+
+      //listeningPort must be more than or equal to 1024 and less than 65535
+      if (listeningPort < 1024 || listeningPort > 65535) {
+        alert('Listening Port must be between 1024 and 65535.');
+        return;
+      }
+
+
+      //make a copy of the cached settings to update with the new values
+      const updatedSettings = JSON.parse(JSON.stringify(CACHED_SETTINGS));
+
+      //update the copied settings with the new values from the UI
+      updatedSettings.GeneralSettings.MaxConcurrentProcesses = parseInt(maxConcurrentProcesses);
+      updatedSettings.GeneralSettings.MaxHandlerProcessRuntime = parseInt(maxHandlerProcessRuntime);
+      updatedSettings.GeneralSettings.ListeningPort = parseInt(listeningPort);
+
+      //send the updated settings to the server for saving
+      try {
+        const response = await fetch('api/settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updatedSettings)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Settings saved successfully:', result);
+        alert('Settings saved successfully.');
+        // Update cached settings with the new values
+        CACHED_SETTINGS = updatedSettings;
+      } catch (error) {
+        console.error('Error saving settings:', error);
+        alert('Error saving settings. Please try again.');
+      }
+
+      
+    });
+  }
+
+  if (securitySettingsSaveBtn) {
+    securitySettingsSaveBtn.addEventListener('click', async function (e) {
+      e.preventDefault();
+      // Implement save functionality here
+      console.log('Security settings save button clicked');
+      // You can call a function to save the settings to the server 
     });
   }
 
@@ -79,6 +169,7 @@ async function fetchServerSettings() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const settings = await response.json();
+        CACHED_SETTINGS = settings;
         return settings;
     } catch (error) {
         console.error('Error fetching server settings:', error);

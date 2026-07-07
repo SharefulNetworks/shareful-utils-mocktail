@@ -307,11 +307,11 @@ apiGetServerStats(){
 
 # API endpoint to return the current server configuration settings, such as max processes, security settings etc.
 # @route method=get path=/api/settings
-apiSettings(){
+apiGetSettings(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside apiSettings..." >&2
+    echo "AdminController: inside apiGetSettings..." >&2
 
     # read current server configuration data from the JSON config file.
     configData="$(ReadServerJSONConfig)"
@@ -326,6 +326,44 @@ apiSettings(){
 
     # set the response body to the JSON object we have built.
     SetBashletResponseBody "$response" "$configData"
+
+}
+
+# API endpoint to update the current server configuration settings, such as max processes, security settings etc.
+# @route method=post path=/api/settings
+apiUpdateSettings(){
+    request="$1"
+    response="$2"
+
+    echo "AdminController: inside apiUpdateSettings..." >&2
+
+    # read current server configuration data from the JSON config file.
+    configData="$(ReadServerJSONConfig)"
+    if [[ -z "$configData" ]]; then
+        echo "AdminController: failed to read server configuration data from config file." >&2
+
+        local err_status_code=500
+        local err_content="Internal Server Error - Failed to read server configuration data from config file (config.json). If the file exists its likely corrupted, please delete it and restart the server."
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # parse the posted JSON body from the request, which contains the updated settings.
+    updatedSettings="$(ParseBashletRequestBody "$request")"
+    if [[ -z "$updatedSettings" ]]; then
+        echo "AdminController: failed to parse updated settings from request body." >&2
+
+        local err_status_code=400
+        local err_content="Bad Request - Failed to parse updated settings from request body."
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # write the updated config data back to the config file.
+    UpdateConfigFile "$updatedSettings"
+
+    # set the response body to indicate success.
+    SetBashletResponseBody "$response" '{"status":"success","message":"Settings updated successfully."}'
 
 }
 

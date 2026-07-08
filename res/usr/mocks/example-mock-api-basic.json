@@ -1,0 +1,26 @@
+{
+  "Name": "Example Mock API (Basic)",
+  "Description": "Example that demonstrates the use of Mocktail Server to create a simple Mock API with endpoints that return static JSON responses.",
+  "Version": "1.0",
+  "BasePath": "/api/v1",
+  "Endpoints": [
+    {
+      "Path": "/users",
+      "Method": "GET",
+      "Response": {
+        "StatusCode": 200,
+        "Headers": {
+          "Content-Type": "application/json"
+        },
+        "Body": [
+          {
+            "id": 1,
+            "name": "John Doe",
+            "email": "john.doe@example.com"
+          }
+        ]
+      }
+    }
+
+  ]
+}

@@ -4,6 +4,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOCAT_PID=""
 PROCESS_MONITOR_PID=""
+PROCESS_USAGE_HISTORY_STATS_FILE="/dev/shm/process_usage_history.json"
 
 
 # declare default server configuration globals, these WILL be overridden by values read from the main server configuration JSON file.
@@ -174,6 +175,7 @@ exportSharedVariables() {
   server_start_timestamp="$(date +%s)"
   export SERVER_START_TIMESTAMP="$server_start_timestamp"
   export ADMIN_USER_EMAIL
+  export PROCESS_USAGE_HISTORY_STATS_FILE
 }
 
 
@@ -217,8 +219,12 @@ getServerProcessCount() {
 # and update a JSON file with the current process count for each minute of the last hour.
 monitorProcessUsage() {
 
-    local historyFile="$SCRIPT_DIR/res/.process_usage_history.json"
+    #local historyFile="$SCRIPT_DIR/res/.process_usage_history.json"
+    #local tmpFile="${historyFile}.tmp"
+    #local historyFile="/dev/shm/process_usage_history.json"
+    local historyFile="$PROCESS_USAGE_HISTORY_STATS_FILE"
     local tmpFile="${historyFile}.tmp"
+    
 
     jq -n '[range(60) | 0]' > "$historyFile"
 

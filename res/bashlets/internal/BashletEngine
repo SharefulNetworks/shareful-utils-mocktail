@@ -334,7 +334,9 @@ resolveBashletsFromRouteConfigs(){
 
   # iterate over the array of route config paths, checking for existence and readability, and if so, parse the JSON to extract any bashlet routes defined.
   for config_path in "${ROUTE_CONFIGS[@]}"; do
+
     if [[ -f "$config_path" && -r "$config_path" ]]; then
+    
       echo "BashletEngine: Parsing route config: $config_path" >&2
       # parse the JSON to extract bashlet routes (assuming a specific structure) and store them in an associative array or similar structure for later use.
       # This is a placeholder for actual JSON parsing logic, which may involve jq or similar tools.

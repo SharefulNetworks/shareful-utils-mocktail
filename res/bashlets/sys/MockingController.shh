@@ -1,2 +1,89 @@
 #!/bin/bash
 
+# The Mocktail Servers MockingController is a system-level Bashlet that is responsible for handling requests to the 
+# to user-defined Mock API's and their respective constituent endpoints. It is invoked by the system-handler when a request 
+# matches the "/sys/mock" path prefix and will attempt to map the path provided in the request to a specific Mock API endpoint. 
+# The MockingController is also responsible for managing the lifecycle of Mock API's, including their creation, 
+# modification, and deletion.
+
+
+# import/source the BashletContext helper functions to support parsing of the incoming request object and constructing the response object.
+source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
+
+
+# init, where defined is automatically invoked by the BashletEngine 
+init(){
+
+   echo "MockingController: Initializing MockingController Bashlet..." >&2
+}
+
+# Facilitates a GET request/response cycle to a user-defined Mock API endpoint, by using the request path to resolve the target Mock API
+# collection via its assigned BASE PATH, the remainder of the request path is then used to resolve the specific 
+# endpoint within that Mock API collection, to which the request is directed.
+# @route method=get path=/
+invokeGET(){
+    request="$1"
+    response="$2"
+
+    #here we really just intercept the request GET HTTP method and redirect it to the invokeEndpoint function.
+    invokeEndpoint "$request" "$response"
+
+}
+
+
+# Facilitates a POST request/response cycle to a user-defined Mock API endpoint, by using the request path to resolve the target Mock API
+# collection via its assigned BASE PATH, the remainder of the request path is then used to resolve the specific 
+# endpoint within that Mock API collection, to which the request is directed.
+# @route method=post path=/
+invokePOST(){
+    request="$1"
+    response="$2"
+
+    #here we really just intercept the request POST HTTP method and redirect it to the invokeEndpoint function.
+    invokeEndpoint "$request" "$response"
+
+}
+
+
+
+# Facilitates a PUT request/response cycle to a user-defined Mock API endpoint, by using the request path to resolve the target Mock API
+# collection via its assigned BASE PATH, the remainder of the request path is then used to resolve the specific 
+# endpoint within that Mock API collection, to which the request is directed.
+# @route method=put path=/
+invokePUT(){
+    request="$1"
+    response="$2"
+
+    #here we really just intercept the request PUT HTTP method and redirect it to the invokeEndpoint function.
+    invokeEndpoint "$request" "$response"
+
+}
+
+
+
+# Facilitates a DELETE request/response cycle to a user-defined Mock API endpoint, by using the request path to resolve the target Mock API
+# collection via its assigned BASE PATH, the remainder of the request path is then used to resolve the specific 
+# endpoint within that Mock API collection, to which the request is directed.
+# @route method=delete path=/
+invokeDELETE(){
+    request="$1"
+    response="$2"
+
+    #here we really just intercept the request DELETE HTTP method and redirect it to the invokeEndpoint function.
+    invokeEndpoint "$request" "$response"
+
+}
+
+
+
+#-------------------------------------Helper functions for the MockingController Bashlet--------------------------------------
+
+# requests to all invoke* functions are routed to this function, which is responsible for resolving the target Mock API collection and endpoint
+# based on the request path, and then returning the defined response for the endpoint to the client.
+invokeEndpoint(){
+    request="$1"
+    response="$2"
+
+}
+
+

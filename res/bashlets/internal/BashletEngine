@@ -246,7 +246,14 @@ DelegateRequestToBashletEngine() {
     # build default response object to be returned to the caller, which may be optionally augmented by the
     # bashlet function being invoked, where its not, this default success response will be returned.
     bashletResponse="$(BuildDefaultBashletResponseObject 200 '{}' 'text/plain' '')"    
-    bashletResponseVarName="bashletResponse" # name of the response object variable to pass to the bash 
+    bashletResponseVarName="bashletResponse" # name of the response object variable to pass to the bash
+
+    # call init on the bashlet if this is the very first time it's being loaded AND an init function has been defined
+    # in the bashlet, this allows the bashlet to perform any necessary initialisation tasks before handling requests.
+    # where this is not the first time the bashlet has been loaded, or no init function is defined, then the 
+    # call to this function will be a no-op.
+    initialiseBashlet "$absolute_bashlet_file_path"
+    
 
     # crucially we may now invoke the resolved bashlet function, passing in the request object and the response object, which may 
     # be optionally modified by the bashlet function to return a custom response to the caller.
@@ -474,6 +481,7 @@ parseBashletAnnotationMetadata() {
 
 
 
+
 # normalises request paths by removing query strings and trailing slashes (except for root), 
 # ensuring consistent routing behavior.
 #
@@ -501,6 +509,31 @@ normalizeRequestPath() {
     echo "$path"
 }
 
+
+initialiseBashlet() {
+    local bashlet_file_path="$1"
+
+    # Check if the bashlet has already been initialized we do this by consulting the BashletEngine's
+    # key-value store of initialized bashlets.
+    if  KVExists "$bashlet_file_path"; then
+        echo "BashletEngine: Bashlet '$bashlet_file_path' has already been loaded, skipping init." >&2
+        return 0
+    else
+        echo "BashletEngine: Bashlet '$bashlet_file_path' has not been initialized, proceeding with init." >&2
+        KVStore "$bashlet_file_path" 1  # Mark as initialized in the key-value store
+    
+        # Check if the init function exists in the bashlet, if so we invoke it to perform any application-specific 
+        # initialisation tasks, otherwise we log that no init function was found.
+        if ( source "$bashlet_file_path"; declare -F init > /dev/null ); then
+            echo "BashletEngine: init function FOUND in bashlet '$bashlet_file_path', invoking init()." >&2
+            init
+        else
+            echo "BashletEngine: init function NOT FOUND in bashlet '$bashlet_file_path', skipping init." >&2
+        fi
+
+    fi
+ 
+}
 
 exportVariablesForSubProcessesAsBase64() {
 

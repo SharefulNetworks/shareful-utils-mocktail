@@ -7,6 +7,8 @@ echo "BashletContext: Loaded BashletContext helper/utility functions... " >&2
 # souce the mime-utils library, which provides a set of utility functions for working with MIME types.
 source "${SCRIPT_DIR}/res/handlers/internal/utils/mime-utils"
 
+
+
 # constructs a baseline/default bashlet response object in JSON format, which will be 
 # returned to the caller, as-is, where the bashlet function being invoked does not 
 # explicitly augment the response object via the various setter functions provided.
@@ -165,8 +167,147 @@ DispatchBashletRedirectResponse() {
 }
 
 
+#------------------------------------------------------public bashlet key-value store functions---------------------------------------------------
 
 
+# Stores the provided key-value pair to the BashletContext key-value store, data stored here is accessible to
+# all instances of the SAME bashlet and persists across all requests, sessions and underlying server processes.
+# Each bashlet will be associated with its own isolated key-value data.
+KVStore(){
+
+   key="$1"
+   value="$2"
+   callingBashlet=$(basename "${BASH_SOURCE[1]}")
+
+   echo "Store: Storing data in the BashletContext key-value store..." >&2
+
+   # create a composite key using the the provided key and the calling bashlet name. This ensure each bashlets
+   # key-value store data isolated from other bashlets, even if they use the same key names.
+   compositeKey="${callingBashlet}:${key}"
+
+   # next we use jq to:
+   # 1) read the JSON map object from the memory mapped file, where it exists, or create a new empty JSON map object where it does not.
+   # 2) update the JSON map object with the new key-value pair, using the composite key as the key and the provided value as the value.
+   # 3) write the updated JSON map object back to the memory mapped file, overwriting the previous contents.
+   # Note: We undertake the entire read-modify-write operation within a flock lock pipeline to ensure that the operation is atomic.
+   local kv_store_json
+   {
+    flock -x 200 
+
+    # Read JSON based KV store object,
+    if [[ -f "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE" ]]; then
+         kv_store_json=$(jq -c '.' "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE")
+    else
+         kv_store_json='{}'
+    fi
+
+
+    # Update JSON based KV store object. Use --argjson when the provided value
+    # is valid JSON, otherwise use --arg to store it as a string.
+    if jq -e . >/dev/null 2>&1 <<< "$value"; then
+      kv_store_json=$(jq -c --arg key "$compositeKey" --argjson value "$value" '.[$key] = $value' <<< "$kv_store_json")
+    else
+      kv_store_json=$(jq -c --arg key "$compositeKey" --arg value "$value" '.[$key] = $value' <<< "$kv_store_json")
+    fi
+
+    # Write JSON
+    printf '%s\n' "$kv_store_json" > "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE"
+
+   } 200>"$BASHLET_CONTEXT_KV_STORE_MMAP_FILE.lock"  # lock file to ensure only one process can read/write to the file at a time.
+   
+
+}
+
+# Retrieves the value associated with the provided key from the BashletContext key-value store, 
+# returning an empty string where the key does not exist.
+KVRead(){
+
+    key="$1"
+    callingBashlet=$(basename "${BASH_SOURCE[1]}")
+
+    echo "Read: Reading data from the BashletContext key-value store..." >&2
+
+    # create a composite key using the the provided key and the calling bashlet name.
+    compositeKey="${callingBashlet}:${key}"
+
+    # next we use jq to:
+    # 1) read the JSON map object from the memory mapped file, where it exists.
+    # 2) extract the value associated with the composite key, returning an empty string where the key does not exist.
+    local kv_store_json
+    {
+        flock -s 200  # shared lock for reading
+
+        if [[ -f "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE" ]]; then
+            kv_store_json=$(jq -c '.' "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE")
+            jq -r --arg key "$compositeKey" '.[$key] // empty' <<< "$kv_store_json"
+        else
+            echo ""  # return empty string if the file does not exist
+        fi
+
+    } 200>"$BASHLET_CONTEXT_KV_STORE_MMAP_FILE.lock"  # lock file to ensure only one process can read/write to the file at a time.      
+
+}
+
+# checks if the provided key exists in the BashletContext key-value store, 
+# returning 0 (true) where it does and 1 (false) where it does not.
+KVExists(){
+
+    key="$1"
+    callingBashlet=$(basename "${BASH_SOURCE[1]}")
+
+    echo "Exists: Checking if key exists in the BashletContext key-value store..." >&2
+
+    # create a composite key using the the provided key and the calling bashlet name.
+    compositeKey="${callingBashlet}:${key}"
+
+    # next we use jq to:
+    # 1) read the JSON map object from the memory mapped file, where it exists.
+    # 2) check if the composite key exists in the JSON map object, returning true or false.
+    local kv_store_json
+    {
+      flock -s 200  # shared lock for reading
+
+      if [[ -f "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE" ]]; then
+        kv_store_json=$(jq -c '.' "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE")
+        jq -e --arg key "$compositeKey" 'has($key)' <<< "$kv_store_json" >/dev/null
+        return $?
+      fi
+
+      return 1  # false if the file does not exist
+
+    } 200>"$BASHLET_CONTEXT_KV_STORE_MMAP_FILE.lock"  # lock file to ensure only one process can read/write to the file at a time.      
+
+}
+
+# Deletes entry from the BashletContext key-value store, where the provided key exists, otherwise thw call to 
+# this function is a no-op.
+KVDelete(){
+
+    key="$1"
+    callingBashlet=$(basename "${BASH_SOURCE[1]}")
+
+    echo "Delete: Deleting key from the BashletContext key-value store..." >&2
+
+    # create a composite key using the the provided key and the calling bashlet name.
+    compositeKey="${callingBashlet}:${key}"
+
+    # next we use jq to:
+    # 1) read the JSON map object from the memory mapped file, where it exists.
+    # 2) delete the composite key from the JSON map object, if it exists.
+    # 3) write the updated JSON map object back to the memory mapped file, overwriting the previous contents.
+    local kv_store_json
+    {
+        flock -x 200  # exclusive lock for writing
+
+        if [[ -f "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE" ]]; then
+            kv_store_json=$(jq -c '.' "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE")
+            kv_store_json=$(jq -c --arg key "$compositeKey" 'del(.[$key])' <<< "$kv_store_json")
+            printf '%s\n' "$kv_store_json" > "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE"
+        fi
+
+    } 200>"$BASHLET_CONTEXT_KV_STORE_MMAP_FILE.lock"  # lock file to ensure only one process can read/write to the file at a time.      
+
+}
 
 
 # -----------------------------------------------------public bashlet request object parsing functions---------------------------------------------------
@@ -811,7 +952,7 @@ UrlEncode(){
 GetServerProcessUtilizationHistory() {
     
     #local utilization_history_file="${SERVER_UTILIZATION_HISTORY_FILE:-$SCRIPT_DIR/res/.process_usage_history.json}"
-    local utilization_history_file="${PROCESS_USAGE_HISTORY_STATS_FILE}"
+    local utilization_history_file="${PROCESS_USAGE_HISTORY_STATS_MMAP_FILE}"
 
     if [[ ! -f "$utilization_history_file" ]]; then
         echo "GetServerProcessUtilizationHistory: Utilization history file not found at $utilization_history_file" >&2

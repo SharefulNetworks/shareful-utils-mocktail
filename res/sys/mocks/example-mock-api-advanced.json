@@ -1,0 +1,26 @@
+{
+  "Name": "Example Mock API (Advanced)",
+  "Description": "Example that demonstrates the use of Mocktail Server to create a more advanced Mock API with endpoints that return static and dynamic JSON responses.",
+  "Version": "1.0",
+  "CollectionId": "x102",
+  "Endpoints": [
+    {
+      "Path": "/api/v1/profiles",
+      "Method": "GET",
+      "Response": {
+        "StatusCode": 200,
+        "Headers": {
+          "Content-Type": "application/json"
+        },
+        "Body": [
+          {
+            "profileIdd": 1,
+            "username": "JonnyDoe",
+            "email": "john.doe@example.com"
+          }
+        ]
+      }
+    }
+
+  ]
+}

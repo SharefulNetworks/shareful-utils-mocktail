@@ -10,11 +10,19 @@
 # import/source the BashletContext helper functions to support parsing of the incoming request object and constructing the response object.
 source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
 
+# import/source the MockingController helper functions to support the return of responses to clients as defined in the Mock API collection JSON files.
+source "$SCRIPT_DIR/res/handlers/internal/utils/mock-utils"
+
 
 # init, where defined is automatically invoked by the BashletEngine 
 init(){
 
    echo "MockingController: Initializing MockingController Bashlet..." >&2
+
+   # load all mock api collection from the host file system into memory and store them to the BashletContext key-value store, 
+   # using their Collection ID as the key, this allows the MockingController to resolve requests to specific Mock API endpoints.
+   loadMockAPICollections
+
 }
 
 # Facilitates a GET request/response cycle to a user-defined Mock API endpoint, by using the request path to resolve the target Mock API
@@ -26,13 +34,13 @@ invokeGET(){
     response="$2"
 
     # attempt to get value from the BashletContexts key-value store
-    if  KVExists "last_request"; then
-        last_request=$(KVRead "last_request")
-        echo "MockingController: Last request was: $last_request" >&2
-    else
-        echo "MockingController: No last request found in the BashletContext key-value store, creating new entry." >&2
-        KVStore "last_request" "$request"
-    fi
+    #if  KVExists "last_request"; then
+    #    last_request=$(KVRead "last_request")
+    #    echo "MockingController: Last request was: $last_request" >&2
+    #else
+    #    echo "MockingController: No last request found in the BashletContext key-value store, creating new entry." >&2
+    #    KVStore "last_request" "$request"
+    #fi
 
     
 
@@ -103,6 +111,61 @@ invokeDELETE(){
 invokeEndpoint(){
     request="$1"
     response="$2"
+
+    
+    collectionId=$(ParseBashletRequestPathSegment "$request" 3)
+    mockAPICollection=$(lookupMockAPICollectionById "$collectionId")
+
+    # where a collection could not be found with the provided collection id, return a 404 error to the client.
+    if [[ $? -ne 0 ]]; then
+        echo "MockingController: No Mock API collection found with Id: $collectionId" >&2
+        
+        # prep and return 404 error
+        local err_status_code=404
+        local err_content="Not Found - Failed to find the requested resource. No Mock API collection found with Id: $collectionId"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    echo "MockingController: Resolved Mock API Collection Id from request path: $collectionId" >&2
+
+}
+
+lookupMockAPICollectionById(){
+    collectionId="$1"
+
+    # attempt to get value from the BashletContexts key-value store
+    if  KVExists "$collectionId"; then
+        mock_json=$(KVRead "$collectionId")
+        echo "MockingController: Found Mock API collection with Id: $collectionId" >&2
+        echo "$mock_json"
+    else
+        echo "MockingController: No Mock API collection found with Id: $collectionId" >&2
+        return 1
+    fi
+
+}
+
+loadMockAPICollections(){
+
+   # load all system-level example MOCK API collections from the /res/sys/mocks/ directory.
+   ls "$SCRIPT_DIR/res/sys/mocks/"*.json 2>/dev/null | while read -r mock_file; do
+
+        echo "MockingController: Loading system-level Mock API collection from file: $mock_file" >&2
+
+        mock_json=$(ReadMockAPICollection "$mock_file")
+
+        # parse the collection id from the Mock API collection.
+        collectionId=$(ParseMockAPICollectionField "$mock_json" '.CollectionId')
+
+        # parse the collection name from the Mock API collection.
+        name=$(ParseMockAPICollectionField "$mock_json" '.Name')
+
+        # store the loaded Mock API collection in the BashletContext key-value store, using its Collection ID as the key.
+        KVStore "$collectionId" "$mock_json"
+
+        echo "MockingController: Loaded Mock API collection with Id: $collectionId and Name: $name" >&2
+   done
 
 }
 

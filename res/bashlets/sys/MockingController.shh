@@ -33,17 +33,6 @@ invokeGET(){
     request="$1"
     response="$2"
 
-    # attempt to get value from the BashletContexts key-value store
-    #if  KVExists "last_request"; then
-    #    last_request=$(KVRead "last_request")
-    #    echo "MockingController: Last request was: $last_request" >&2
-    #else
-    #    echo "MockingController: No last request found in the BashletContext key-value store, creating new entry." >&2
-    #    KVStore "last_request" "$request"
-    #fi
-
-    
-
     #here we really just intercept the request GET HTTP method and redirect it to the invokeEndpoint function.
     invokeEndpoint "$request" "$response"
 
@@ -157,79 +146,29 @@ invokeEndpoint(){
 
     local statusCode
     local responseBody
-    statusCode="$(jq -r '.Response.StatusCode // 200' <<< "$matchedEndpoint")"
-    responseBody="$(jq -r '
-        if (.Response.Body // null) == null then ""
-        elif (.Response.Body | type) == "string" then .Response.Body
-        else (.Response.Body | tojson)
-        end
-    ' <<< "$matchedEndpoint")"
+   
+    # parse the response status code and body from the matched endpoint definition, defaulting to 200 if not defined.
+    statusCode="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Response.StatusCode // 200')"
+   
+    # parse the response body from the matched endpoint definition, defaults to an empty string if not defined.
+    responseBody="$(ParseMockAPICollectionEndpointResponseBody "$matchedEndpoint")"
 
+    # set the response status code to the value parsed from the matched endpoint definition, or 200 if not defined.
     SetBashletResponseStatusCode "$response" "$statusCode"
 
+    # parse and set the response headers from the matched endpoint definition, if any are defined and set them on the response.
     while IFS=$'\t' read -r headerName headerValue; do
         [[ -z "$headerName" ]] && continue
         SetBashletResponseHeader "$response" "$headerName" "$headerValue"
-    done < <(jq -r '.Response.Headers // {} | to_entries[]? | "\(.key)\t\(.value)"' <<< "$matchedEndpoint")
+    done < <(ParseMockAPICollectionEndpointResponseHeaders "$matchedEndpoint")
 
+    # set the response body to the value parsed from the matched endpoint definition, or an empty string if not defined.
     SetBashletResponseBody "$response" "$responseBody"
 
 }
 
 
-# Resolves a single endpoint definition from a mock API collection for the supplied path and method.
-# Matching precedence is:
-# 1) exact static path match (e.g. /api/v1/users/settings)
-# 2) parameterized path match (e.g. /api/v1/users/{userId})
-ResolveMockEndpoint(){
-    local mockCollectionJson="$1"
-    local requestPath="$2"
-    local requestMethod="$3"
 
-    jq -c \
-        --arg requestPath "$requestPath" \
-        --arg requestMethod "$requestMethod" '
-        def normPath:
-            tostring
-            | if . == "" then "/" else . end
-            | if startswith("/") then . else "/" + . end
-            | if . == "/" then . else sub("/+$"; "") end;
-
-        def isParamPath:
-            test("\\{[^/]+\\}");
-
-        def toParamRegex:
-            "^" + (gsub("\\{[^/]+\\}"; "[^/]+")) + "$";
-
-        (.Endpoints // .endpoints // []) as $endpoints
-        | ($requestPath | normPath) as $path
-        | ($requestMethod | ascii_downcase) as $method
-        | [
-            $endpoints[]
-            | .Path as $rawPath
-            | (.Method // .method // "") as $endpointMethod
-            | ($rawPath | normPath) as $normalizedPath
-            | select(($endpointMethod == "") or (($endpointMethod | ascii_downcase) == $method))
-            | . + {
-                __normalizedPath: $normalizedPath,
-                __isParamPath: ($normalizedPath | isParamPath)
-              }
-          ] as $candidates
-        | (
-            ([ $candidates[] | select((.__isParamPath | not) and (.__normalizedPath == $path)) ] | .[0])
-            //
-            ([
-                $candidates[]
-                | select(.__isParamPath)
-                | . as $candidate
-                | select($path | test(($candidate.__normalizedPath | toParamRegex)))
-              ]
-             | sort_by(.__normalizedPath | length)
-             | reverse
-             | .[0])
-          ) // empty
-        ' <<< "$mockCollectionJson"
-}
 
 lookupMockAPICollectionById(){
     collectionId="$1"

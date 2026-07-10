@@ -23,12 +23,94 @@ ParseMockAPICollectionField() {
     jq -cr "$path" <<< "$json"
 }
 
+ParseMockAPICollectionEndpoints() {
+    local json="$1"
+    jq -cr '.Endpoints // .endpoints // []' <<< "$json"
+}
+
+ParseMockAPICollectionEndpointField() {
+    local endpointJson="$1"
+    local path="$2"
+    jq -cr "$path" <<< "$endpointJson"
+}
+
+ParseMockAPICollectionEndpointResponseHeaders() {
+    local endpointJson="$1"
+    jq -r '.Response.Headers // {} | to_entries[]? | "\(.key)\t\(.value)"' <<< "$endpointJson"
+}
+
+ParseMockAPICollectionEndpointResponseBody(){
+    local endpointJson="$1"
+    jq -r '
+        if (.Response.Body // null) == null then ""
+        elif (.Response.Body | type) == "string" then .Response.Body
+        else (.Response.Body | tojson)
+        end
+    ' <<< "$endpointJson"
+}
+
+
 
 SetMockAPICollectionField() {
     local json="$1"
     local path="$2"
     local value="$3"
     jq -cr --arg path "$path" --arg value "$value" 'setpath($path[1:] | split("." ); $value)' <<< "$json"
+}
+
+
+# Resolves a single endpoint definition from a mock API collection for the supplied path and method.
+# Matching precedence is:
+# 1) exact static path match (e.g. /api/v1/users/settings)
+# 2) parameterized path match (e.g. /api/v1/users/{userId})
+ResolveMockEndpoint(){
+    local mockCollectionJson="$1"
+    local requestPath="$2"
+    local requestMethod="$3"
+
+    jq -c \
+        --arg requestPath "$requestPath" \
+        --arg requestMethod "$requestMethod" '
+        def normPath:
+            tostring
+            | if . == "" then "/" else . end
+            | if startswith("/") then . else "/" + . end
+            | if . == "/" then . else sub("/+$"; "") end;
+
+        def isParamPath:
+            test("\\{[^/]+\\}");
+
+        def toParamRegex:
+            "^" + (gsub("\\{[^/]+\\}"; "[^/]+")) + "$";
+
+        (.Endpoints // .endpoints // []) as $endpoints
+        | ($requestPath | normPath) as $path
+        | ($requestMethod | ascii_downcase) as $method
+        | [
+            $endpoints[]
+            | .Path as $rawPath
+            | (.Method // .method // "") as $endpointMethod
+            | ($rawPath | normPath) as $normalizedPath
+            | select(($endpointMethod == "") or (($endpointMethod | ascii_downcase) == $method))
+            | . + {
+                __normalizedPath: $normalizedPath,
+                __isParamPath: ($normalizedPath | isParamPath)
+              }
+          ] as $candidates
+        | (
+            ([ $candidates[] | select((.__isParamPath | not) and (.__normalizedPath == $path)) ] | .[0])
+            //
+            ([
+                $candidates[]
+                | select(.__isParamPath)
+                | . as $candidate
+                | select($path | test(($candidate.__normalizedPath | toParamRegex)))
+              ]
+             | sort_by(.__normalizedPath | length)
+             | reverse
+             | .[0])
+          ) // empty
+        ' <<< "$mockCollectionJson"
 }
 
 

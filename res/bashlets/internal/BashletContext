@@ -328,6 +328,12 @@ ParseBashletRequestPathSegment() {
   jq -r --argjson segment_index "$segment_index" '.path | split("/") | .[$segment_index] // empty' <<< "$request"
 }
 
+ParseBashletRequestSubPath() {
+  local request="$1"
+  local start_index="$2"
+  jq -r --argjson start_index "$start_index" '.path | split("/") | .[$start_index:] | join("/")' <<< "$request"
+}
+
 ParseBashletRequestProtocol() {
   local request="$1"
   jq -r '.protocol' <<< "$request"

@@ -112,8 +112,22 @@ invokeEndpoint(){
     request="$1"
     response="$2"
 
-    
+    # parse the collection id from the request path, which is expected to be the 3rd segment of the path.
     collectionId=$(ParseBashletRequestPathSegment "$request" 3)
+
+    # parse the endpoint path from the request path, which is expected to be everything after the 3rd segment of the path.
+    endpointPath=$(ParseBashletRequestSubPath "$request" 4)
+    endpointPath="$(EnsureLeadingSlash "$endpointPath")"
+    if [[ "$endpointPath" != "/" ]]; then
+        endpointPath="${endpointPath%/}"
+    fi
+
+    echo "The endpoint path is: $endpointPath" >&2
+
+    # parse request method, used when resolving the endpoint definition.
+    requestMethod=$(ParseBashletRequestMethod "$request")
+
+    # use the collection id to lookup the Mock API collection in the BashletContext key-value store, and return the parsed JSON object.
     mockAPICollection=$(lookupMockAPICollectionById "$collectionId")
 
     # where a collection could not be found with the provided collection id, return a 404 error to the client.
@@ -127,8 +141,94 @@ invokeEndpoint(){
         return 1
     fi
 
-    echo "MockingController: Resolved Mock API Collection Id from request path: $collectionId" >&2
+    echo "MockingController: Resolved Mock API Collection Id: $collectionId from request path." >&2
 
+    # resolve target endpoint from the collection, preferring exact static path matches
+    # before falling back to parameterized path matches (e.g. /users/{userId}).
+    matchedEndpoint=$(ResolveMockEndpoint "$mockAPICollection" "$endpointPath" "$requestMethod")
+    if [[ $? -ne 0 || -z "$matchedEndpoint" ]]; then
+        echo "MockingController: No endpoint matched path '$endpointPath' for method '$requestMethod' in collection '$collectionId'" >&2
+
+        local err_status_code=404
+        local err_content="Not Found - No endpoint matched path: $endpointPath for method: $requestMethod"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    local statusCode
+    local responseBody
+    statusCode="$(jq -r '.Response.StatusCode // 200' <<< "$matchedEndpoint")"
+    responseBody="$(jq -r '
+        if (.Response.Body // null) == null then ""
+        elif (.Response.Body | type) == "string" then .Response.Body
+        else (.Response.Body | tojson)
+        end
+    ' <<< "$matchedEndpoint")"
+
+    SetBashletResponseStatusCode "$response" "$statusCode"
+
+    while IFS=$'\t' read -r headerName headerValue; do
+        [[ -z "$headerName" ]] && continue
+        SetBashletResponseHeader "$response" "$headerName" "$headerValue"
+    done < <(jq -r '.Response.Headers // {} | to_entries[]? | "\(.key)\t\(.value)"' <<< "$matchedEndpoint")
+
+    SetBashletResponseBody "$response" "$responseBody"
+
+}
+
+
+# Resolves a single endpoint definition from a mock API collection for the supplied path and method.
+# Matching precedence is:
+# 1) exact static path match (e.g. /api/v1/users/settings)
+# 2) parameterized path match (e.g. /api/v1/users/{userId})
+ResolveMockEndpoint(){
+    local mockCollectionJson="$1"
+    local requestPath="$2"
+    local requestMethod="$3"
+
+    jq -c \
+        --arg requestPath "$requestPath" \
+        --arg requestMethod "$requestMethod" '
+        def normPath:
+            tostring
+            | if . == "" then "/" else . end
+            | if startswith("/") then . else "/" + . end
+            | if . == "/" then . else sub("/+$"; "") end;
+
+        def isParamPath:
+            test("\\{[^/]+\\}");
+
+        def toParamRegex:
+            "^" + (gsub("\\{[^/]+\\}"; "[^/]+")) + "$";
+
+        (.Endpoints // .endpoints // []) as $endpoints
+        | ($requestPath | normPath) as $path
+        | ($requestMethod | ascii_downcase) as $method
+        | [
+            $endpoints[]
+            | .Path as $rawPath
+            | (.Method // .method // "") as $endpointMethod
+            | ($rawPath | normPath) as $normalizedPath
+            | select(($endpointMethod == "") or (($endpointMethod | ascii_downcase) == $method))
+            | . + {
+                __normalizedPath: $normalizedPath,
+                __isParamPath: ($normalizedPath | isParamPath)
+              }
+          ] as $candidates
+        | (
+            ([ $candidates[] | select((.__isParamPath | not) and (.__normalizedPath == $path)) ] | .[0])
+            //
+            ([
+                $candidates[]
+                | select(.__isParamPath)
+                | . as $candidate
+                | select($path | test(($candidate.__normalizedPath | toParamRegex)))
+              ]
+             | sort_by(.__normalizedPath | length)
+             | reverse
+             | .[0])
+          ) // empty
+        ' <<< "$mockCollectionJson"
 }
 
 lookupMockAPICollectionById(){

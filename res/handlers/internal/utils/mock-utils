@@ -30,4 +30,6 @@ SetMockAPICollectionField() {
     local value="$3"
     jq -cr --arg path "$path" --arg value "$value" 'setpath($path[1:] | split("." ); $value)' <<< "$json"
 }
+
+
    

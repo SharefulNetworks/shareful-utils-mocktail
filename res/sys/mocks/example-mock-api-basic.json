@@ -44,6 +44,24 @@
             }
           ]
       }
+    },
+    {
+      "Path": "/api/v1/users/{userId}",
+      "Method": "GET",
+      "Response": {
+        "StatusCode": 200,
+        "Headers": {
+          "Content-Type": "application/json"
+        },
+        "Body": 
+          [
+            {
+              "id": 1,
+              "name": "John Doe",
+              "email": "john.doe@example.com"
+            }
+          ]
+      }
     }
     
 

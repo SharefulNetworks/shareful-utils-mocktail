@@ -144,26 +144,10 @@ invokeEndpoint(){
         return 1
     fi
 
-    local statusCode
-    local responseBody
-   
-    # parse the response status code and body from the matched endpoint definition, defaulting to 200 if not defined.
-    statusCode="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Response.StatusCode // 200')"
-   
-    # parse the response body from the matched endpoint definition, defaults to an empty string if not defined.
-    responseBody="$(ParseMockAPICollectionEndpointResponseBody "$matchedEndpoint")"
+    echo "MockingController: Resolved Mock API Endpoint for path '$endpointPath' and method '$requestMethod' in collection '$collectionId'" >&2
 
-    # set the response status code to the value parsed from the matched endpoint definition, or 200 if not defined.
-    SetBashletResponseStatusCode "$response" "$statusCode"
-
-    # parse and set the response headers from the matched endpoint definition, if any are defined and set them on the response.
-    while IFS=$'\t' read -r headerName headerValue; do
-        [[ -z "$headerName" ]] && continue
-        SetBashletResponseHeader "$response" "$headerName" "$headerValue"
-    done < <(ParseMockAPICollectionEndpointResponseHeaders "$matchedEndpoint")
-
-    # set the response body to the value parsed from the matched endpoint definition, or an empty string if not defined.
-    SetBashletResponseBody "$response" "$responseBody"
+    # generate the response from the matched endpoint definition and return it to the client.
+    generateResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
 
 }
 
@@ -205,6 +189,45 @@ loadMockAPICollections(){
 
         echo "MockingController: Loaded Mock API collection with Id: $collectionId and Name: $name" >&2
    done
+
+}
+
+
+generateResponseFromMatchedEndpoint(){
+    request="$1"
+    response="$2"
+    matchedEndpoint="$3"
+
+
+    local statusCode
+    local responseBody
+   
+    # parse the response status code and body from the matched endpoint definition, defaulting to 200 if not defined.
+    statusCode="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Response.StatusCode // 200')"
+   
+    # parse the response body from the matched endpoint definition, defaults to an empty string if not defined.
+    responseBody="$(ParseMockAPICollectionEndpointResponseBody "$matchedEndpoint")"
+
+    # set the response status code to the value parsed from the matched endpoint definition, or 200 if not defined.
+    SetBashletResponseStatusCode "$response" "$statusCode"
+
+    # parse and set the response headers from the matched endpoint definition, if any are defined and set them on the response.
+    while IFS=$'\t' read -r headerName headerValue; do
+
+        # if header value is empty, skip setting the header on the response.
+        [[ -z "$headerValue" ]] && continue
+
+        # if header name equals "Content-Type" and the header value equals application/json then skip setting the header on the response, as this is the default content type for Mocktail Server responses.
+        [[ "$headerName" == "Content-Type" && "$headerValue" == "application/json" ]] && continue   
+       
+        # otherwise, set the header on the response.
+        SetBashletResponseHeader "$response" "$headerName" "$headerValue"
+
+    done < <(ParseMockAPICollectionEndpointResponseHeaders "$matchedEndpoint")
+
+    # set the response body to the value parsed from the matched endpoint definition, or an empty string if not defined.
+    SetBashletResponseBody "$response" "$responseBody"
+
 
 }
 

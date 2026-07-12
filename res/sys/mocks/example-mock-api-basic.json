@@ -8,10 +8,6 @@
       "Path": "/api/v1/users",
       "Method": "GET",
       "Response": {
-        "StatusCode": 200,
-        "Headers": {
-          "Content-Type": "application/json"
-        },
         "Body": 
           [
             {
@@ -31,36 +27,41 @@
       "Path": "/api/v1/users/settings",
       "Method": "GET",
       "Response": {
-        "StatusCode": 200,
-        "Headers": {
-          "Content-Type": "application/json"
-        },
         "Body": 
-          [
             {
               "Enable2FA": true,
               "EnableMailNotifications": false,
               "EnableUserGeolocation": true
-            }
-          ]
+            }  
       }
     },
     {
       "Path": "/api/v1/users/{userId}",
       "Method": "GET",
       "Response": {
-        "StatusCode": 200,
-        "Headers": {
-          "Content-Type": "application/json"
-        },
         "Body": 
-          [
+          
             {
               "id": 1,
               "name": "John Doe",
               "email": "john.doe@example.com"
             }
-          ]
+          
+      }
+    },
+    {
+      "Path": "/api/v1/users/{userId}/addresses/{addressId}",
+      "Method": "GET",
+      "Response": {
+        "Body": 
+          
+            {
+              "Street": "123 Main St",
+              "City": "Anytown",
+              "State": "CA",
+              "ZipCode": "12345"
+            }
+          
       }
     }
     

@@ -77,11 +77,20 @@ ResolveMockEndpoint(){
             | if startswith("/") then . else "/" + . end
             | if . == "/" then . else sub("/+$"; "") end;
 
-        def isParamPath:
-            test("\\{[^/]+\\}");
+        def pathSegments:
+            normPath
+            | if . == "/" then [] else ltrimstr("/") | split("/") end;
 
-        def toParamRegex:
-            "^" + (gsub("\\{[^/]+\\}"; "[^/]+")) + "$";
+        def isParamSegment:
+            test("^\\{[^/]+\\}$");
+
+                def matchesTemplate($path; $templatePath):
+                        ($templatePath | pathSegments) as $templateSegments
+            | ($path | pathSegments) as $requestSegments
+            | ($templateSegments | length) == ($requestSegments | length)
+              and all(range(0; ($templateSegments | length));
+                ($templateSegments[.] | isParamSegment) or ($templateSegments[.] == $requestSegments[.])
+              );
 
         (.Endpoints // .endpoints // []) as $endpoints
         | ($requestPath | normPath) as $path
@@ -94,7 +103,9 @@ ResolveMockEndpoint(){
             | select(($endpointMethod == "") or (($endpointMethod | ascii_downcase) == $method))
             | . + {
                 __normalizedPath: $normalizedPath,
-                __isParamPath: ($normalizedPath | isParamPath)
+                                __isParamPath: ($normalizedPath | pathSegments | any(.[]; isParamSegment)),
+                                __segmentCount: ($normalizedPath | pathSegments | length),
+                                __paramCount: ($normalizedPath | pathSegments | map(select(isParamSegment)) | length)
               }
           ] as $candidates
         | (
@@ -103,12 +114,9 @@ ResolveMockEndpoint(){
             ([
                 $candidates[]
                 | select(.__isParamPath)
-                | . as $candidate
-                | select($path | test(($candidate.__normalizedPath | toParamRegex)))
+                                | select(. as $candidate | matchesTemplate($path; $candidate.__normalizedPath))
               ]
-             | sort_by(.__normalizedPath | length)
-             | reverse
-             | .[0])
+                         | max_by([.__segmentCount, (-(.__paramCount))]))
           ) // empty
         ' <<< "$mockCollectionJson"
 }

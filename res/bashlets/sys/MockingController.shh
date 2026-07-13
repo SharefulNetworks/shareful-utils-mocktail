@@ -192,24 +192,9 @@ loadMockAPICollections(){
 
 }
 
-
-generateResponseFromMatchedEndpoint(){
-    request="$1"
-    response="$2"
-    matchedEndpoint="$3"
-
-
-    local statusCode
-    local responseBody
-   
-    # parse the response status code and body from the matched endpoint definition, defaulting to 200 if not defined.
-    statusCode="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Response.StatusCode // 200')"
-   
-    # parse the response body from the matched endpoint definition, defaults to an empty string if not defined.
-    responseBody="$(ParseMockAPICollectionEndpointResponseBody "$matchedEndpoint")"
-
-    # set the response status code to the value parsed from the matched endpoint definition, or 200 if not defined.
-    SetBashletResponseStatusCode "$response" "$statusCode"
+setResponseHeadersFromEndpoint(){
+    response="$1"
+    matchedEndpoint="$2"
 
     # parse and set the response headers from the matched endpoint definition, if any are defined and set them on the response.
     while IFS=$'\t' read -r headerName headerValue; do
@@ -225,10 +210,169 @@ generateResponseFromMatchedEndpoint(){
 
     done < <(ParseMockAPICollectionEndpointResponseHeaders "$matchedEndpoint")
 
+}
+
+
+generateResponseFromMatchedEndpoint(){
+    request="$1"
+    response="$2"
+    matchedEndpoint="$3"
+
+    local responseBody
+    local statusCode
+
+    # parse the response status code from the matched endpoint definition, defaulting to 200 if not defined.
+    statusCode="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Response.StatusCode // 200')"
+
+    # parse the response body from the matched endpoint definition, this will dictate how the response is generated.
+    responseBody="$(ParseMockAPICollectionEndpointResponseBody "$matchedEndpoint")"
+
+    # if the response body is a string is a single string equal to "ECHO" (case insensitive) then generate an echo response, 
+    # the body provided in the request. Is merely echoed back as the response body.
+    if [[ "${responseBody,,}" == "echo" ]]; then
+        echo "MockingController: Generating dynamic response for matched endpoint." >&2
+        generateEchoedResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
+    elif [[ "$statusCode" == "302" ]]; then
+        echo "MockingController: Generating redirect response for matched endpoint." >&2
+        generateRedirectResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
+    else
+        echo "MockingController: Generating static response for matched endpoint." >&2
+        generateStaticResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
+    fi
+   
+   
+}
+
+
+generateEchoedResponseFromMatchedEndpoint(){
+    request="$1"
+    response="$2"
+    matchedEndpoint="$3"
+
+    local statusCode
+    local responseBody
+
+    # first and foremost parse the request method as echo responses can only be generated for POST requests, as the 
+    # request body is used to define the response body that will be returned.
+    requestMethod="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Method')"
+    if [[ "$requestMethod" != "POST" ]]; then
+        echo "MockingController: Echo responses can only be generated for POST requests, but the matched endpoint is defined for method: $requestMethod" >&2
+        local err_status_code=400
+        local err_content="Bad Request - Echo responses can only be generated for POST requests, but the matched endpoint is defined for method: $requestMethod"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # parse the response status code and body from the matched endpoint definition, defaulting to 200 if not defined.
+    statusCode="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Response.StatusCode // 200')"
+
+    # parse the request body from the request, which will be used as the response body for the echo response.
+    responseBody="$(ParseBashletRequestBody "$request")"
+
+    # set the response headers from the matched endpoint definition, if any are defined.
+    setResponseHeadersFromEndpoint "$response" "$matchedEndpoint"
+
+    # set the response status code to the value parsed from the matched endpoint definition, or 200 if not defined.
+    SetBashletResponseStatusCode "$response" "$statusCode"
+
     # set the response body to the value parsed from the matched endpoint definition, or an empty string if not defined.
     SetBashletResponseBody "$response" "$responseBody"
+}
+
+generateStaticResponseFromMatchedEndpoint(){
+    request="$1"
+    response="$2"
+    matchedEndpoint="$3"
+
+    local statusCode
+    local responseBody
+
+    # parse the response status code and body from the matched endpoint definition, defaulting to 200 if not defined.
+    statusCode="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Response.StatusCode // 200')"
+
+    # parse the response body from the matched endpoint definition, defaults to an empty string if not defined.
+    responseBody="$(ParseMockAPICollectionEndpointResponseBody "$matchedEndpoint")"
+
+    # set the response status code to the value parsed from the matched endpoint definition, or 200 if not defined.
+    SetBashletResponseStatusCode "$response" "$statusCode"
+
+    # set the response headers from the matched endpoint definition, if any are defined.
+    setResponseHeadersFromEndpoint "$response" "$matchedEndpoint"
+
+    # set the response body to the value parsed from the matched endpoint definition, or an empty string if not defined.
+    SetBashletResponseBody "$response" "$responseBody"
+}
+
+
+generateRedirectResponseFromMatchedEndpoint(){
+    request="$1"
+    response="$2"
+    matchedEndpoint="$3"
+
+    local statusCode
+    local redirectUrl
+
+    # parse the response status code and validate that it's equal to 302, as redirect responses can only be generated 
+    # for 302 status codes.
+    statusCode="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Response.StatusCode // 302')"
+    if [[ "$statusCode" != "302" ]]; then
+        echo "MockingController: Redirect responses can only be generated for 302 status codes, but the matched endpoint is defined for status code: $statusCode" >&2
+        local err_status_code=500
+        local err_content="Internal Server Error - Redirect responses can only be generated for 302 status codes, but the matched endpoint is defined for status code: $statusCode"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # parse the response body from the matched endpoint definition, defaults to an empty string if not defined.
+    # this should contain an array of one or more redirect urls.
+    responseBody="$(ParseMockAPICollectionEndpointResponseBody "$matchedEndpoint")"
+    
+    # if the response body is not an array, return a 400 error to the client.
+    if ! IsAnArray "$responseBody"; then
+        echo "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with a response body of type: $(GetJsonType "$responseBody")" >&2
+        local err_status_code=500
+        local err_content="Internal Server Error - Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with a response body of type: $(GetJsonType "$responseBody")"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    #  if the response body is an array, but it is empty, return a 500 error to the client.
+    if [[ $(ArrayLength "$responseBody") -eq 0 ]]; then
+        echo "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array." >&2
+        local err_status_code=500
+        local err_content="Internal Server Error - Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array."
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # convert the json array to a bash array,
+    local redirectUrls
+    mapfile -t redirectUrls < <(JsonArrayToLines "$responseBody")
+    local arrayLength=${#redirectUrls[@]}
+    if [[ $arrayLength -eq 1 ]]; then
+        # if there is only one redirect url in the array, use that as the redirect url.
+        redirectUrl="${redirectUrls[0]}"
+    elif [[ $arrayLength -gt 1 ]]; then
+        # if there are multiple redirect urls in the array, select one at random.
+        redirectUrl="${redirectUrls[RANDOM % $arrayLength]}"
+    fi
+
+
+    # set the response status code to the value parsed from the matched endpoint definition, guartenteed to be 302 at this point.
+    SetBashletResponseStatusCode "$response" "$statusCode"
+
+    # set the response headers from the matched endpoint definition, if any are defined.
+    setResponseHeadersFromEndpoint "$response" "$matchedEndpoint"
+
+    # finally dispatch a redirect response to the client, the helper function will implicitly
+    # set the Location header to the redirect url and return a 302 response to the client.
+    # We can optionally provide reference to the response object to have any headers or other state
+    # set on the response object to be included in the redirect response.
+    DispatchBashletRedirectResponse "$redirectUrl" "$response" 
 
 
 }
+
+
 
 

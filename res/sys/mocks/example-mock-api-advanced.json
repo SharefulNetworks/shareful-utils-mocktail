@@ -14,10 +14,42 @@
         },
         "Body": [
           {
-            "profileIdd": 1,
+            "profileId": 1,
             "username": "JonnyDoe",
             "email": "john.doe@example.com"
           }
+        ]
+      }
+    },
+    {
+      "Path": "/api/v1/profiles/{profileId}",
+      "Method": "POST",
+      "Response": {
+        "Body": "Echo"
+      }
+    },
+    {
+      "Path": "/api/v1/profiles/{profileId}/settings",
+      "Method": "GET",
+      "Response": {
+        "Body": {
+          "Enable2FA": true,
+          "EnableMailNotifications": false,
+          "EnableUserGeolocation": true
+        }
+      }
+    },
+    {
+      "Path": "/api/v1/profiles/{profileId}/credential-servers",
+      "Method": "GET",
+      "Response": {
+        "StatusCode": 302,
+        "Body": [
+          "http://mysite.com/credential-server-1",
+          "http://mysite.com/credential-server-2",
+          "http://mysite.com/credential-server-3",
+          "http://mysite.com/credential-server-4",
+          "http://mysite.com/credential-server-5"
         ]
       }
     }

@@ -59,6 +59,27 @@ SetMockAPICollectionField() {
 }
 
 
+# indicates if the provided JSON is an array, returning true if it is and false if it is not.
+IsAnArray() {
+    local json="$1"
+    jq -e 'if type == "array" then true else false end' <<< "$json" > /dev/null
+}
+
+GetJsonType() {
+    local json="$1"
+    jq -r 'type' <<< "$json"
+}
+
+ArrayLength() {
+    local json="$1"
+    jq -r 'length' <<< "$json"
+}
+
+JsonArrayToLines() {
+  local jsonStr="$1"
+  jq -r '.[]' <<< "$jsonStr"
+}
+
 # Resolves a single endpoint definition from a mock API collection for the supplied path and method.
 # Matching precedence is:
 # 1) exact static path match (e.g. /api/v1/users/settings)

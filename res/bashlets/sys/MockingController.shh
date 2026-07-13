@@ -353,8 +353,67 @@ generateRedirectResponseFromMatchedEndpoint(){
         # if there is only one redirect url in the array, use that as the redirect url.
         redirectUrl="${redirectUrls[0]}"
     elif [[ $arrayLength -gt 1 ]]; then
-        # if there are multiple redirect urls in the array, select one at random.
-        redirectUrl="${redirectUrls[RANDOM % $arrayLength]}"
+
+        # Where there are MULTIPLE redirect URLS defined...
+        # 1) Parse the incoming request query string parameters if it includes inc=[an index] then use that index to
+        #    select the redirect url from the array, 
+        # 2) Conversely if the query string includes exc=[an index] then exclude 
+        #    that index from the array and select a random redirect url from the remaining urls.
+        # 3) If neither inc nor exc are provided in the query string, then select a random redirect url from the array.       
+        local incIndex=$(ParseBashletRequestQueryStringParam "$request" "inc")
+        local excIndex=$(ParseBashletRequestQueryStringParam "$request" "exc")
+        
+        if [[ -n "$incIndex" ]]; then
+            # if the inc index is provided, use that index to select the redirect url from the array, if the index is valid.
+            if [[ "$incIndex" -ge 0 && "$incIndex" -lt "$arrayLength" ]]; then
+                echo "MockingController: Using provided inc index '$incIndex' to select redirect url from array of length '$arrayLength'." >&2
+                redirectUrl="${redirectUrls[$incIndex]}"
+            else
+                echo "MockingController: The provided inc index '$incIndex' is out of bounds for the redirect urls array of length '$arrayLength'." >&2
+                local err_status_code=400
+                local err_content="Bad Request - The provided inc index '$incIndex' is out of bounds for the redirect urls array of length '$arrayLength'."
+                SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+                return 1
+            fi
+        elif [[ -n "$excIndex" ]]; then
+            # if the exc index is provided, exclude that index from the array and select a random redirect url from the remaining urls, if the index is valid.
+            if [[ "$excIndex" -ge 0 && "$excIndex" -lt "$arrayLength" ]]; then
+                echo "MockingController: Using provided exc index '$excIndex' to exclude redirect url from array of length '$arrayLength'." >&2
+                # create a new array excluding the specified index
+                local filteredRedirectUrls=()
+                for i in "${!redirectUrls[@]}"; do
+                    if [[ "$i" -ne "$excIndex" ]]; then
+                        filteredRedirectUrls+=("${redirectUrls[$i]}")
+                    fi
+                done
+                # select a random redirect url from the filtered array
+                local filteredArrayLength=${#filteredRedirectUrls[@]}
+                if [[ $filteredArrayLength -eq 0 ]]; then
+                    echo "MockingController: The provided exc index '$excIndex' excludes all redirect urls from the array, resulting in an empty array." >&2
+                    local err_status_code=400
+                    local err_content="Bad Request - The provided exc index '$excIndex' excludes all redirect urls from the array, resulting in an empty array."
+                    SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+                    return 1
+                fi
+                redirectUrl="${filteredRedirectUrls[RANDOM % $filteredArrayLength]}"
+            else
+                echo "MockingController: The provided exc index '$excIndex' is out of bounds for the redirect urls array of length '$arrayLength'." >&2
+                local err_status_code=400
+                local err_content="Bad Request - The provided exc index '$excIndex' is out of bounds for the redirect urls array of length '$arrayLength'."
+                SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+                return 1
+            fi
+        else
+            # if neither inc nor exc are provided, select a random redirect url from the array.
+            echo "MockingController: No inc or exc index provided, selecting a random redirect url from array of length '$arrayLength'." >&2
+            redirectUrl="${redirectUrls[RANDOM % $arrayLength]}"
+        fi
+    else
+        echo "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array." >&2
+        local err_status_code=500
+        local err_content="Internal Server Error - Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array."       
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
     fi
 
 

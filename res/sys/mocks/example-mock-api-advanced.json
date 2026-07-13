@@ -31,8 +31,12 @@
     {
       "Path": "/api/v1/profiles/{profileId}/settings",
       "Method": "GET",
+      "EnableDynamicParamSubstitution": true,
       "Response": {
         "Body": {
+          "ProfileId": 1,
+          "Username": "JonnyDoe",
+          "Email": "john.doe@example.com",
           "Enable2FA": true,
           "EnableMailNotifications": false,
           "EnableUserGeolocation": true

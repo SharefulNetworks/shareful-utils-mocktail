@@ -65,6 +65,11 @@ IsAnArray() {
     jq -e 'if type == "array" then true else false end' <<< "$json" > /dev/null
 }
 
+IsAnObject() {
+    local json="$1"
+    jq -e 'if type == "object" then true else false end' <<< "$json" > /dev/null
+}
+
 GetJsonType() {
     local json="$1"
     jq -r 'type' <<< "$json"

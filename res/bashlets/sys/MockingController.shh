@@ -293,6 +293,12 @@ generateStaticResponseFromMatchedEndpoint(){
     # parse the response body from the matched endpoint definition, defaults to an empty string if not defined.
     responseBody="$(ParseMockAPICollectionEndpointResponseBody "$matchedEndpoint")"
 
+    # if dynamic parameter substitution is enabled, substitute the parameters in the response body.
+    if [[ "$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.EnableDynamicParamSubstitution // false')" == "true" ]]; then
+        echo "MockingController: Dynamic parameter substitution is enabled for matched endpoint, substituting parameters in response body." >&2
+        responseBody="$(executeDynamicParameterSubstitution "$request" "$matchedEndpoint")"
+    fi
+
     # set the response status code to the value parsed from the matched endpoint definition, or 200 if not defined.
     SetBashletResponseStatusCode "$response" "$statusCode"
 
@@ -431,6 +437,43 @@ generateRedirectResponseFromMatchedEndpoint(){
 
 
 }
+
+# maps the query string parameters in the inbound request to the response body of the matched endpoint, where the response body 
+# is defined as an object. This allows the value of attributes in the response body JSON to be dynamically set. Where specified,
+# the values provided as request query string parameters will override the corresponding values defined in the matched endpoint 
+# response body providing the name of the query string parameter matches the name of the attribute in the response body JSON.
+executeDynamicParameterSubstitution(){
+    request="$1"
+    matchedEndpoint="$2"
+
+
+    # parse the endpoint body from the matched endpoint definition, which will be used to map the request parameters to.
+    endpointBody="$(ParseMockAPICollectionEndpointResponseBody "$matchedEndpoint")"
+
+    # if the endpoint body is not an object, return a 400 error to the client.
+    if ! IsAnObject "$endpointBody"; then
+        echo "MockingController: Endpoint body must be defined as an object, but the matched endpoint is defined with a body of type: $(GetJsonType "$endpointBody")" >&2
+        local err_status_code=500
+        local err_content="Internal Server Error - Endpoint body must be defined as an object, but the matched endpoint is defined with a body of type: $(GetJsonType "$endpointBody")"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # next iterate over the parameters in the endpoint body and check if there is a corresponding query string parameter in the request, if so, override the value in the endpoint body with the value from the request parameter.
+    while IFS=$'\t' read -r key value; do
+        # check if the request has a query string parameter with the same name as the key in the endpoint body, if so, override the value in the endpoint body with the value from the request parameter.
+        requestParamValue="$(ParseBashletRequestQueryStringParam "$request" "$key")"
+        if [[ -n "$requestParamValue" ]]; then
+            echo "MockingController: Overriding endpoint body attribute '$key' with value from request parameter: $requestParamValue" >&2
+            endpointBody="$(SetMockAPICollectionField "$endpointBody" ".$key" "$requestParamValue")"
+        fi
+    done < <(ParseMockAPICollectionField "$endpointBody" 'to_entries[] | "\(.key)\t\(.value)"') 
+
+    # return the modified endpoint body, which will be used as the response body for the matched endpoint.  
+    echo "$endpointBody"
+
+
+} 
 
 
 

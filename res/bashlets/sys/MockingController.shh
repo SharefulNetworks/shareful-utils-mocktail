@@ -23,10 +23,14 @@ init(){
    # using their Collection ID as the key, this allows the MockingController to resolve requests to specific Mock API endpoints...
 
    # first load system (example) collections...
-   loadMockAPICollections "$SCRIPT_DIR/res/sys/mocks/"*.json""
+   loadMockAPICollections "$SCRIPT_DIR/res/sys/mocks"
 
    # next load user-defined collections
-   loadMockAPICollections "$SCRIPT_DIR/res/usr/mocks/"*.json""
+   loadMockAPICollections "$SCRIPT_DIR/res/usr/mocks"
+
+   mockAPICollectionMetaDataArr=$(KVRead "mockAPICollectionsMetaData")
+
+   echo "Loaded Mock API collections metadata: $mockAPICollectionMetaDataArr" >&2
 
 }
 
@@ -238,12 +242,18 @@ lookupMockAPICollectionById(){
 # called on initialisation of the MockingController bashlet to load Mock API Collections into memory
 # and cached the mappings, thereby negating the need to have to read the data from the file system on every request.
 loadMockAPICollections(){
+    local mockAPICollectionsDirPath="$1"
 
-   mockAPICollectionsDirPath="$1"
+   # 1. Initialize the array once in the parent shell
+   local mockAPICollectionMetaDataArr="[]"
+   if KVExists "mockAPICollectionsMetaData"; then
+       mockAPICollectionMetaDataArr=$(KVRead "mockAPICollectionsMetaData")
+   fi
 
-   # load all system-level example MOCK API collections from the /res/sys/mocks/ directory.
-   ls "$mockAPICollectionsDirPath" 2>/dev/null | while read -r mock_file; do
-   #ls "$SCRIPT_DIR/res/sys/mocks/"*.json 2>/dev/null | while read -r mock_file; do
+   # 2. Enumerate the JSON files in the provided directory without using a pipe,
+   # so the metadata array keeps accumulating in the current shell.
+   for mock_file in "$mockAPICollectionsDirPath"/*.json; do
+       [[ -e "$mock_file" ]] || continue
 
         echo "MockingController: Loading Mock API collection from file: $mock_file" >&2
 
@@ -255,14 +265,28 @@ loadMockAPICollections(){
         # parse the collection name from the Mock API collection.
         name=$(ParseMockAPICollectionField "$mock_json" '.Name')
 
-        # store the loaded Mock API collection in the BashletContext key-value store, using its Collection ID as the key.
+        # get the endpoint count.
+        endpointCount=$(ParseMockAPICollectionField "$mock_json" '.Endpoints | length')
+
+        # store the loaded Mock API collection in the BashletContext key-value store
         KVStore "$collectionId" "$mock_json"
 
+        # construct a metadata object
+        local mockAPICollectionMetadata="{}"
+        mockAPICollectionMetadata="$(SetJSONString "$mockAPICollectionMetadata" '.CollectionId' "$collectionId")"
+        mockAPICollectionMetadata="$(SetJSONString "$mockAPICollectionMetadata" '.Name' "$name")"
+        mockAPICollectionMetadata="$(SetJSONNumber "$mockAPICollectionMetadata" '.EndpointCount' "$endpointCount")"
+
+        # 3. This update now safely persists in parent memory!
+        mockAPICollectionMetaDataArr="$(AppendJSONArrayItem "$mockAPICollectionMetaDataArr" "$mockAPICollectionMetadata")"
+
         echo "MockingController: Loaded Mock API collection with Id: $collectionId and Name: $name" >&2
-   done
 
+    done
+ 
+   # 4. Store the completely accumulated metadata array exactly ONCE
+   KVStore "mockAPICollectionsMetaData" "$mockAPICollectionMetaDataArr"
 }
-
 
 
 setResponseHeadersFromEndpoint(){

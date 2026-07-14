@@ -22,7 +22,7 @@
         },
         {
             "Title": "System Mocking Controller Route",
-            "Path": "/mocking",
+            "Path": "/mock",
             "Type": "bashlet",
             "BashletPath": "/res/bashlets/sys/MockingController",
             "Description": "The root system mocking bashlet."

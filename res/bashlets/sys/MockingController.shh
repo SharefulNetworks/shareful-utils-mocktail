@@ -121,6 +121,18 @@ apiGetMockAPICollections(){
     response="$2"
 
     echo "MockingController: Inside apiGetMockAPICollections function..." >&2
+
+    # attempt to load mock api collection metadata from the BashletContext key-value store,
+    # if it exists, otherwise return an empty array. The data should have been loaded into 
+    # the BashletContext key-value store on initialisation of the MockingController bashlet.
+    local loadedMockAPICollectionMetaData=[]
+    if KVExists "mockAPICollectionsMetaData"; then
+        loadedMockAPICollectionMetaData=$(KVRead "mockAPICollectionsMetaData")
+    fi 
+
+    # set the response body to the JSON meta data object we have loaded.
+    SetBashletResponseBody "$response" "$loadedMockAPICollectionMetaData"     
+   
 }
 
 # API endpoint to create a new Mock API collection, the request body must contain a valid Mock API collection JSON object, 

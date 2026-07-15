@@ -13,6 +13,13 @@ ReadMockAPICollection() {
     jq -r '.' "$path"
 }
 
+# stores the provided mocK API collection JSON to the provided file path, overwriting any existing file at that path.
+StoreMockAPICollection() {
+    local json="$1"
+    local path="$2"
+    echo "$json" | jq -r '.' > "$path"
+}
+
 
 # reads a specific value from the JSON Mock API collection using jq a reference
 # to the Mock API Collection JSON must be provided as the first argument, and the key to read 
@@ -78,6 +85,17 @@ GetJsonType() {
 ArrayLength() {
     local json="$1"
     jq -r 'length' <<< "$json"
+}
+
+GetMockAPICollectionIndexById() {
+    local mockAPICollectionsMetaData="$1"
+    local collectionId="$2"
+
+    jq -r --arg collectionId "$collectionId" '
+        to_entries
+        | map(select(.value.CollectionId == $collectionId))
+        | .[0].key // -1
+    ' <<< "$mockAPICollectionsMetaData"
 }
 
 JsonArrayToLines() {

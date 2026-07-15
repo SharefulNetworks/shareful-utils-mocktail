@@ -3,6 +3,7 @@
   "Description": "Example that demonstrates the use of Mocktail Server to create a simple Mock API with endpoints that return static JSON responses.",
   "Version": "1.0",
   "CollectionId": "x101",
+  "Type":"System",
   "Endpoints": [
     {
       "Path": "/api/v1/users",

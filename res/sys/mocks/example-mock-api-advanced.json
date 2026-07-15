@@ -3,6 +3,7 @@
   "Description": "Example that demonstrates the use of Mocktail Server to create a more advanced Mock API with endpoints that return static and dynamic JSON responses.",
   "Version": "1.0",
   "CollectionId": "x102",
+  "Type":"System",
   "Endpoints": [
     {
       "Path": "/api/v1/profiles",

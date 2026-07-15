@@ -551,6 +551,18 @@ AppendJSONArrayItem() {
     fi
 }
 
+SetJSONArrayItem() {
+    local json="$1"
+    local index="$2"
+    local value="$3"
+
+    if IsJSON "$value"; then
+        jq -c --argjson v "$value" --argjson i "$index" '.[$i] = $v' <<< "$json"
+    else
+        jq -c --arg v "$value" --argjson i "$index" '.[$i] = $v' <<< "$json"
+    fi
+}
+
 
 
 # ------------------------------------------------ public generic utility functions ---------------------------------------------------

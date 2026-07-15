@@ -7,6 +7,10 @@
 # modification, and deletion.
 
 
+# declare globals
+SYSTEM_MOCK_API_COLLECTIONS_BASE_PATH="$SCRIPT_DIR/res/sys/mocks"
+USER_MOCK_API_COLLECTIONS_BASE_PATH="$SCRIPT_DIR/res/usr/mocks"
+
 # import/source the BashletContext helper functions to support parsing of the incoming request object and constructing the response object.
 source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
 
@@ -23,10 +27,10 @@ init(){
    # using their Collection ID as the key, this allows the MockingController to resolve requests to specific Mock API endpoints...
 
    # first load system (example) collections...
-   loadMockAPICollections "$SCRIPT_DIR/res/sys/mocks"
+   loadMockAPICollections "$SYSTEM_MOCK_API_COLLECTIONS_BASE_PATH"
 
    # next load user-defined collections
-   loadMockAPICollections "$SCRIPT_DIR/res/usr/mocks"
+   loadMockAPICollections "$USER_MOCK_API_COLLECTIONS_BASE_PATH"
 
    mockAPICollectionMetaDataArr=$(KVRead "mockAPICollectionsMetaData")
 
@@ -135,15 +139,62 @@ apiGetMockAPICollections(){
    
 }
 
-# API endpoint to create a new Mock API collection, the request body must contain a valid Mock API collection JSON object, 
-# which will be parsed and stored in the BashletContext key-value store, using its Collection ID as the key for immediate access
-# and also persisted to the host file system for future use.
+# API endpoint to create a new Mock API collection, the request body must contain a the requsite Mock API collection details,
+# i.e Name,Description and Id as an absolute minimum, these will be used to crrate a NEW Mock API collection 
+# which will bestored in the BashletContext key-value store, using its Collection ID as the key for immediate access
+# AND also persisted to the host file system for future use.
 # @route method=post path=/api/collections
 apiCreateMockAPICollection(){
     request="$1"
     response="$2"
 
     echo "MockingController: Inside apiCreateMockAPICollection function..." >&2
+
+    # parse the posted JSON body from the request, which contains the new Mock API collection details,
+    requestBody="$(ParseBashletRequestBody "$request")"
+
+    # parse the requsite fields from the request body
+    newMockAPIName=$(ParseJSONField "$requestBody" '.Name')
+    newMockAPIDescription=$(ParseJSONField "$requestBody" '.Description')
+
+    # generate a collection id from the provided name by converting it to lowercase, replacing spaces with hyphens,
+    # and removing any non-alphanumeric characters except hyphens.
+    newMockAPIId=$(generateCollectionIdFromName "$newMockAPIName")
+
+    # check if the id already exists in the BashletContext key-value store, if it does return a 400 error to the client.
+    if KVExists "$newMockAPIId"; then
+       
+        local err_status_code=400
+        local error_content={}
+        error_content=$(SetJSONField "$error_content" '.status' "400")
+        error_content=$(SetJSONField "$error_content" '.statusMessage' "Bad Request - Mock APICollection with Id: $newMockAPIId already exists.")
+        SendBashletErrorResponse "$err_status_code" "$error_content" "$request"
+        return 1
+    fi
+
+    # build up new Mock API Collection JSON object/document using the provided details and some default values for the other required fields.
+    newMockAPICollection="{}"
+    newMockAPICollection=$(SetJSONField "$newMockAPICollection" '.Name' "$newMockAPIName")
+    newMockAPICollection=$(SetJSONField "$newMockAPICollection" '.Description' "$newMockAPIDescription")
+    newMockAPICollection=$(SetJSONField "$newMockAPICollection" '.CollectionId' "$newMockAPIId")
+    newMockAPICollection=$(SetJSONField "$newMockAPICollection" '.Version' '1.0')
+    newMockAPICollection=$(SetJSONField "$newMockAPICollection" '.Endpoints' '[]')   # empty endpoint array this can be updated later.
+
+
+    # store the new Mock API collection to the BashletContext key-value store and persist it to the host file system.
+    # our private will assist us in this regard.
+    storeCollection "$newMockAPIId" "$newMockAPICollection"
+
+
+    # finally return a response to the caller
+    local responseBody={}
+    responseBody=$(SetJSONField "$responseBody" '.status' '201')
+    responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Created - Mock API Collection with Id: $newMockAPIId has been created successfully.")
+    SetBashletResponseStatusCode "$response" "201"
+    SetBashletResponseBody "$response" "$responseBody"
+
+
+
 }
 
 
@@ -176,6 +227,56 @@ apiDeleteMockAPICollection(){
 
 
 #-------------------------------------Helper functions for the MockingController Bashlet--------------------------------------
+
+storeCollection(){
+    collectionId="$1"
+    mockAPICollectionJSON="$2"
+
+
+    # store the new Mock API COllection to the file system using the Collection id value as the file name.
+    StoreMockAPICollection "$mockAPICollectionJSON" "$USER_MOCK_API_COLLECTIONS_BASE_PATH/$collectionId.json"
+
+    # As all mock api collections are load into memory/cached (via the BashletContext key-value store) on initialisation 
+    # of the server the new entry should be added to the BashletContext key-value store to enable immediate access to it and its constituent endpoints.
+    KVStore "$collectionId" "$mockAPICollectionJSON"
+
+    # We also need to store metadata related to the new collection to the mockAPICollectionsMetaData array in the BashletContext key-value store, which is used to provide a list of all loaded Mock API collections to the client.
+    local loadedMockAPICollectionMetaData="[]"
+    if KVExists "mockAPICollectionsMetaData"; then
+        loadedMockAPICollectionMetaData=$(KVRead "mockAPICollectionsMetaData")
+    fi 
+
+    # attempt to locate the mock api collection metadata in the loadedMockAPICollectionMetaData array, if it exists,
+    # grab reference to its index as we will use this to replace the existing metadata with the updated metadata for the collection.
+    local collectionIndex=-1
+    collectionIndex=$(GetMockAPICollectionIndexById "$loadedMockAPICollectionMetaData" "$collectionId")
+
+    # get the endpoint count, we'll need it for the meta data object we'll go on to generate.
+    endpointCount=$(ParseMockAPICollectionField "$mockAPICollectionJSON" '.Endpoints | length')
+    name=$(ParseMockAPICollectionField "$mockAPICollectionJSON" '.Name')
+
+    # Generate the new metadata for the collection, which will be used to replace the existing metadata in the loadedMockAPICollectionMetaData array.
+    local newCollectionMetadata
+    newCollectionMetadata="{}"
+    newCollectionMetadata="$(SetJSONString "$newCollectionMetadata" '.CollectionId' "$collectionId")"
+    newCollectionMetadata="$(SetJSONString "$newCollectionMetadata" '.Name' "$name")"
+    newCollectionMetadata="$(SetJSONNumber "$newCollectionMetadata" '.EndpointCount' "$endpointCount")"
+
+   
+    # replace or append the new metadata to the loadedMockAPICollectionMetaData array, depending on whether the collection was found in the array or not.
+    # Note: We will really only be replacing an existing metadata entry if this function is being called in respect of
+    # an update to an existing Mock API collection, otherwise we will be appending the new metadata to the array.
+    if [[ $collectionIndex -ne -1 ]]; then
+        # Replace the existing metadata with the updated metadata.
+        loadedMockAPICollectionMetaData="$(SetJSONArrayItem "$loadedMockAPICollectionMetaData" "$collectionIndex" "$newCollectionMetadata")"
+    else
+        # Append the new metadata to the array.
+        loadedMockAPICollectionMetaData="$(AppendJSONArrayItem "$loadedMockAPICollectionMetaData" "$newCollectionMetadata")"
+    fi
+
+    # Finally Store the updated metadata array back to the BashletContext.
+    KVStore "mockAPICollectionsMetaData" "$loadedMockAPICollectionMetaData"
+}
 
 # requests to all invoke* functions are routed to this function, which is responsible for resolving the target Mock API collection and endpoint
 # based on the request path, and then returning the defined response for the endpoint to the client.
@@ -583,6 +684,16 @@ executeDynamicParameterSubstitution(){
 
 
 } 
+#Generates a collection id from the provided name by converting it to lowercase, replacing spaces with hyphens, 
+#and removing any non-alphanumeric characters except hyphens. 
+generateCollectionIdFromName(){ 
+    collectionName="$1"
+
+    # convert the collection name to lowercase, replace spaces with hyphens, and remove any non-alphanumeric characters except hyphens.
+    collectionId="$(echo "$collectionName" | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g' | sed 's/[^a-z0-9-]//g')"
+
+    echo "$collectionId"
+}
 
 
 

@@ -123,6 +123,27 @@ DelegateRequestToBashletEngine() {
             --arg file "$absolute_bashlet_file_path" \
             --arg path "$sanitized_request_path" \
             --arg method "$request_method" '
+
+                        def normPath:
+                                tostring
+                                | if . == "" then "/" else . end
+                                | if startswith("/") then . else "/" + . end
+                                | if . == "/" then . else sub("/+$"; "") end;
+
+                        def pathSegments:
+                                normPath
+                                | if . == "/" then [] else ltrimstr("/") | split("/") end;
+
+                        def isParamSegment:
+                                test("^\\{[^/]+\\}$");
+
+                        def matchesTemplate($path; $templatePath):
+                                ($templatePath | pathSegments) as $templateSegments
+                                | ($path | pathSegments) as $requestSegments
+                                | ($templateSegments | length) == ($requestSegments | length)
+                                    and all(range(0; ($templateSegments | length));
+                                        ($templateSegments[.] | isParamSegment) or ($templateSegments[.] == $requestSegments[.])
+                                    );
                 
             (.bashlets // .Bashlets // [])[]
             | select(.BashletFilePath == $file)
@@ -130,22 +151,40 @@ DelegateRequestToBashletEngine() {
             | [
                 .BashletRoutes[]
 
-                | .Path as $route
+                                | .Path as $route
 
-                | ($route | rtrimstr("/")) as $prefix
+                                | ($route | normPath) as $normalizedPath
 
                 | (.Method // .method // "") as $route_method
 
+                                | . + {
+                                        __normalizedPath: $normalizedPath,
+                                        __isParamPath: ($normalizedPath | pathSegments | any(isParamSegment)),
+                                        __segmentCount: ($normalizedPath | pathSegments | length),
+                                        __paramCount: ($normalizedPath | pathSegments | map(select(isParamSegment)) | length)
+                                    }
+
                 | select(
-                    ( ($path == $prefix) or ($path | startswith($prefix + "/")) )
-                    and ( ($route_method == "") or ( ($route_method | ascii_downcase) == ($method | ascii_downcase) ) )
+                                        ( ($route_method == "") or ( ($route_method | ascii_downcase) == ($method | ascii_downcase) ) )
+                                        and (
+                                ((.__isParamPath | not) and (.__normalizedPath == $path))
+                                                or
+                                                (.__isParamPath and matchesTemplate($path; .__normalizedPath))
+                                        )
                 )
 
               ]
 
-            | sort_by(.Path | length)
-            | reverse
-            | .[0] // empty
+                        | (
+                                ([ .[] | select((.__isParamPath | not) and (.__normalizedPath == $path)) ] | .[0])
+                                //
+                                ([
+                                        .[]
+                                        | select(.__isParamPath)
+                                        | select(matchesTemplate($path; .__normalizedPath))
+                                    ]
+                                 | max_by([.__segmentCount, (-(.__paramCount))]))
+                            ) // empty
 
             ' <<< "$BASHLET_ANNOTATION_METADATA_FROM_PARENT_PROC"
     )"

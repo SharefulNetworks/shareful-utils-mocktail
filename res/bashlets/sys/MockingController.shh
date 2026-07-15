@@ -210,6 +210,21 @@ apiUpdateMockAPICollection(){
     response="$2"
 
     echo "MockingController: Inside apiUpdateMockAPICollection function..." >&2
+
+    # parse the posted JSON body from the request, which contains the new Mock API collection details,
+    requestBody="$(ParseBashletRequestBody "$request")"
+
+    # parse the requsite fields from the request body
+    mockAPIName=$(ParseJSONField "$requestBody" '.Name')
+    mockAPIDescription=$(ParseJSONField "$requestBody" '.Description')
+    mockAPIVersion=$(ParseJSONField "$requestBody" '.Version')
+
+
+    # parse the collection id from the request path, which is expected to be the 3rd segment of the path.
+    collectionId=$(ParseBashletRequestPathSegment "$request" 3)
+
+
+    
 }
 
 

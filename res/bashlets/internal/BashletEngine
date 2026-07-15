@@ -169,7 +169,9 @@ DelegateRequestToBashletEngine() {
                                         and (
                                 ((.__isParamPath | not) and (.__normalizedPath == $path))
                                                 or
-                                                (.__isParamPath and matchesTemplate($path; .__normalizedPath))
+                                (.__isParamPath and matchesTemplate($path; .__normalizedPath))
+                                or
+                                (.__normalizedPath == "/")
                                         )
                 )
 
@@ -183,7 +185,9 @@ DelegateRequestToBashletEngine() {
                                         | select(.__isParamPath)
                                         | select(matchesTemplate($path; .__normalizedPath))
                                     ]
-                                 | max_by([.__segmentCount, (-(.__paramCount))]))
+                             | max_by([.__segmentCount, (-(.__paramCount))]))
+                            //
+                            ([ .[] | select((.__normalizedPath == "/") and ((.Method // .method // "") | ascii_downcase == ($method | ascii_downcase))) ] | .[0])
                             ) // empty
 
             ' <<< "$BASHLET_ANNOTATION_METADATA_FROM_PARENT_PROC"

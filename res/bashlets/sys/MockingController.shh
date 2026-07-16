@@ -18,7 +18,10 @@ source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
 source "$SCRIPT_DIR/res/handlers/internal/utils/mock-utils"
 
 
-# init, where defined is automatically invoked by the BashletEngine 
+# init, where defined is automatically invoked by the BashletEngine on the first call to a bashlet, since its only
+# called once, it is a good place to perform any initialisation tasks that need to be done before the bashlet can be used.
+# Here we load all System and User-defined Mock API collections into memory and cache them in the BashletContext 
+# key-value store for immediate access.
 init(){
 
    echo "MockingController: Initializing MockingController Bashlet..." >&2
@@ -38,6 +41,9 @@ init(){
 
 }
 
+
+#----------------------------------------Mock API Collection Request Handlers-------------------------------------------------------
+
 # Facilitates a GET request/response cycle to a user-defined Mock API endpoint, by using the request path to resolve the target Mock API
 # collection via its assigned BASE PATH, the remainder of the request path is then used to resolve the specific 
 # endpoint within that Mock API collection, to which the request is directed.
@@ -52,14 +58,6 @@ invokeGET(){
 }
 
 
-# @route method=get path=/del
-invokeDel(){
-    request="$1"
-    response="$2"
-
-    KVDelete "last_request"
-
-}
 
 # Facilitates a POST request/response cycle to a user-defined Mock API endpoint, by using the request path to resolve the target Mock API
 # collection via its assigned BASE PATH, the remainder of the request path is then used to resolve the specific 
@@ -105,6 +103,17 @@ invokeDELETE(){
 }
 
 
+
+
+
+
+
+
+
+
+
+# --------------------------------------------  Mocking Service UI Routes ---------------------------------------------------
+
 # Navigates to the MockingController dashboard page, which provides a user interface for managing Mock API collections 
 # and their constituent endpoints.
 # @route method=get path=/dashboard secure=true
@@ -116,7 +125,20 @@ viewMockingDashboard(){
    
 }
 
-# ----------------API endpoint routes they return a JSON-based response, they are intended to be called from within the context of system UI pages---------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ----------------Mocking Service API Endpoint Routes, intended to be called from within the context of system UI pages---------------
 
 # API endpoint to return a list of all Mock API collections that have been loaded into the MockingController Bashlet,
 # @route method=get path=/api/collections
@@ -214,6 +236,15 @@ apiUpdateMockAPICollection(){
     # parse the collection id from the request path.
     collectionId=$(ParseBashletRequestPathParam "$request" "collectionId")
 
+    # if the collection id is empty, return a 400 error to the client.
+    if [ -z "$collectionId" ]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '400')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Missing required path parameter: collectionId.")
+        SendBashletErrorResponse "400"  "$responseBody" "$request"
+        return 1
+    fi
+
     # next parse the posted JSON body from the request, which contains the new Mock API collection details,
     requestBody="$(ParseBashletRequestBody "$request")"
 
@@ -270,12 +301,64 @@ apiDeleteMockAPICollection(){
     response="$2"
 
     echo "MockingController: Inside apiDeleteMockAPICollection function..." >&2
+
+     # parse the collection id from the request path.
+     collectionId=$(ParseBashletRequestPathParam "$request" "collectionId")
+
+     # if the collection id is empty, return a 400 error to the client.
+    if [ -z "$collectionId" ]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '400')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Missing required path parameter: collectionId.")
+        SendBashletErrorResponse "400"  "$responseBody" "$request"
+        return 1
+    fi
+
+    # if the collection exists in the BashletContext key-value store, if it does not exist, return a 404 error to the client.
+    if ! KVExists "$collectionId"; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '404')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Not Found - Mock API Collection with Id: $collectionId does not exist and thus cannot be deleted.")
+        SendBashletErrorResponse "404"  "$responseBody" "$request"
+        return 1
+    fi
+
+    # where the collection DOES exist, delete from the file system and the BashletContext key-value store, out helper function 
+    # will assist us in this regard.
+    deleteCollection "$collectionId"
+
+
+    # finally return a response to the caller
+    local responseBody={}
+    responseBody=$(SetJSONField "$responseBody" '.status' '200')
+    responseBody=$(SetJSONField "$responseBody" '.statusMessage' "OK - Mock API Collection with Id: $collectionId has been deleted successfully.")
+    SetBashletResponseBody "$response" "$responseBody"
 }
+
+
+
+
+
+
+
+
 
 
 
 #-------------------------------------Helper functions for the MockingController Bashlet--------------------------------------
 
+
+# stores or update mock API collection with the specified collection id. The storage operation creates/updates 3 distinct
+# artifacts: 
+#
+# 1)First the the Mock API collection JSON object is stored to the host file system 
+#
+# 2)Next the Mock API collection JSON object is stored to the BashletContext key-value store, using its Collection ID 
+#   as the key for immediate access, this is vital as all Mock API Collections are loaded into memory on initialisation of the MockingController bashlet 
+#   and cached in the BashletContext key-value store. From that point forward all requests to Mock API endpoints are resolved from the BashletContext key-value store, 
+#   which negates the need to read the data from the file system on every request.
+#
+# 3)Finally the Mock API collection metadata is updated in the BashletContext key-value store, which is used to provide a list of all loaded Mock API collections to the client.
 storeCollection(){
     collectionId="$1"
     mockAPICollectionJSON="$2"
@@ -324,6 +407,36 @@ storeCollection(){
 
     # Finally Store the updated metadata array back to the BashletContext.
     KVStore "mockAPICollectionsMetaData" "$loadedMockAPICollectionMetaData"
+}
+
+
+deleteCollection(){
+    collectionId="$1"
+
+    # delete the Mock API collection file from the host file system.
+    DeleteMockAPICollection "$USER_MOCK_API_COLLECTIONS_BASE_PATH/$collectionId.json"
+
+    # delete the Mock API collection from the BashletContext key-value store.
+    KVDelete "$collectionId"
+
+    # delete the Mock API collection metadata from the BashletContext key-value store.
+    local loadedMockAPICollectionMetaData="[]"
+    if KVExists "mockAPICollectionsMetaData"; then
+        loadedMockAPICollectionMetaData=$(KVRead "mockAPICollectionsMetaData")
+    fi 
+
+    # attempt to locate the mock api collection metadata in the loadedMockAPICollectionMetaData array, if it exists,
+    # grab reference to its index as we will use this to remove the existing metadata for the collection.
+    local collectionIndex=-1
+    collectionIndex=$(GetMockAPICollectionIndexById "$loadedMockAPICollectionMetaData" "$collectionId")
+
+    # remove the metadata from the array, if it was found.
+    if [[ $collectionIndex -ne -1 ]]; then
+        loadedMockAPICollectionMetaData="$(RemoveJSONArrayItem "$loadedMockAPICollectionMetaData" "$collectionIndex")"
+        KVStore "mockAPICollectionsMetaData" "$loadedMockAPICollectionMetaData"
+    fi
+
+
 }
 
 # requests to all invoke* functions are routed to this function, which is responsible for resolving the target Mock API collection and endpoint

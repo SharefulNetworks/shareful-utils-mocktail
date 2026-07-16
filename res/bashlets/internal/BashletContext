@@ -601,6 +601,12 @@ SetJSONArrayItem() {
     fi
 }
 
+RemoveJSONArrayItem() {
+    local json="$1"
+    local index="$2"
+
+    jq -c --argjson i "$index" 'del(.[$i])' <<< "$json"
+}
 
 
 # ------------------------------------------------ public generic utility functions ---------------------------------------------------

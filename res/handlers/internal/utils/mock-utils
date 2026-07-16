@@ -20,6 +20,12 @@ StoreMockAPICollection() {
     echo "$json" | jq -r '.' > "$path"
 }
 
+# deletes the Mock API collection file at the provided path from the host file system, if it exists.
+DeleteMockAPICollection() {
+    local path="$1"
+    rm -f "$path"
+}
+
 
 # reads a specific value from the JSON Mock API collection using jq a reference
 # to the Mock API Collection JSON must be provided as the first argument, and the key to read 

@@ -334,6 +334,13 @@ ParseBashletRequestSubPath() {
   jq -r --argjson start_index "$start_index" '.path | split("/") | .[$start_index:] | join("/")' <<< "$request"
 }
 
+
+ParseBashletRequestPathParam() {
+  local request="$1"
+  local param_name="$2"
+  jq -r --arg param_name "$param_name" '.bashlet_path_params[$param_name] // empty' <<< "$request"
+}
+
 ParseBashletRequestProtocol() {
   local request="$1"
   jq -r '.protocol' <<< "$request"
@@ -390,6 +397,37 @@ ParseBashletRequestCookiesParam() {
   local request="$1"
   local cookie_name="$2"
   jq -r --arg cookie_name "$cookie_name" '.cookies[$cookie_name] // empty' <<< "$request"
+}
+
+# Extracts path parameters from a request using the route_metadata object.
+# The route_metadata contains the matched route template with parameter placeholders (e.g., {collectionId})
+# which are matched against the actual request path segments to extract values.
+# Returns a JSON object with parameter names as keys and their corresponding path values.
+# Usage: ExtractPathParametersFromRequest "$request" "$route_metadata"
+ExtractPathParametersFromRequest() {
+  local request="$1"
+  local route_metadata="$2"
+  
+  local request_path
+  request_path=$(jq -r '(.rel_path // .path)' <<< "$request")
+  
+  jq -n \
+    --arg request_path "$request_path" \
+    --argjson route_meta "$route_metadata" \
+    '
+    ($route_meta.Path | ltrimstr("/") | split("/")) as $template_segments |
+    ($request_path | ltrimstr("/") | split("/")) as $request_segments |
+    
+    reduce range(0; $template_segments | length) as $i (
+      {};
+      if ($template_segments[$i] | test("^\\{[^/]+\\}$")) then
+        ($template_segments[$i] | gsub("[{}]"; "")) as $param_name |
+        . + {($param_name): ($request_segments[$i] // "")}
+      else
+        .
+      end
+    )
+    '
 }
 
 # -----------------------------------------------------public bashlet response setter functions---------------------------------------------------

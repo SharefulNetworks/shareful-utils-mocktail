@@ -286,6 +286,16 @@ DelegateRequestToBashletEngine() {
     # the bashlet function, passing in the request object and a default response object. 
     echo "BashletEngine: Resolved '$sanitized_request_path' -> '$func_name'" >&2
 
+    # store the route-relative path separately so existing callers can still access the mounted URL via .path,
+    # while path helpers operate against the matched bashlet subpath.
+    bashletRequest="$(SetJSONField "$bashletRequest" '.rel_path' "$sanitized_request_path")"
+
+    # extract any path parameters from the inbound request and add them to the request object
+    # as name value pairs under the name bashlet_path_params since path params will only be supported in bashlets
+    local path_params
+    path_params=$(ExtractPathParametersFromRequest "$bashletRequest" "$route_metadata")
+    bashletRequest=$(SetJSONField "$bashletRequest" '.bashlet_path_params' "$path_params")
+
     # build default response object to be returned to the caller, which may be optionally augmented by the
     # bashlet function being invoked, where its not, this default success response will be returned.
     bashletResponse="$(BuildDefaultBashletResponseObject 200 '{}' 'text/plain' '')"    

@@ -211,7 +211,10 @@ apiUpdateMockAPICollection(){
 
     echo "MockingController: Inside apiUpdateMockAPICollection function..." >&2
 
-    # parse the posted JSON body from the request, which contains the new Mock API collection details,
+    # parse the collection id from the request path.
+    collectionId=$(ParseBashletRequestPathParam "$request" "collectionId")
+
+    # next parse the posted JSON body from the request, which contains the new Mock API collection details,
     requestBody="$(ParseBashletRequestBody "$request")"
 
     # parse the requsite fields from the request body
@@ -219,12 +222,42 @@ apiUpdateMockAPICollection(){
     mockAPIDescription=$(ParseJSONField "$requestBody" '.Description')
     mockAPIVersion=$(ParseJSONField "$requestBody" '.Version')
 
+    # check if a Mock API collection with the provided exists and  has been cached in the BashletContext key-value store, 
+    # if it does not exist, return a 404 error to the client.
+    if ! KVExists "$collectionId"; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '404')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Not Found - Mock API Collection with Id: $collectionId does not exist.")
+        SendBashletErrorResponse "404"  "$responseBody" "$request"
+        return 1
+    fi
 
-    # parse the collection id from the request path, which is expected to be the 3rd segment of the path.
-    collectionId=$(ParseBashletRequestPathSegment "$request" 3)
+    # check that a value has been provided for the required fields, if not return a 400 error to the client.
+    if [ -z "$mockAPIName" ] || [ -z "$mockAPIDescription" ] || [ -z "$mockAPIVersion" ]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '400')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Missing required fields in request body. Name, Description and Version are required.")
+        SendBashletErrorResponse "400"  "$responseBody" "$request"
+        return 1
+    fi  
 
+    # retrieve the existing Mock API collection from the BashletContext key-value store, which we will update with the new values.
+    existingMockAPICollection=$(KVRead "$collectionId")
 
-    
+    # update the existing Mock API collection with the new values from the request body.
+    updatedMockAPICollection=$(SetJSONField "$existingMockAPICollection" '.Name' "$mockAPIName")
+    updatedMockAPICollection=$(SetJSONField "$updatedMockAPICollection" '.Description' "$mockAPIDescription")
+    updatedMockAPICollection=$(SetJSONField "$updatedMockAPICollection" '.Version' "$mockAPIVersion")
+
+    # store the updated Mock API collection to the BashletContext key-value store and persist it to the host file system.
+    storeCollection "$collectionId" "$updatedMockAPICollection"
+
+    # finally return a response to the caller
+    local responseBody={}
+    responseBody=$(SetJSONField "$responseBody" '.status' '200')
+    responseBody=$(SetJSONField "$responseBody" '.statusMessage' "OK - Mock API Collection with Id: $collectionId has been updated successfully.")
+    SetBashletResponseBody "$response" "$responseBody"
+
 }
 
 

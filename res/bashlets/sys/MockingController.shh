@@ -335,9 +335,102 @@ apiDeleteMockAPICollection(){
     SetBashletResponseBody "$response" "$responseBody"
 }
 
+# API endpoint to create a new Mock API endpoint within an existing Mock API collection, the request body must contain 
+# the requsite Mock API Collection, Endpoint details, otherwise a 400 (bad request) error will be returned to the client. 
+# The new endpoint will be appended to the existing Mock API collection's associated with the id providedas a path parameter 
+# in the request.
+# @route method=post path=/api/collections/{collectionId}/endpoints
+apiCreateMockAPICollectionEndpoint(){
+    request="$1"
+    response="$2"
 
+    echo "MockingController: Inside apiCreateMockAPICollectionEndpoint function..." >&2
 
+    # parse the collection id from the request path.
+    local collectionId=$(ParseBashletRequestPathParam "$request" "collectionId")
 
+    echo "MockingController: Parsed collectionId: $collectionId" >&2
+
+    # if the collection id is empty, return a 400 error to the client.
+    if [ -z "$collectionId" ]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '400')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Missing required path parameter: collectionId.")
+        SendBashletErrorResponse "400"  "$responseBody" "$request"
+        return 1
+    fi  
+
+    # next attempt to obtain reference to the Mock API collection from the BashletContext key-value store, if it does not exist, return a 404 error to the client.
+    if ! KVExists "$collectionId"; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '404')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Not Found - Mock API Collection with Id: $collectionId does not exist and thus cannot be updated.")
+        SendBashletErrorResponse "404"  "$responseBody" "$request"
+        return 1
+    fi
+
+    # otherwise retrieve the existing Mock API collection from the BashletContext key-value store, which we will update with the new endpoint.
+    local existingMockAPICollection=$(KVRead "$collectionId")
+
+    # parse the posted JSON body from the request, which contains the new Mock API endpoint details,
+    local requestBody="$(ParseBashletRequestBody "$request")"
+
+    # parse the requsite fields from the request body
+    local newEndpointPath=$(ParseJSONField "$requestBody" '.Path')
+    local newEndpointMethod=$(ParseJSONField "$requestBody" '.Method')
+    local newEndpointResponse=$(ParseJSONField "$requestBody" '.Response')
+
+    # check that a value has been provided for the required fields, if not return a 400 error to the client.
+    if [ -z "$newEndpointPath" ] || [ -z "$newEndpointMethod" ] || [ -z "$newEndpointResponse" ]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '400')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Missing required fields in request body. Path, Method and Response are required.")
+        SendBashletErrorResponse "400"  "$responseBody" "$request"
+        return 1
+    fi
+
+    # ensure that method is GET,POST,PUT,PATCH or DELETE, (case insensitive) if not return a 400 error to the client.
+    if ! [[ "$newEndpointMethod" =~ ^(GET|POST|PUT|PATCH|DELETE)$ ]]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '400')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Invalid method. Only GET, POST, PUT, PATCH and DELETE are supported.")
+        SendBashletErrorResponse "400"  "$responseBody" "$request"
+        return 1
+    fi
+
+    # next validate that the response includes a Body it may also include a Header object and status code, but these are optional
+    # if not, return a 400 error to the client.
+    local body=$(ParseJSONField "$newEndpointResponse" '.Body')
+    if [ -z "$body" ]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '400')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Invalid response. Response must include a Body.")
+        SendBashletErrorResponse "400"  "$responseBody" "$request"
+        return 1
+    fi
+
+    # use the details provided in the response object to build a new endpoint object.
+    local newEndpoint="{}"
+    newEndpoint=$(SetJSONField "$newEndpoint" '.Path' "$newEndpointPath")
+    newEndpoint=$(SetJSONField "$newEndpoint" '.Method' "$newEndpointMethod")
+    newEndpoint=$(SetJSONField "$newEndpoint" '.Response' "$newEndpointResponse")
+
+    # append the new endpoint to the existing Mock API collection's Endpoints array.
+    local endpointsArray=$(ParseMockAPICollectionEndpoints "$existingMockAPICollection")
+    endpointsArray=$(AppendJSONArrayItem "$endpointsArray" "$newEndpoint")
+    updatedMockAPICollection=$(SetJSONField "$existingMockAPICollection" '.Endpoints' "$endpointsArray")
+
+    # store the updated Mock API collection to the BashletContext key-value store and persist it to the host file system.
+    storeCollection "$collectionId" "$updatedMockAPICollection"
+
+    # finally return a response to the caller
+    local responseBody={}
+    responseBody=$(SetJSONField "$responseBody" '.status' '201')
+    responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Created - Mock API Endpoint has been created successfully in Mock API Collection with Id: $collectionId.")
+    SetBashletResponseStatusCode "$response" "201"
+    SetBashletResponseBody "$response" "$responseBody"
+
+}
 
 
 

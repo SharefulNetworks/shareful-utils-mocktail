@@ -1,0 +1,15 @@
+{
+  "Name": "Second API Collection",
+  "Description": "My Second API Collection",
+  "CollectionId": "second-api-collection",
+  "Version": 1.0,
+  "Endpoints": [
+    {
+      "Path": "/api/v1/profiles/{profileId}",
+      "Method": "POST",
+      "Response": {
+        "Body": "Echo"
+      }
+    }
+  ]
+}

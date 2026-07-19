@@ -415,6 +415,21 @@ apiCreateMockAPICollectionEndpoint(){
     newEndpoint=$(SetJSONField "$newEndpoint" '.Method' "$newEndpointMethod")
     newEndpoint=$(SetJSONField "$newEndpoint" '.Response' "$newEndpointResponse")
 
+     # get the current endpoint count and increment this value to product the new endpoint id.
+    currentEndpointCount=$(GetMockAPICollectionEndpintCount "$existingMockAPICollection")
+    newEndpointId="$((currentEndpointCount + 1))"
+    newEndpoint=$(SetJSONString "$newEndpoint" '.Id' "$newEndpointId")
+
+    # if an endpoint with the specified path and method already exists in the Mock API collection, return a 400 error to the client.
+    if EndpointExistsInMockAPICollection "$existingMockAPICollection" "$newEndpointPath" "$newEndpointMethod"; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '400')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Endpoint already exists that references path $newEndpointPath in Mock API Collection with Id: $collectionId.")
+        SendBashletErrorResponse "400"  "$responseBody" "$request"
+        return 1
+    fi
+
+
     # append the new endpoint to the existing Mock API collection's Endpoints array.
     local endpointsArray=$(ParseMockAPICollectionEndpoints "$existingMockAPICollection")
     endpointsArray=$(AppendJSONArrayItem "$endpointsArray" "$newEndpoint")
@@ -431,6 +446,81 @@ apiCreateMockAPICollectionEndpoint(){
     SetBashletResponseBody "$response" "$responseBody"
 
 }
+
+# API endpoint to update an existing Mock API endpoint within a Mock API collection, the request body must contain 
+# the requsite Mock API Collection, Endpoint details, otherwise a 400 (bad request) error will be returned to the client. 
+# @route method=put path=/api/collections/{collectionId}/endpoints/{endpointId}
+apiUpdateMockAPICollectionEndpoint(){
+    request="$1"
+    response="$2"
+
+    echo "MockingController: Inside apiUpdateMockAPICollectionEndpoint function..." >&2
+
+    # we start by parsing both path parameters from the request, first the collection id...
+    local collectionId=$(ParseBashletRequestPathParam "$request" "collectionId")
+
+    # then the endpoint id
+    local endpointId=$(ParseBashletRequestPathParam "$request" "endpointId")
+
+     # next attempt to obtain reference to the Mock API collection from the BashletContext key-value store, if it does not exist, return a 404 error to the client.
+    if ! KVExists "$collectionId"; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '404')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Not Found - Mock API Collection with Id: $collectionId does not exist and thus cannot be updated.")
+        SendBashletErrorResponse "404"  "$responseBody" "$request"
+        return 1
+    fi
+
+    # otherwise retrieve the existing Mock API collection from the BashletContext key-value store, which we will update with the new endpoint.
+    local existingMockAPICollection
+    existingMockAPICollection=$(KVRead "$collectionId")
+
+    echo "Existing Mock API Collection: $existingMockAPICollection" >&2
+
+    # next check that the endpoint exists in the Mock API collection, if it does not exist, return a 404 error to the client.
+    # if an endpoint with the specified path and method already exists in the Mock API collection, return a 400 error to the client.
+    local existingEndpoint
+    existingEndpoint=$(GetMockAPICollectionEndpointById "$existingMockAPICollection" "$endpointId")
+    if [ -z "$existingEndpoint" ]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '404')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Not Found - Mock API Endpoint with Id: $endpointId does not exist in Mock API Collection with Id: $collectionId and thus cannot be updated.")
+        SendBashletErrorResponse "404"  "$responseBody" "$request"
+        return 1
+    fi
+
+    # conversely where the endpoint DOES exist, we parse the posted JSON body from the request, which contains the new Mock API endpoint details,
+    local requestBody
+    requestBody="$(ParseBashletRequestBody "$request")"
+
+
+    # parse the requsite fields from the request body, all fields (apart from the id) can be updated.
+    local newEndpointPath=$(ParseJSONField "$requestBody" '.Path')
+    local newEndpointMethod=$(ParseJSONField "$requestBody" '.Method')
+    local newEndpointResponse=$(ParseJSONField "$requestBody" '.Response')
+
+    # update the existing endpoint with the detals obtained from the request.
+    local updatedEndpoint
+    updatedEndpoint=$(SetJSONField "$existingEndpoint" '.Path' "$newEndpointPath")
+    updatedEndpoint=$(SetJSONField "$updatedEndpoint" '.Method' "$newEndpointMethod")
+    updatedEndpoint=$(SetJSONField "$updatedEndpoint" '.Response' "$newEndpointResponse")
+
+    # update the existing Mock API collection with the updated endpoint.
+    local updatedMockAPICollection
+    updatedMockAPICollection=$(UpdateMockAPICollectionEndpointById "$existingMockAPICollection" "$endpointId" "$updatedEndpoint")
+
+    # store the updated Mock API collection to the BashletContext key-value store and persist it to the host file system.
+    storeCollection "$collectionId" "$updatedMockAPICollection"
+
+    # finally return a response to the caller
+    local responseBody={}
+    responseBody=$(SetJSONField "$responseBody" '.status' '200')
+    responseBody=$(SetJSONField "$responseBody" '.statusMessage' "OK - Mock API Endpoint with Id: $endpointId has been updated successfully in Mock API Collection with Id: $collectionId.")
+    SetBashletResponseBody "$response" "$responseBody"  
+
+}
+
+
 
 
 

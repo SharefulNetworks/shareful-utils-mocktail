@@ -6,6 +6,7 @@
   "Type":"System",
   "Endpoints": [
     {
+      "Id": "1", 
       "Path": "/api/v1/profiles",
       "Method": "GET",
       "Response": {
@@ -23,6 +24,7 @@
       }
     },
     {
+      "Id": "2",
       "Path": "/api/v1/profiles/{profileId}",
       "Method": "POST",
       "Response": {
@@ -30,6 +32,7 @@
       }
     },
     {
+      "Id": "3",
       "Path": "/api/v1/profiles/{profileId}/settings",
       "Method": "GET",
       "EnableDynamicParamSubstitution": true,
@@ -45,6 +48,7 @@
       }
     },
     {
+      "Id": "4",
       "Path": "/api/v1/profiles/{profileId}/credential-servers",
       "Method": "GET",
       "Response": {

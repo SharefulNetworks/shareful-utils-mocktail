@@ -62,6 +62,21 @@ ParseMockAPICollectionEndpointResponseBody(){
     ' <<< "$endpointJson"
 }
 
+EndpointExistsInMockAPICollection() {
+    local mockCollectionJson="$1"
+    local requestPath="$2"
+    local requestMethod="$3"
+
+    local endpoint
+    endpoint=$(ResolveMockEndpoint "$mockCollectionJson" "$requestPath" "$requestMethod")
+
+    if [[ -n "$endpoint" ]]; then
+        return 0  # Endpoint exists
+    else
+        return 1  # Endpoint does not exist
+    fi
+}
+
 
 
 SetMockAPICollectionField() {
@@ -102,6 +117,34 @@ GetMockAPICollectionIndexById() {
         | map(select(.value.CollectionId == $collectionId))
         | .[0].key // -1
     ' <<< "$mockAPICollectionsMetaData"
+}
+
+GetMockAPICollectionEndpintCount(){
+    local mockCollectionJson="$1"
+    jq -r '(.Endpoints // .endpoints // []) | length' <<< "$mockCollectionJson"
+}
+
+GetMockAPICollectionEndpointById() {
+    local mockCollectionJson="$1"
+    local endpointId="$2"
+
+    jq -c --arg endpointId "$endpointId" '
+        (.Endpoints // .endpoints // [])
+        | map(select((.Id | tostring) == $endpointId))
+        | .[0] // empty
+    ' <<< "$mockCollectionJson"
+}
+
+UpdateMockAPICollectionEndpointById(){
+    local mockCollectionJson="$1"
+    local endpointId="$2"
+    local updatedEndpointJson="$3"
+
+    jq -c --arg endpointId "$endpointId" --argjson updatedEndpoint "$updatedEndpointJson" '
+        (.Endpoints // .endpoints) |= map(
+            if (.Id | tostring) == $endpointId then $updatedEndpoint else . end
+        )
+    ' <<< "$mockCollectionJson"
 }
 
 JsonArrayToLines() {

@@ -6,6 +6,7 @@
   "Type":"System",
   "Endpoints": [
     {
+      "Id": "1",
       "Path": "/api/v1/users",
       "Method": "GET",
       "Response": {
@@ -25,6 +26,7 @@
       }
     },
     {
+      "Id": "2",
       "Path": "/api/v1/users/settings",
       "Method": "GET",
       "Response": {
@@ -37,6 +39,7 @@
       }
     },
     {
+      "Id": "3",
       "Path": "/api/v1/users/{userId}",
       "Method": "GET",
       "Response": {
@@ -51,6 +54,7 @@
       }
     },
     {
+      "Id": "4",
       "Path": "/api/v1/users/{userId}/addresses/{addressId}",
       "Method": "GET",
       "Response": {

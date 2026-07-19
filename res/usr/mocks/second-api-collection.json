@@ -5,11 +5,20 @@
   "Version": 1.0,
   "Endpoints": [
     {
+      "Path": "/api/v1/profiles/{profileId}/2",
+      "Method": "PUT",
+      "Response": {
+        "Body": "Hello"
+      },
+      "Id": "1"
+    },
+    {
       "Path": "/api/v1/profiles/{profileId}",
       "Method": "POST",
       "Response": {
-        "Body": "Echo"
-      }
+        "Body": "A test body"
+      },
+      "Id": "2"
     }
   ]
 }

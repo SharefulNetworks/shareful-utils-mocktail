@@ -147,6 +147,17 @@ UpdateMockAPICollectionEndpointById(){
     ' <<< "$mockCollectionJson"
 }
 
+RemoveMockAPICollectionEndpointById(){
+    local mockCollectionJson="$1"
+    local endpointId="$2"
+
+    jq -c --arg endpointId "$endpointId" '
+        (.Endpoints // .endpoints) |= map(
+            select((.Id | tostring) != $endpointId)
+        )
+    ' <<< "$mockCollectionJson"
+}   
+
 JsonArrayToLines() {
   local jsonStr="$1"
   jq -r '.[]' <<< "$jsonStr"

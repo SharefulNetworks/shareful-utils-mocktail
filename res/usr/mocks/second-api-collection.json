@@ -11,6 +11,49 @@
         "Body": "Hello From Endpoint"
       },
       "Id": "1"
+    },
+    {
+      "Path": "/api/v1/profiles/{profileId}/preferences",
+      "Method": "PUT",
+      "Response": {
+        "Body": "Hello Frpm Endpoint"
+      },
+      "EnableDynamicParamSubstitution": "null",
+      "Id": "2"
+    },
+    {
+      "Path": "/api/v1/profiles/{profileId}/preferences2",
+      "Method": "POST",
+      "Response": {
+        "Body": "A test body"
+      },
+      "EnableDynamicParamSubstitution": "null",
+      "Id": "3"
+    },
+    {
+      "Path": "/api/v1/profiles/{profileId}/preferences4",
+      "Method": "POST",
+      "Response": {
+        "Body": "Hello From Endpoint"
+      },
+      "Id": "4"
+    },
+    {
+      "Path": "/api/v1/profiles/{profileId}/preferences4",
+      "Method": "POST",
+      "Response": {
+        "Body": "A test body"
+      },
+      "Id": "5",
+      "EnableDynamicParamSubstitution": "false"
+    },
+    {
+      "Path": "/api/v1/profiles/{profileId}/preferences9",
+      "Method": "GET",
+      "Response": {
+        "Body": "A test body"
+      },
+      "Id": "6"
     }
   ]
 }

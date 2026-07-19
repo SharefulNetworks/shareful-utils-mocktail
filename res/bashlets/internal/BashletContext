@@ -531,6 +531,15 @@ SetJSONField() {
     fi
 }
 
+RemoveJSONField() {
+
+    local json="$1"
+    local path="$2"
+
+    jq -c \
+       "del($path)" <<< "$json"
+} 
+
 SetJSONBoolean() {
 
     local json="$1"

@@ -418,6 +418,9 @@ apiCreateMockAPICollectionEndpoint(){
     local newEndpointMethod=$(ParseJSONField "$requestBody" '.Method')
     local newEndpointResponse=$(ParseJSONField "$requestBody" '.Response')
 
+    # parse the optional EnableDynamicParamSubstitution field if its provided.
+    local enableDynamicParamSubstitution=$(ParseJSONField "$requestBody" '.EnableDynamicParamSubstitution')
+
     # check that a value has been provided for the required fields, if not return a 400 error to the client.
     if [ -z "$newEndpointPath" ] || [ -z "$newEndpointMethod" ] || [ -z "$newEndpointResponse" ]; then
         local responseBody={}
@@ -452,6 +455,11 @@ apiCreateMockAPICollectionEndpoint(){
     newEndpoint=$(SetJSONField "$newEndpoint" '.Path' "$newEndpointPath")
     newEndpoint=$(SetJSONField "$newEndpoint" '.Method' "$newEndpointMethod")
     newEndpoint=$(SetJSONField "$newEndpoint" '.Response' "$newEndpointResponse")
+
+    # set the EnableDynamicParamSubstitution field if it was provided.
+    if [ -n "$enableDynamicParamSubstitution" ] && [ "$enableDynamicParamSubstitution" != "null" ]; then
+        newEndpoint=$(SetJSONField "$newEndpoint" '.EnableDynamicParamSubstitution' "$enableDynamicParamSubstitution")
+    fi
 
      # get the current endpoint count and increment this value to product the new endpoint id.
     currentEndpointCount=$(GetMockAPICollectionEndpintCount "$existingMockAPICollection")
@@ -537,11 +545,23 @@ apiUpdateMockAPICollectionEndpoint(){
     local newEndpointMethod=$(ParseJSONField "$requestBody" '.Method')
     local newEndpointResponse=$(ParseJSONField "$requestBody" '.Response')
 
+    # parse the optional EnableDynamicParamSubstitution field if its provided.
+    local enableDynamicParamSubstitution=$(ParseJSONField "$requestBody" '.EnableDynamicParamSubstitution')
+
+
     # update the existing endpoint with the detals obtained from the request.
     local updatedEndpoint
     updatedEndpoint=$(SetJSONField "$existingEndpoint" '.Path' "$newEndpointPath")
     updatedEndpoint=$(SetJSONField "$updatedEndpoint" '.Method' "$newEndpointMethod")
     updatedEndpoint=$(SetJSONField "$updatedEndpoint" '.Response' "$newEndpointResponse")
+
+    # set the EnableDynamicParamSubstitution field if it was provided and is not null
+    if [ -n "$enableDynamicParamSubstitution" ] && [ "$enableDynamicParamSubstitution" != "null" ]; then
+        updatedEndpoint=$(SetJSONField "$updatedEndpoint" '.EnableDynamicParamSubstitution' "$enableDynamicParamSubstitution")
+    else
+        # if the field is not provided or is null, we remove it from the endpoint object.
+        updatedEndpoint=$(RemoveJSONField "$updatedEndpoint" '.EnableDynamicParamSubstitution')
+    fi
 
     # update the existing Mock API collection with the updated endpoint.
     local updatedMockAPICollection

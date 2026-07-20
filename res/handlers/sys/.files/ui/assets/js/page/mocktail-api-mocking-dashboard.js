@@ -1,8 +1,8 @@
 //--------------------------------------------------------------------------------------------------------
-// name: mocktail-dashboard.js
-// description: This file contains the JavaScript code for the Mocktail dashboard page.
+// name: mocktail-api-mocking-dashboard.js
+// description: This file contains the JavaScript code for the Mocktail API mocking dashboard page.
 // author: Giles Thompson
-// date: 2026-07-04
+// date: 2026-07-20
 //--------------------------------------------------------------------------------------------------------
  
 //grab reference to the UI element to render the chart to.
@@ -16,7 +16,8 @@ var processUtilisationChart;
  document.addEventListener("DOMContentLoaded", function () {
 
   //render process utilization chart, with initial zeroed data values, these will be updated by the data returned from the server stats API endpoint.
-  renderProcessUtilizationChart();
+  renderAPIMockingStatsChart();
+  //renderProcessUtilizationChart();
 
   // Initial stats fetch on page load
   fetchServerStats();
@@ -48,7 +49,7 @@ var processUtilisationChart;
     document.getElementById('max-process-limit').textContent = data.maxProcessLimit;
     document.getElementById('current-process-usage').textContent = data.processUtilizationHistory[getCurrentMinute()];
     document.getElementById('server-uptime').textContent = formatUptime(data.serverUptime);
-    updateProcessUtilizationChart(data.processUtilizationHistory);
+    //updateProcessUtilizationChart(data.processUtilizationHistory);
   }
 
 
@@ -163,6 +164,65 @@ var processUtilisationChart;
 
 
   }
+
+  const renderAPIMockingStatsChart = () => {
+    var ctx = document.getElementById("myChart2").getContext("2d");
+    var myChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ],
+        datasets: [
+          {
+            label: "Statistics",
+            data: [460, 458, 330, 502, 430, 610, 488],
+            borderWidth: 2,
+            backgroundColor: "#6777ef",
+            borderColor: "#6777ef",
+            borderWidth: 2.5,
+            pointBackgroundColor: "#ffffff",
+            pointRadius: 4,
+          },
+        ],
+      },
+      options: {
+        legend: {
+          display: false,
+        },
+        scales: {
+          yAxes: [
+            {
+              gridLines: {
+                drawBorder: false,
+                color: "#f2f2f2",
+              },
+              ticks: {
+                beginAtZero: true,
+                stepSize: 150,
+              },
+            },
+          ],
+          xAxes: [
+            {
+              ticks: {
+                display: false,
+              },
+              gridLines: {
+                display: false,
+              },
+            },
+          ],
+        },
+      },
+    });
+  };
 
 
   const showGeneralSettingsPanel = (clickedElement) => {

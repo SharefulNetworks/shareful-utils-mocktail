@@ -122,6 +122,8 @@ viewMockingDashboard(){
     response="$2"
 
     echo "MockingController: Inside viewMockingDashboard function..." >&2
+
+    ForwardBashletRequest "/sys/ui/mocktail-mocking-dashboard.html"
    
 }
 

@@ -4,10 +4,9 @@
 # the main server configuration JSON file.
 
 
-# reads entire JSON config file using jq.
+# reads the main JSON config file from the repository root relative to SCRIPT_DIR.
 ReadServerJSONConfig() {
-    local filter="${1:-.}"
-    jq -r "$filter" res/config.json
+    jq -r '.' "${SCRIPT_DIR}/res/config.json"
 }
 
 # reads a specific value from the JSON config file using jq a reference
@@ -65,7 +64,7 @@ SetJSONConfigSecuritySetting(){
 # the function will refuse to write it to the config file and will return an error.
 UpdateConfigFile() {
     local newConfig="$1"
-    local configPath="res/config.json"
+    local configPath="${SCRIPT_DIR}/res/config.json"
     local tempFile
 
     tempFile="$(mktemp "${configPath}.tmp.XXXXXX")" || return 1

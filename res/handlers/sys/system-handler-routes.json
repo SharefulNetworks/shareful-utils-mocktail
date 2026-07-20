@@ -29,6 +29,14 @@
 
         },
         {
+            "Title": "Access To General System UI Assets From The System Mocking Controller Route",
+            "Path": "/mock/assets/*",
+            "Type": "static",
+            "FilePath": "/res/handlers/sys/.files/ui/assets",
+            "Description": "Similar to the assets wildcard route defined below but this route specifically makes the system UI assets available to the MockingController and all constituent handler functions.."
+
+        },
+        {
             "Title": "General System UI, Static Wildcard Route",
             "Path": "/ui/*",
             "Type": "static",

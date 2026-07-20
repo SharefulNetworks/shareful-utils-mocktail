@@ -5,6 +5,9 @@ echo "BashletEngine: Loaded BashletEngine component.." >&2
 # source the bashlet-utils script, which provides utility functions for bashlet operations, including parsing request objects and other common tasks.
 source "${SCRIPT_DIR}/res/bashlets/internal/BashletContext"
 
+# source the config helpers so secure-route auth checks can read the stored passphrase before any specific bashlet is invoked.
+source "${SCRIPT_DIR}/res/handlers/internal/utils/config-utils"
+
 # the file extension for bashlet scripts, which is used to identify them during the resolution process.
 BASHLET_FILE_EXT=".shh" 
 
@@ -219,11 +222,13 @@ DelegateRequestToBashletEngine() {
         # check if the user is authenticated by checking for the presence of the auth cookie in the request object.
         authCookie="$(GetCookieInBashletRequest "$bashletRequest" "$AUTH_TOKEN_COOKIE_NAME")"
 
+      
         # where an auth cookie exists we check thats its valid, we'll need the stored passphrase from
         # the config file to do this, where the passphrase is not found an empty string will be returned
         # and the check will subsequently fail, thus we don't need to explicitly check for the passphrase here, 
         # we just check if the auth cookie is valid.
         storedPassphrase="$(GetStoredPassphraseFromConfig)"
+
         CheckAuthSessionToken "$authCookie" "$storedPassphrase"
         authCookieValid="$?"
 

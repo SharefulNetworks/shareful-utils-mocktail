@@ -122,7 +122,7 @@ var processUtilisationChart;
            label: 'Process Utilization Count',
            data: chartData,
            borderWidth: 2,
-           backgroundColor: '#6777ef',
+           backgroundColor: 'rgba(103, 119, 239, 0.2)',
            borderColor: '#6777ef',
            borderWidth: 2.5,
            pointBackgroundColor: '#ffffff',

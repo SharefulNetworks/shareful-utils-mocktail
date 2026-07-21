@@ -5,19 +5,14 @@
 // date: 2026-07-20
 //--------------------------------------------------------------------------------------------------------
  
-//grab reference to the UI element to render the chart to.
-var processUtilizationChartContext;
-var processUtilizationChartScrollContainer;
 
-//var to hold the chart UI canvas.
-var processUtilisationChart;
 
  //on page load....
  document.addEventListener("DOMContentLoaded", function () {
 
   //render process utilization chart, with initial zeroed data values, these will be updated by the data returned from the server stats API endpoint.
   renderAPIMockingStatsChart();
-  //renderProcessUtilizationChart();
+
 
   // Initial stats fetch on page load
   fetchServerStats();
@@ -103,69 +98,21 @@ var processUtilisationChart;
   };
 
 
-  const renderProcessUtilizationChart = () => {
 
-     //grab reference to the 2D canvas context we'll render the chart to.
-     processUtilizationChartContext = document.getElementById("myChart").getContext('2d');
-    processUtilizationChartScrollContainer = document.getElementById("process-utilization-chart-scroll");
-
-     //initial chart data.
-     var chartData = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-
-     //Instantiate and configure a nw line chart to visualize the process usage stats over the last hour.
-     processUtilisationChart = new Chart(processUtilizationChartContext, {
-       type: 'line',
-       data: {
-         //labels should be minutes in an hour, so there should be 60 labels.
-         labels: ["00:00", "00:01", "00:02", "00:03", "00:04", "00:05", "00:06", "00:07", "00:08", "00:09", "00:10", "00:11", "00:12", "00:13", "00:14", "00:15", "00:16", "00:17", "00:18", "00:19", "00:20", "00:21", "00:22", "00:23", "00:24", "00:25", "00:26", "00:27", "00:28", "00:29", "00:30", "00:31", "00:32", "00:33", "00:34", "00:35", "00:36", "00:37", "00:38", "00:39", "00:40", "00:41", "00:42", "00:43", "00:44", "00:45", "00:46", "00:47", "00:48", "00:49", "00:50", "00:51", "00:52", "00:53", "00:54", "00:55", "00:56", "00:57", "00:58", "00:59"],
-         //labels: ["00:10", "00:20", "00:30", "00:40", "00:50", "01:00"],
-         datasets: [{
-           label: 'Process Utilization Count',
-           data: chartData,
-           borderWidth: 2,
-           backgroundColor: '#6777ef',
-           borderColor: '#6777ef',
-           borderWidth: 2.5,
-           pointBackgroundColor: '#ffffff',
-           pointRadius: chartData.map(value => value === 0 ? 0 : 4) // Set point radius to 0 for zero values, otherwise 4
-         }]
-       },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          legend: {
-            display: false
-          },
-          scales: {
-            yAxes: [{
-              gridLines: {
-                drawBorder: false,
-                color: '#f2f2f2',
-              },
-              ticks: {
-                beginAtZero: true,
-                stepSize: 5
-              }
-            }],
-            xAxes: [{
-              ticks: {
-                display: false,
-                stepSize: 10
-              },
-              gridLines: {
-                display: false
-              }
-            }]
-          },
-        }
-     });
-
-    scrollProcessUtilizationChartToCurrentMinute();
-
-
-  }
 
   const renderAPIMockingStatsChart = () => {
+
+    // this wiil be the name of the top 10 mock API endpoints that have been called, as returned from
+    // the backend MockingController, which essentially hould be the full path to the endpoint inclusive 
+    // of the mock api collection id.
+    var chartLabelData = []
+
+    // this will hold the chart data that captures the top 10 endpoints that have been called since the last update
+    // as returned from the backend MockingController.
+    var chartData = []
+
+
+
     var ctx = document.getElementById("myChart2").getContext("2d");
     var myChart = new Chart(ctx, {
       type: "bar",

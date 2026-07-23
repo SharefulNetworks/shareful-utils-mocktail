@@ -111,8 +111,6 @@
     // as returned from the backend MockingController.
     var chartData = []
 
-
-
     var ctx = document.getElementById("myChart2").getContext("2d");
     var myChart = new Chart(ctx, {
       type: "bar",
@@ -131,7 +129,7 @@
             label: "Statistics",
             data: [460, 458, 330, 502, 430, 610, 488],
             borderWidth: 2,
-            backgroundColor: "#6777ef",
+            backgroundColor: 'rgba(103, 119, 239, 0.2)',
             borderColor: "#6777ef",
             borderWidth: 2.5,
             pointBackgroundColor: "#ffffff",

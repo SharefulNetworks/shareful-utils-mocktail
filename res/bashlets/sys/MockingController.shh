@@ -8,8 +8,13 @@
 
 
 # declare globals
-SYSTEM_MOCK_API_COLLECTIONS_BASE_PATH="$SCRIPT_DIR/res/sys/mocks"
-USER_MOCK_API_COLLECTIONS_BASE_PATH="$SCRIPT_DIR/res/usr/mocks"
+SYSTEM_MOCK_API_COLLECTIONS_BASE_PATH="$SCRIPT_DIR/res/sys/mocks"       # base path to read system (example) Mock API collections from the host file system.
+USER_MOCK_API_COLLECTIONS_BASE_PATH="$SCRIPT_DIR/res/usr/mocks"         # base path to read user-defined Mock API collections from the host file system.
+MOCK_API_COLLECTION_METADATA_KEY="mockAPICollectionsMetaData"           # key used to store the metadata of all loaded Mock API collections in the BashletContext key-value store.
+MOCK_API_COLLECTION_ENDPOINT_STATS_KEY="mockAPICollectionEndpointStats" # key used to store the statistics of all Mock API endpoints in the BashletContext key-value store.
+
+
+
 
 # import/source the BashletContext helper functions to support parsing of the incoming request object and constructing the response object.
 source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
@@ -35,7 +40,7 @@ init(){
    # next load user-defined collections
    loadMockAPICollections "$USER_MOCK_API_COLLECTIONS_BASE_PATH"
 
-   mockAPICollectionMetaDataArr=$(KVRead "mockAPICollectionsMetaData")
+   mockAPICollectionMetaDataArr=$(KVRead "$MOCK_API_COLLECTION_METADATA_KEY")
 
    echo "Loaded Mock API collections metadata: $mockAPICollectionMetaDataArr" >&2
 
@@ -154,8 +159,8 @@ apiListMockAPICollections(){
     # if it exists, otherwise return an empty array. The data should have been loaded into 
     # the BashletContext key-value store on initialisation of the MockingController bashlet.
     local loadedMockAPICollectionMetaData=[]
-    if KVExists "mockAPICollectionsMetaData"; then
-        loadedMockAPICollectionMetaData=$(KVRead "mockAPICollectionsMetaData")
+    if KVExists "$MOCK_API_COLLECTION_METADATA_KEY"; then
+        loadedMockAPICollectionMetaData=$(KVRead "$MOCK_API_COLLECTION_METADATA_KEY")
     fi 
 
     # set the response body to the JSON meta data object we have loaded.
@@ -640,6 +645,35 @@ apiDeleteMockAPICollectionEndpoint(){
 }
 
 
+# API endpoint to return a list of the top-ten most frequently invoked Mock API endpoints, based on their 
+# respective invocation count.
+# @route method=get path=/api/collections/endpointstats
+apiGetMockAPICollectionEndpointStats(){
+    request="$1"
+    response="$2"
+
+    echo "MockingController: Inside apiGetMockAPICollectionEndpointStats function..." >&2
+
+    # attempt to load mock api endpoint stats from the BashletContext key-value store,
+    # if it exists, otherwise return an empty array. The data should have been loaded into 
+    # the BashletContext key-value store on initialisation of the MockingController bashlet.
+    local endpointStatsArr=[]
+    if KVExists "$MOCK_API_ENDPOINT_STATS_KEY"; then
+
+        # read the entire endpoint stats array from the bashlet context key-value store.
+        endpointStatsArr=$(KVRead "$MOCK_API_ENDPOINT_STATS_KEY")
+
+        # select the subset of the top-ten endpoints based on their respective endpoint count.
+        endpointStatsArr=$(SelectTopTenEndpoints "$endpointStatsArr")
+
+    fi 
+
+    # set the response body to the endpoint stats array we have loaded.
+    SetBashletResponseBody "$response" "$endpointStatsArr"     
+   
+}
+
+
 
 
 
@@ -654,6 +688,55 @@ apiDeleteMockAPICollectionEndpoint(){
 
 #-------------------------------------Helper functions for the MockingController Bashlet--------------------------------------
 
+
+updateMockAPICollectionEndpointStats(){
+    collectionId="$1"
+    endpointJSON="$2"  # will only be used if we need to create a new endpoint stats object, otherwise we will update the existing one.
+
+    # parse endpoint id, path, method from the endpoint JSON, these will be later be required for our stats object.
+    local endpointId
+    local endpointPath
+    local endpointMethod
+    endpointId=$(ParseJSONField "$endpointJSON" '.Id')
+    endpointPath=$(ParseJSONField "$endpointJSON" '.Path')
+    endpointMethod=$(ParseJSONField "$endpointJSON" '.Method')
+
+
+    # firstly attempt to retreive the the endpoint stats array from the BashletContext key-value store, 
+    # if it does not exist, we will create a new array. If we have stored the stats for at least one endpoint the array will exist.
+    local endpointStatsArr=[]
+    if KVExists "$MOCK_API_ENDPOINT_STATS_KEY"; then
+        endpointStatsArr=$(KVRead "$MOCK_API_ENDPOINT_STATS_KEY")
+    fi
+
+    # secondly we attempt to locate the endpoint stats object in the endpointStatsArr array by id
+    # and read the existing count.
+    local existingEndpointStats
+    existingEndpointStats=$(GetMockAPIEndpointStatsById "$endpointStatsArr" "$endpointId")
+
+    if [ -n "$existingEndpointStats" ]; then
+        # if the endpoint stats object exists, we increment the count and update the BashletContext key-value store.
+        local existingCount
+        existingCount=$(ParseJSONField "$existingEndpointStats" '.Count')
+        local newCount=$((existingCount + 1))
+        existingEndpointStats=$(SetJSONNumber "$existingEndpointStats" '.Count' "$newCount")
+        endpointStatsArr=$(UpdateMockAPIEndpointStatsById "$endpointStatsArr" "$endpointId" "$existingEndpointStats")
+        KVStore "$MOCK_API_ENDPOINT_STATS_KEY" "$endpointStatsArr"
+    else
+        # if the endpoint stats object does not exist, we create a new one with a count of 1 and update the BashletContext key-value store.
+        local newEndpointStats="{}"
+        newEndpointStats=$(SetJSONString "$newEndpointStats" '.EndpointId' "$endpointId")
+        newEndpointStats=$(SetJSONString "$newEndpointStats" '.CollectionId' "$collectionId")
+        newEndpointStats=$(SetJSONString "$newEndpointStats" '.Path' "$endpointPath")
+        newEndpointStats=$(SetJSONString "$newEndpointStats" '.Method' "$endpointMethod")
+        newEndpointStats=$(SetJSONNumber "$newEndpointStats" '.Count' "1")
+        endpointStatsArr=$(AppendJSONArrayItem "$endpointStatsArr" "$newEndpointStats")
+        KVStore "$MOCK_API_ENDPOINT_STATS_KEY" "$endpointStatsArr"
+    fi
+
+   
+     # echo "Current Mock API Endpoint Stats: $endpointStatsArr" > loggy.log
+}
 
 # stores or update mock API collection with the specified collection id. The storage operation creates/updates 3 distinct
 # artifacts: 
@@ -680,8 +763,8 @@ storeCollection(){
 
     # We also need to store metadata related to the new collection to the mockAPICollectionsMetaData array in the BashletContext key-value store, which is used to provide a list of all loaded Mock API collections to the client.
     local loadedMockAPICollectionMetaData="[]"
-    if KVExists "mockAPICollectionsMetaData"; then
-        loadedMockAPICollectionMetaData=$(KVRead "mockAPICollectionsMetaData")
+    if KVExists "$MOCK_API_COLLECTION_METADATA_KEY"; then
+        loadedMockAPICollectionMetaData=$(KVRead "$MOCK_API_COLLECTION_METADATA_KEY")
     fi 
 
     # attempt to locate the mock api collection metadata in the loadedMockAPICollectionMetaData array, if it exists,
@@ -713,7 +796,7 @@ storeCollection(){
     fi
 
     # Finally Store the updated metadata array back to the BashletContext.
-    KVStore "mockAPICollectionsMetaData" "$loadedMockAPICollectionMetaData"
+    KVStore "$MOCK_API_COLLECTION_METADATA_KEY" "$loadedMockAPICollectionMetaData"
 }
 
 
@@ -728,8 +811,8 @@ deleteCollection(){
 
     # delete the Mock API collection metadata from the BashletContext key-value store.
     local loadedMockAPICollectionMetaData="[]"
-    if KVExists "mockAPICollectionsMetaData"; then
-        loadedMockAPICollectionMetaData=$(KVRead "mockAPICollectionsMetaData")
+    if KVExists "$MOCK_API_COLLECTION_METADATA_KEY"; then
+        loadedMockAPICollectionMetaData=$(KVRead "$MOCK_API_COLLECTION_METADATA_KEY")
     fi 
 
     # attempt to locate the mock api collection metadata in the loadedMockAPICollectionMetaData array, if it exists,
@@ -740,7 +823,7 @@ deleteCollection(){
     # remove the metadata from the array, if it was found.
     if [[ $collectionIndex -ne -1 ]]; then
         loadedMockAPICollectionMetaData="$(RemoveJSONArrayItem "$loadedMockAPICollectionMetaData" "$collectionIndex")"
-        KVStore "mockAPICollectionsMetaData" "$loadedMockAPICollectionMetaData"
+        KVStore "$MOCK_API_COLLECTION_METADATA_KEY" "$loadedMockAPICollectionMetaData"
     fi
 
 
@@ -797,6 +880,9 @@ invokeEndpoint(){
 
     echo "MockingController: Resolved Mock API Endpoint for path '$endpointPath' and method '$requestMethod' in collection '$collectionId'" >&2
 
+    # update endpoint stats to reflect that the endpoint has been invoked, these stats will be ultimately used by the Mocking UI dashboard.
+    updateMockAPICollectionEndpointStats "$collectionId" "$matchedEndpoint"
+
     # generate the response from the matched endpoint definition and return it to the client.
     generateResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
 
@@ -823,12 +909,12 @@ lookupMockAPICollectionById(){
 # called on initialisation of the MockingController bashlet to load Mock API Collections into memory
 # and cached the mappings, thereby negating the need to have to read the data from the file system on every request.
 loadMockAPICollections(){
-    local mockAPICollectionsDirPath="$1"
+   local mockAPICollectionsDirPath="$1"
 
    # 1. Initialize the array once in the parent shell
    local mockAPICollectionMetaDataArr="[]"
-   if KVExists "mockAPICollectionsMetaData"; then
-       mockAPICollectionMetaDataArr=$(KVRead "mockAPICollectionsMetaData")
+   if KVExists "$MOCK_API_COLLECTION_METADATA_KEY"; then
+       mockAPICollectionMetaDataArr=$(KVRead "$MOCK_API_COLLECTION_METADATA_KEY")
    fi
 
    # 2. Enumerate the JSON files in the provided directory without using a pipe,
@@ -866,7 +952,7 @@ loadMockAPICollections(){
     done
  
    # 4. Store the completely accumulated metadata array exactly ONCE
-   KVStore "mockAPICollectionsMetaData" "$mockAPICollectionMetaDataArr"
+   KVStore "$MOCK_API_COLLECTION_METADATA_KEY" "$mockAPICollectionMetaDataArr"
 }
 
 

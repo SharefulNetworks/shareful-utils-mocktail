@@ -226,4 +226,37 @@ ResolveMockEndpoint(){
 }
 
 
+
+GetMockAPIEndpointStatsById() {
+    local endpointStatsArr="$1"
+    local endpointId="$2"
+
+    jq -c --arg endpointId "$endpointId" '
+        map(select(.EndpointId == $endpointId))
+        | .[0] // empty
+    ' <<< "$endpointStatsArr"
+}
+
+
+UpdateMockAPIEndpointStatsById(){
+    local endpointStatsArr="$1"
+    local endpointId="$2"
+    local updatedEndpointStatsJson="$3"
+
+    jq -c --arg endpointId "$endpointId" --argjson updatedEndpointStats "$updatedEndpointStatsJson" '
+        map(
+            if .EndpointId == $endpointId then $updatedEndpointStats else . end
+        )
+    ' <<< "$endpointStatsArr"
+}
+
+
+SelectTopTenEndpoints(){
+    local endpointStatsArr="$1"
+
+    jq -c '
+        sort_by(.Count) | reverse | .[0:10]
+    ' <<< "$endpointStatsArr"
+}
+
    

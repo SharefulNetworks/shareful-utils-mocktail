@@ -116,18 +116,21 @@
       type: "bar",
       data: {
         labels: [
-          "Sunday",
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday",
+          "1st Endpoint",
+          "2nd Endpoint",
+          "3rd Endpoint",
+          "4th Endpoint",
+          "5th Endpoint",
+          "6th Endpoint",
+          "7th Endpoint",
+          "8th Endpoint",
+          "9th Endpoint",
+          "10th Endpoint",
         ],
         datasets: [
           {
             label: "Statistics",
-            data: [460, 458, 330, 502, 430, 610, 488],
+            data: [10, 15, 30, 5, 2, 24, 13],
             borderWidth: 2,
             backgroundColor: 'rgba(103, 119, 239, 0.2)',
             borderColor: "#6777ef",
@@ -150,7 +153,7 @@
               },
               ticks: {
                 beginAtZero: true,
-                stepSize: 150,
+                stepSize: 5,
               },
             },
           ],

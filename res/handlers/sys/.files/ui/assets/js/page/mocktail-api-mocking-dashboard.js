@@ -6,12 +6,15 @@
 //--------------------------------------------------------------------------------------------------------
  
 
+//var to hold the endpoint stats chart UI canvas.
+var endpointStatsChart;
+
 
  //on page load....
  document.addEventListener("DOMContentLoaded", function () {
 
   //render process utilization chart, with initial zeroed data values, these will be updated by the data returned from the server stats API endpoint.
-  renderAPIMockingStatsChart();
+  renderAPIEndpointStatsChart();
 
 
   // Initial stats fetch on page load
@@ -27,24 +30,37 @@
   // Function to fetch server stats from the AdminController
   async function fetchServerStats() {
     try {
-      const response = await fetch('../admin/api/serverstats');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+
+      //first general server stats from the AdminController...
+      const serverStatsResponse = await fetch('../admin/api/serverstats');
+      if (!serverStatsResponse.ok) {
+        throw new Error(`HTTP error! status: ${serverStatsResponse.status}`);
       }
-      const data = await response.json();
-      updateDashboard(data);
+      const serverStatsResponseData = await serverStatsResponse.json();
+
+      //...then fetch the endpoint stats from the MockingController
+      const endpointStatsResponse = await fetch('api/collections/endpointstats')
+      if(!endpointStatsResponse.ok){
+        throw new Error(`HTTP error! status: ${endpointStatsResponse.status}`);
+      }
+      const endpointStatsResponseData = await endpointStatsResponse.json();
+
+      //finally update the dashboard with the fetched data from both endpoints.
+      updateDashboard(serverStatsResponseData, endpointStatsResponseData);
+
     } catch (error) {
       console.error('Error fetching server stats:', error);
     }
   }
   
   // Function to update the dashboard with fetched data
-  function updateDashboard(data) {
-    document.getElementById('admin-user-email').textContent = data.adminUserEmail;
-    document.getElementById('max-process-limit').textContent = data.maxProcessLimit;
-    document.getElementById('current-process-usage').textContent = data.processUtilizationHistory[getCurrentMinute()];
-    document.getElementById('server-uptime').textContent = formatUptime(data.serverUptime);
-    //updateProcessUtilizationChart(data.processUtilizationHistory);
+  function updateDashboard(serverStatsData,endpointStatsData) {
+    document.getElementById('admin-user-email').textContent = serverStatsData.adminUserEmail;
+    document.getElementById('max-process-limit').textContent = serverStatsData.maxProcessLimit;
+    document.getElementById('current-process-usage').textContent = serverStatsData.processUtilizationHistory[getCurrentMinute()];
+    document.getElementById('server-uptime').textContent = formatUptime(serverStatsData.serverUptime);
+    updateAPIEndpointStatsChart(endpointStatsData);
+    
   }
 
 
@@ -56,40 +72,39 @@
     return `${hours}h ${minutes}m ${secs}s`;
   }
 
-  // Function to update the process utilization chart
-  function updateProcessUtilizationChart(history) {
-    
-    // Example: myChart.data.datasets[0].data = history; myChart.update();
-    processUtilisationChart.data.datasets[0].data = history;
-    processUtilisationChart.data.datasets[0].pointRadius = history.map(value => value === 0 ? 0 : 4); // Update point radius based on new data
-    processUtilisationChart.update();
-    scrollProcessUtilizationChartToCurrentMinute();
+
+
+  function updateAPIEndpointStatsChart(endpointStats){
+
+     console.log("Updating API Endpoint Stats Chart with data: ", endpointStats);
+
+      //update each of the entries in the array of endpoint stats to the chart data, and then update the chart.
+      //the chart data is an array of the top 10 endpoints that have been called since the last update, as returned from the backend MockingController.
+      //the chart labels are the names of the top 10 endpoints that have been called since the last update, as returned from the backend MockingController.
+
+      var chartData = endpointStats.map(stat => stat.Count);
+      var chartLabels = endpointStats.map((stat) => [
+        `Path: ${stat.Path}`,
+        `Method: ${stat.Method}`,
+        `EndpointId: ${stat.EndpointId}`,
+        `CollectionId: ${stat.CollectionId}`,
+      ]);
+
+      if (chartData.length === 0) {
+        // if there is no data to display, show the "No Data Available" label
+        document.getElementById("no-data-label").style.display = "block";
+      } else {
+        // if there is data to display, hide the "No Data Available" label
+        document.getElementById("no-data-label").style.display = "none";
+      }
+
+
+      endpointStatsChart.data.datasets[0].data = chartData;
+      endpointStatsChart.data.labels = chartLabels;
+      endpointStatsChart.update();
   }
 
-  function scrollProcessUtilizationChartToCurrentMinute() {
-    if (!processUtilizationChartScrollContainer) {
-      processUtilizationChartScrollContainer = document.getElementById("process-utilization-chart-scroll");
-    }
 
-    if (!processUtilizationChartScrollContainer) {
-      return;
-    }
-
-    const currentMinute = new Date().getMinutes();
-    const totalMinutes = 60;
-    const scrollRange = processUtilizationChartScrollContainer.scrollWidth - processUtilizationChartScrollContainer.clientWidth;
-
-    if (scrollRange <= 0) {
-      return;
-    }
-
-    const targetScrollLeft = Math.round((currentMinute / (totalMinutes - 1)) * scrollRange);
-
-    processUtilizationChartScrollContainer.scrollTo({
-      left: targetScrollLeft,
-      behavior: "smooth"
-    });
-  }
    
 
  const getCurrentMinute = () => {
@@ -100,19 +115,24 @@
 
 
 
-  const renderAPIMockingStatsChart = () => {
+  const renderAPIEndpointStatsChart = () => {
 
-    // this wiil be the name of the top 10 mock API endpoints that have been called, as returned from
-    // the backend MockingController, which essentially hould be the full path to the endpoint inclusive 
-    // of the mock api collection id.
-    var chartLabelData = []
-
+  
     // this will hold the chart data that captures the top 10 endpoints that have been called since the last update
     // as returned from the backend MockingController.
     var chartData = []
 
+
+    if (chartData.length === 0) {
+      // if there is no data to display, show the "No Data Available" label
+      document.getElementById("no-data-label").style.display = "block";
+    } else {
+      // if there is data to display, hide the "No Data Available" label
+      document.getElementById("no-data-label").style.display = "none";
+    }
+
     var ctx = document.getElementById("myChart2").getContext("2d");
-    var myChart = new Chart(ctx, {
+    endpointStatsChart = new Chart(ctx, {
       type: "bar",
       data: {
         labels: [
@@ -129,10 +149,10 @@
         ],
         datasets: [
           {
-            label: "Statistics",
-            data: [10, 15, 30, 5, 2, 24, 13],
+            label: "Request Count",
+            data: chartData,
             borderWidth: 2,
-            backgroundColor: 'rgba(103, 119, 239, 0.2)',
+            backgroundColor: "rgba(103, 119, 239, 0.2)",
             borderColor: "#6777ef",
             borderWidth: 2.5,
             pointBackgroundColor: "#ffffff",
@@ -141,6 +161,11 @@
         ],
       },
       options: {
+        tooltips: {
+          bodyFontSize: 12,
+          titleFontSize: 12,
+         
+        },
         legend: {
           display: false,
         },

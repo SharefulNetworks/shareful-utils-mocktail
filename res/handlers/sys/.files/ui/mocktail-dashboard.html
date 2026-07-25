@@ -266,51 +266,28 @@
             <div class="col-lg-19 col-md-12 col-12 col-sm-12">
               <div class="card">
                 <div class="card-header">
-                  <h4>Mock API Collections</h4>
+                  <h4>Recent Mock API Collections</h4>
                   <div class="card-header-action" style="border: radius 30px; ">
                     
-                    <a href="#" class="btn btn-primary" style="border-radius:0px;"><i class="fas fa-plus"></i> &nbsp; Add Route</a>
+                    <a href="#" class="btn btn-primary" style="border-radius:0px;"><i class="fas fa-eye"></i> &nbsp; View All Collections</a>
                   
                   
                   </div>
                 </div>
                 <div class="card-body p-0">
                   <div class="table-responsive">
-                    <table class="table table-striped mb-0">
+                    <table class="table table-striped mb-0" id="mockApiTable">
                       <thead>
                         <tr>
                           <th>Title</th>
+                          <th>Root Path</th>
                           <th>Endpoint Count</th>
                           <th>Action</th>
                         </tr>
                       </thead>
                       <tbody>                         
-                        <tr>
-                          <td>
-                            <a href="#" class="font-weight-600"> Example Mock API 1 (basic)</a>
-
-                          </td>
-                          <td>
-                              5
-                          </td>
-                          <td>
-                            <a class="btn btn-primary btn-action mr-1" data-toggle="tooltip" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                            <a class="btn btn-danger btn-action" data-toggle="tooltip" title="Delete" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')"><i class="fas fa-trash"></i></a>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                             <a href="#" class="font-weight-600"> Example Mock API 2 (advanced)</a>
-                           
-                          </td>
-                          <td>
-                              3
-                          </td>
-                          <td>
-                            <a class="btn btn-primary btn-action mr-1" data-toggle="tooltip" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                            <a class="btn btn-danger btn-action" data-toggle="tooltip" title="Delete" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')"><i class="fas fa-trash"></i></a>
-                          </td>
-                        </tr>
+                      
+                       
                        
                       </tbody>
                     </table>

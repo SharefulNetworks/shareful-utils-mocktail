@@ -246,22 +246,7 @@
             </div>
 
               <!-- main mocktail stats chart-->
-               <!--
-              <div class="col-12 col-md-12 col-lg-12">
-                <div class="card">
-                  <div class="card-header">
-                    <h4>Process Utilisation (per minute)</h4>
-                  </div>
-                  <div class="card-body">
-                    <div id="process-utilization-chart-scroll" style="overflow-x: auto; width: 100%;">
-                      <div style="min-width: 5200px; height: 320px;">
-                        <canvas id="myChart" style="width: 100%; height: 100%;"></canvas>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div> 
-            -->
+            
                 <!-- main mocktail api mocking stats chart-->
                 <div class="col-12 col-md-12 col-lg-12" style="position: relative; min-height: 200px;">
                   <div style="width: 15%; display: none; border: 3px solid #6777ef; border-radius: 3px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 35; text-align: center; font-size: 16px; font-weight:bolder" id="no-data-label"><i class="fas fa-info-circle" style="color: #6777ef; padding-left: 2px; font-size: 15px;"></i> No Data Available </div>
@@ -285,48 +270,24 @@
                   <h4>Mock API Collections</h4>
                   <div class="card-header-action" style="border: radius 30px; ">
                     
-                    <a href="#" class="btn btn-primary" style="border-radius:0px;"><i class="fas fa-plus"></i> &nbsp; Add Route</a>
+                    <a href="#" class="btn btn-primary" style="border-radius:0px;"><i class="fas fa-plus"></i> &nbsp; Add Collection</a>
                   
                   
                   </div>
                 </div>
                 <div class="card-body p-0">
                   <div class="table-responsive">
-                    <table class="table table-striped mb-0">
+                    <table class="table table-striped mb-0" id="mockApiTable">
                       <thead>
                         <tr>
                           <th>Title</th>
+                          <th>Root Path</th>
                           <th>Endpoint Count</th>
                           <th>Action</th>
                         </tr>
                       </thead>
                       <tbody>                         
-                        <tr>
-                          <td>
-                            <a href="#" class="font-weight-600"> Example Mock API 1 (basic)</a>
-
-                          </td>
-                          <td>
-                              5
-                          </td>
-                          <td>
-                            <a class="btn btn-primary btn-action mr-1" data-toggle="tooltip" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                            <a class="btn btn-danger btn-action" data-toggle="tooltip" title="Delete" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')"><i class="fas fa-trash"></i></a>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                             <a href="#" class="font-weight-600"> Example Mock API 2 (advanced)</a>
-                           
-                          </td>
-                          <td>
-                              3
-                          </td>
-                          <td>
-                            <a class="btn btn-primary btn-action mr-1" data-toggle="tooltip" title="Edit"><i class="fas fa-pencil-alt"></i></a>
-                            <a class="btn btn-danger btn-action" data-toggle="tooltip" title="Delete" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')"><i class="fas fa-trash"></i></a>
-                          </td>
-                        </tr>
+                   
                        
                       </tbody>
                     </table>

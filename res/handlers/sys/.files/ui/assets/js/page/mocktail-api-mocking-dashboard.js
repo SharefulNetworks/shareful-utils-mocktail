@@ -31,35 +31,47 @@ var endpointStatsChart;
   async function fetchServerStats() {
     try {
 
+     
       //first general server stats from the AdminController...
-      const serverStatsResponse = await fetch('../admin/api/serverstats');
-      if (!serverStatsResponse.ok) {
-        throw new Error(`HTTP error! status: ${serverStatsResponse.status}`);
-      }
-      const serverStatsResponseData = await serverStatsResponse.json();
+      const serverStatsResponseData = await fetchFromBackendJSONAPI('../admin/api/serverstats');
 
-      //...then fetch the endpoint stats from the MockingController
-      const endpointStatsResponse = await fetch('api/collections/endpointstats')
-      if(!endpointStatsResponse.ok){
-        throw new Error(`HTTP error! status: ${endpointStatsResponse.status}`);
-      }
-      const endpointStatsResponseData = await endpointStatsResponse.json();
+      //then fetch the endpoint stats from the MockingController...
+      const endpointStatsResponseData = await fetchFromBackendJSONAPI('api/collections/endpointstats');
+
+      //next fetch mock API collection metadata from the MockingController, this is used to populate the main Mocktail dashboard, 
+      //table with the list of mock API collections 
+      const mockAPICollectionMetadataResponseData = await fetchFromBackendJSONAPI('api/collections');``
+
 
       //finally update the dashboard with the fetched data from both endpoints.
-      updateDashboard(serverStatsResponseData, endpointStatsResponseData);
+      updateDashboard(serverStatsResponseData, endpointStatsResponseData, mockAPICollectionMetadataResponseData);
 
     } catch (error) {
       console.error('Error fetching server stats:', error);
     }
   }
+
+  //fetches the mock API collection metadata from the MockingController, this is used to populate the main Mocktail dashboard, 
+  // table with the list of mock API collections 
+  async function fetchFromBackendJSONAPI(endpointURL){
+
+      const resp = await fetch(endpointURL);
+      if (!resp.ok) {
+        throw new Error(`HTTP error! status: ${resp.status}`);
+      }
+      const data = await resp.json();
+      return data;
+  }
   
   // Function to update the dashboard with fetched data
-  function updateDashboard(serverStatsData,endpointStatsData) {
+  function updateDashboard(serverStatsData,endpointStatsData,mockAPICollectionMetadataData) {
     document.getElementById('admin-user-email').textContent = serverStatsData.adminUserEmail;
     document.getElementById('max-process-limit').textContent = serverStatsData.maxProcessLimit;
     document.getElementById('current-process-usage').textContent = serverStatsData.processUtilizationHistory[getCurrentMinute()];
     document.getElementById('server-uptime').textContent = formatUptime(serverStatsData.serverUptime);
+    document.getElementById('mock-apis').textContent = getJSONArrayCount(mockAPICollectionMetadataData);
     updateAPIEndpointStatsChart(endpointStatsData);
+    updateMockAPICollectionTable(mockAPICollectionMetadataData);
     
   }
 
@@ -105,7 +117,13 @@ var endpointStatsChart;
   }
 
 
-   
+ function getJSONArrayCount(jsonArray) {
+    if (!Array.isArray(jsonArray)) {
+        console.error("Provided data is not an array:", jsonArray);
+        return 0;
+    }
+    return jsonArray.length;
+  }
 
  const getCurrentMinute = () => {
     const now = new Date();
@@ -219,5 +237,48 @@ var endpointStatsChart;
       clickedElement.classList.add('active');
     }
   }
+
+
+  function addMockApiRow(name, rootPath, endpointCount, onEdit, onDelete) {
+    const tbody = document.querySelector("#mockApiTable tbody");
+
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+        <td>
+            <a href="#" class="font-weight-600">${name}</a>
+        </td>
+        <td><a href="#" class="font-weight-600">/${rootPath}</a></td>
+        <td>${endpointCount}</td>
+        <td>
+            <a class="btn btn-primary btn-action mr-1" title="Edit">
+                <i class="fas fa-pencil-alt"></i>
+            </a>
+            <a class="btn btn-danger btn-action" title="Delete">
+                <i class="fas fa-trash"></i>
+            </a>
+        </td>
+    `;
+
+    tr.querySelector(".btn-primary").addEventListener("click", onEdit);
+    tr.querySelector(".btn-danger").addEventListener("click", onDelete);
+
+    tbody.appendChild(tr);
+}
+
+
+  function updateMockAPICollectionTable(mockAPICollectionMetadataData) {
+    const tbody = document.querySelector("#mockApiTable tbody");
+    tbody.innerHTML = ""; // Clear existing rows
+
+    mockAPICollectionMetadataData.forEach((collection) => {
+        addMockApiRow(collection.Name, 
+                      collection.CollectionId,     //the collection id, preceeded with a forward slash, is the root path for the mock API collection, so we can display it in the table.
+                      collection.EndpointCount, 
+                      () => { console.log(`Edit ${collection.Name}`); }, 
+                      () => { console.log(`Delete ${collection.Name}`); });
+                      });
+  }
+
 
 

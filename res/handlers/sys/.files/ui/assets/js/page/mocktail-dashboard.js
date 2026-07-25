@@ -31,24 +31,41 @@ var processUtilisationChart;
   // Function to fetch server stats from the AdminController
   async function fetchServerStats() {
     try {
-      const response = await fetch('api/serverstats');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      updateDashboard(data);
+
+      //fetch general server stats from the AdminController.
+      const serverStatsResponseData = await fetchFromBackendJSONAPI('api/serverstats');
+
+      //fetch mock API collection metadata from the MockingController.
+      const mockAPICollectionMetadataResponseData = await fetchFromBackendJSONAPI('../mock/api/collections');
+
+      updateDashboard(serverStatsResponseData, mockAPICollectionMetadataResponseData);
     } catch (error) {
       console.error('Error fetching server stats:', error);
     }
   }
+
+
+    //fetches the mock API collection metadata from the MockingController, this is used to populate the main Mocktail dashboard, 
+  // table with the list of mock API collections 
+  async function fetchFromBackendJSONAPI(endpointURL){
+
+      const resp = await fetch(endpointURL);
+      if (!resp.ok) {
+        throw new Error(`HTTP error! status: ${resp.status}`);
+      }
+      const data = await resp.json();
+      return data;
+  }
   
   // Function to update the dashboard with fetched data
-  function updateDashboard(data) {
-    document.getElementById('admin-user-email').textContent = data.adminUserEmail;
-    document.getElementById('max-process-limit').textContent = data.maxProcessLimit;
-    document.getElementById('current-process-usage').textContent = data.processUtilizationHistory[getCurrentMinute()];
-    document.getElementById('server-uptime').textContent = formatUptime(data.serverUptime);
-    updateProcessUtilizationChart(data.processUtilizationHistory);
+  function updateDashboard(serverStatsData,mockAPICollectionMetadataData) {
+    document.getElementById('admin-user-email').textContent = serverStatsData.adminUserEmail;
+    document.getElementById('max-process-limit').textContent = serverStatsData.maxProcessLimit;
+    document.getElementById('current-process-usage').textContent = serverStatsData.processUtilizationHistory[getCurrentMinute()];
+    document.getElementById('server-uptime').textContent = formatUptime(serverStatsData.serverUptime);
+    document.getElementById('mock-apis').textContent = getJSONArrayCount(mockAPICollectionMetadataData);
+    updateProcessUtilizationChart(serverStatsData.processUtilizationHistory);
+    updateMockAPICollectionTable(mockAPICollectionMetadataData);
   }
 
 
@@ -95,6 +112,14 @@ var processUtilisationChart;
     });
   }
    
+
+  function getJSONArrayCount(jsonArray) {
+    if (!Array.isArray(jsonArray)) {
+        console.error("Provided data is not an array:", jsonArray);
+        return 0;
+    }
+    return jsonArray.length;
+  }
 
  const getCurrentMinute = () => {
     const now = new Date();
@@ -165,6 +190,19 @@ var processUtilisationChart;
 
   }
 
+  function updateMockAPICollectionTable(mockAPICollectionMetadataData) {
+    const tbody = document.querySelector("#mockApiTable tbody");
+    tbody.innerHTML = ""; // Clear existing rows
+
+    mockAPICollectionMetadataData.forEach((collection) => {
+        addMockApiRow(collection.Name, 
+                      collection.CollectionId,     //the collection id, preceeded with a forward slash, is the root path for the mock API collection, so we can display it in the table.
+                      collection.EndpointCount, 
+                      () => { console.log(`Edit ${collection.Name}`); }, 
+                      () => { console.log(`Delete ${collection.Name}`); });
+                      });
+  }
+
 
   const showGeneralSettingsPanel = (clickedElement) => {
     const systemSettingsCard = document.getElementById('system-settings-card');
@@ -187,5 +225,33 @@ var processUtilisationChart;
       clickedElement.classList.add('active');
     }
   }
+
+
+  function addMockApiRow(name, rootPath, endpointCount, onEdit, onDelete) {
+    const tbody = document.querySelector("#mockApiTable tbody");
+
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+        <td>
+            <a href="#" class="font-weight-600">${name}</a>
+        </td>
+        <td><a href="#" class="font-weight-600">/${rootPath}</a></td>
+        <td>${endpointCount}</td>
+        <td>
+            <a class="btn btn-primary btn-action mr-1" title="Edit">
+                <i class="fas fa-pencil-alt"></i>
+            </a>
+            <a class="btn btn-danger btn-action" title="Delete">
+                <i class="fas fa-trash"></i>
+            </a>
+        </td>
+    `;
+
+    tr.querySelector(".btn-primary").addEventListener("click", onEdit);
+    tr.querySelector(".btn-danger").addEventListener("click", onDelete);
+
+    tbody.appendChild(tr);
+}
 
 

@@ -331,7 +331,13 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
 // in the main dashboard table.
 function populateMockAPICollectionDetailsPanel(collectionId) {
 
-    //firstly fetch the mock API collection details from the MockingController, this is used to populate the main Mocktail dashboard, 
+    //firstly display the Mock API Collection Details Panel, where its not alrrady visible.
+    const detailsPanel = document.getElementById('mockApiCollectionDetailsPanel');
+    if (detailsPanel.style.display === 'none' || detailsPanel.style.display === '') {
+        detailsPanel.style.display = 'block';
+    }
+
+    //then crucially fetch the mock API collection details from the MockingController, this is used to populate the main Mocktail dashboard, 
     //table with the list of mock API collections 
     fetchFromBackendJSONAPI(`api/collections/${collectionId}`)
     .then(mockAPICollectionDetails => {

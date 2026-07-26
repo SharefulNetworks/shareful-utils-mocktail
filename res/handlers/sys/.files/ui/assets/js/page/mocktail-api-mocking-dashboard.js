@@ -266,19 +266,87 @@ var endpointStatsChart;
     tbody.appendChild(tr);
 }
 
+function addMockApiCollectionEndpointRow(endpointId,path, method, onEdit, onDelete) {
+    const tbody = document.querySelector("#mockApiCollectionEndpointsTable tbody");
 
-  function updateMockAPICollectionTable(mockAPICollectionMetadataData) {
-    const tbody = document.querySelector("#mockApiTable tbody");
-    tbody.innerHTML = ""; // Clear existing rows
+    const tr = document.createElement("tr");
 
-    mockAPICollectionMetadataData.forEach((collection) => {
-        addMockApiRow(collection.Name, 
-                      collection.CollectionId,     //the collection id, preceeded with a forward slash, is the root path for the mock API collection, so we can display it in the table.
-                      collection.EndpointCount, 
-                      () => { console.log(`Edit ${collection.Name}`); }, 
-                      () => { console.log(`Delete ${collection.Name}`); });
-                      });
-  }
+    tr.innerHTML = `
+        <td>${endpointId}</td>
+        <td>${path}</td>
+        <td>${method}</td>  
+        
+        <td>
+            <a class="btn btn-primary btn-action mr-1" title="Edit">
+                <i class="fas fa-pencil-alt"></i>
+            </a>
+            <a class="btn btn-danger btn-action" title="Delete">
+                <i class="fas fa-trash"></i>
+            </a>
+        </td>
+    `;
+
+    tr.querySelector(".btn-primary").addEventListener("click", onEdit);
+    tr.querySelector(".btn-danger").addEventListener("click", onDelete);
+
+    tbody.appendChild(tr);
+} 
+
+
+function updateMockAPICollectionTable(mockAPICollectionMetadataData) {
+  const tbody = document.querySelector("#mockApiTable tbody");
+  tbody.innerHTML = ""; // Clear existing rows
+  mockAPICollectionMetadataData.forEach((collection) => {
+      addMockApiRow(collection.Name, 
+                    collection.CollectionId,     //the collection id, preceeded with a forward slash, is the root path for the mock API collection, so we can display it in the table.
+                    collection.EndpointCount, 
+                    () => { console.log(`Edit ${collection.Name}`);  populateMockAPICollectionDetailsPanel(collection.CollectionId); }, 
+                    () => { console.log(`Delete ${collection.Name}`); });
+                    });
+                    
+}
+
+
+function updateMockAPICollectionDetailsPanelOverview(mockAPICollectionDetails) {
+  document.getElementById('collection-name').textContent = mockAPICollectionDetails.Name;
+  document.getElementById('collection-description').textContent = mockAPICollectionDetails.Description;
+  document.getElementById('collection-id').textContent = mockAPICollectionDetails.CollectionId;
+}
+
+function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDetailsEndpoints) {
+  const tbody = document.querySelector("#mockApiCollectionEndpointsTable tbody");
+  tbody.innerHTML = ""; // Clear existing rows
+  mockAPICollectionDetailsEndpoints.forEach((endpoint) => {
+      addMockApiCollectionEndpointRow(endpoint.Id, 
+                                      endpoint.Path, 
+                                      endpoint.Method, 
+                                     () => { console.log(`Edit ${endpoint.Path}`); }, 
+                                     () => { console.log(`Delete ${endpoint.Path}`); });
+                    });
+}
+
+
+// Function to populate the Mock API Collection Details Panel, this will display the
+// list of endpoints for a specific mock API collection, when the user selects the collection 
+// in the main dashboard table.
+function populateMockAPICollectionDetailsPanel(collectionId) {
+
+    //firstly fetch the mock API collection details from the MockingController, this is used to populate the main Mocktail dashboard, 
+    //table with the list of mock API collections 
+    fetchFromBackendJSONAPI(`api/collections/${collectionId}`)
+    .then(mockAPICollectionDetails => {
+        updateMockAPICollectionDetailsPanelOverview(mockAPICollectionDetails);
+        updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDetails.Endpoints);
+    })
+    .catch(error => {
+        console.error('Error fetching mock API collection details:', error);
+    });
+}
+
+
+
+  
+
 
 
 

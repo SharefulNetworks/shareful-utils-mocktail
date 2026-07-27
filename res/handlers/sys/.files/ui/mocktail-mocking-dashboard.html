@@ -30,6 +30,21 @@
   </script>
   <!-- /END GA -->
 
+  <!-- Code Mirror-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/lint/lint.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/foldgutter.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsonlint/1.6.3/jsonlint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/lint/lint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/lint/json-lint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/foldcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/foldgutter.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/brace-fold.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/search/searchcursor.min.js"></script>
+
+
   <!-- Mocktail Dashboard Specific Scripts -->
   <script src="assets/js/page/mocktail-api-mocking-dashboard.js"></script>
    
@@ -368,7 +383,7 @@
 
         </div>
     </div>
-</div>
+     </div>
 
   
       <!-- Mock API Collection Endpoint Delete Modal -->
@@ -402,7 +417,42 @@
 
         </div>
     </div>
-</div>
+      </div>
+
+       <!-- Mock API Collection Endpoint Editor Modal -->
+       <div class="modal fade" id="mockAPICollectionEndpointEditorModal" tabindex="-1" role="dialog" aria-labelledby="editorModalTitle" aria-hidden="true">
+       <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="editorModalTitle">
+                    Edit Mock API Collection Endpoint Response
+                </h5>
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+               <textarea name="endpoint-editor" id="endpoint-editor-textarea"></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button type="button" class="btn btn-primary" id="confirmEditEndpoint">
+                    Save Changes
+                </button>
+            </div>
+
+        </div>
+    </div>
+      </div>
+
+
       </div>
       <footer class="main-footer">
         <div class="footer-left">

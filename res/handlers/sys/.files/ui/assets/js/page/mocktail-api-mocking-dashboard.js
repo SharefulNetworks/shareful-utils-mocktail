@@ -327,11 +327,21 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
    //first define function that is called when mock api collection endpoint deletion is confirmed.
   const onMockAPICollectionEndpointDeleteConfirmed = (endpointId) => {
     console.log(`Confirmed delete of endpoint with ID: ${endpointId}`);
-    // Here you would typically call your backend API to delete the endpoint.
-    // After deletion, you might want to refresh the table or remove the row from the UI.
+    // Here we call the backend API to delete the endpoint.
+    // After deletion, we refresh the table.
 
     //finally close the deletion dialog
     $('#mockAPICollectionEndpointDeleteModal').modal('hide'); 
+  }
+
+  const onMockAPICollectionEndpointEditConfirmed = (endpointId) => {
+    console.log(`Confirmed edit of endpoint with ID: ${endpointId}`);
+    // Here we call the backend API to edit the endpoint.
+  
+
+    //finally close the edit dialog
+    $('#mockAPICollectionEndpointEditorModal').modal('hide');
+
   }
 
   const tbody = document.querySelector("#mockApiCollectionEndpointsTable tbody");
@@ -340,7 +350,7 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
       addMockApiCollectionEndpointRow(endpoint.Id, 
                                       endpoint.Path, 
                                       endpoint.Method, 
-                                     () => { console.log(`Edit ${endpoint.Path}`); }, 
+                                     () => { console.log(`Edit ${endpoint.Path}`); showMockAPICollectionEndpointEditorModal(() => { onMockAPICollectionEndpointEditConfirmed(endpoint.Id); },endpoint.Response); },
                                      () => { console.log(`Delete ${endpoint.Path}`); showMockAPICollectionEndpointDeleteConfirmationModal(() => { onMockAPICollectionEndpointDeleteConfirmed(endpoint.Id); },endpoint.Id); });
                     });
 }
@@ -380,6 +390,35 @@ function showMockAPICollectionEndpointDeleteConfirmationModal(onConfirm, endpoin
     $('#mockAPICollectionEndpointDeleteModal').modal('show');
     $('#confirmDeleteEndpoint').off('click').on('click', onConfirm);
     document.getElementById('collection-endpoint-id-to-delete').textContent = endpointId;
+}
+
+function showMockAPICollectionEndpointEditorModal(onSave,editorContent) {
+
+  $('#mockAPICollectionEndpointEditorModal').modal('show');
+  document.getElementById('endpoint-editor-textarea').value = editorContent;
+  $('#confirmEditEndpoint').off('click').on('click', onSave);
+  
+}
+
+function setupMockAPICollectionEndpointEditor(collectionId) {
+
+  const editor = CodeMirror.fromTextArea(document.getElementById("endpoint-editor-textarea"), {
+    mode: { name: "javascript", json: true },
+
+    lineNumbers: true,
+
+    lint: true,
+
+    matchBrackets: true,
+    autoCloseBrackets: true,
+
+    foldGutter: true,
+
+    gutters: [
+        "CodeMirror-lint-markers",
+        "CodeMirror-foldgutter"
+    ]
+});
 }
 
 

@@ -254,9 +254,8 @@ var endpointStatsChart;
             <a class="btn btn-primary btn-action mr-1" title="Edit">
                 <i class="fas fa-pencil-alt"></i>
             </a>
-            <a class="btn btn-danger btn-action" title="Delete">
-                <i class="fas fa-trash"></i>
-            </a>
+           
+             <a class="btn btn-danger btn-action" data-toggle="tooltip" title="Delete" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')"><i class="fas fa-trash"></i></a>
         </td>
     `;
 
@@ -280,9 +279,8 @@ function addMockApiCollectionEndpointRow(endpointId,path, method, onEdit, onDele
             <a class="btn btn-primary btn-action mr-1" title="Edit">
                 <i class="fas fa-pencil-alt"></i>
             </a>
-            <a class="btn btn-danger btn-action" title="Delete">
-                <i class="fas fa-trash"></i>
-            </a>
+          
+             <a class="btn btn-danger btn-action" data-toggle="tooltip" title="Delete" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')"><i class="fas fa-trash"></i></a>
         </td>
     `;
 
@@ -294,6 +292,17 @@ function addMockApiCollectionEndpointRow(endpointId,path, method, onEdit, onDele
 
 
 function updateMockAPICollectionTable(mockAPICollectionMetadataData) {
+
+  //first define function that is called when mock api collection deletion is confirmed.
+  const onMockAPICollectionDeleteConfirmed = (collectionId) => {
+    console.log(`Confirmed delete of collection with ID: ${collectionId}`);
+    // Here you would typically call your backend API to delete the collection.
+    // After deletion, you might want to refresh the table or remove the row from the UI.
+
+    //finally close the deletion dialog
+    $('#deleteModal').modal('hide'); 
+  }
+
   const tbody = document.querySelector("#mockApiTable tbody");
   tbody.innerHTML = ""; // Clear existing rows
   mockAPICollectionMetadataData.forEach((collection) => {
@@ -301,7 +310,7 @@ function updateMockAPICollectionTable(mockAPICollectionMetadataData) {
                     collection.CollectionId,     //the collection id, preceeded with a forward slash, is the root path for the mock API collection, so we can display it in the table.
                     collection.EndpointCount, 
                     () => { console.log(`Edit ${collection.Name}`);  populateMockAPICollectionDetailsPanel(collection.CollectionId); }, 
-                    () => { console.log(`Delete ${collection.Name}`); });
+                    () => { console.log(`Delete ${collection.Name}`); showMockAPICollectionDeleteConfirmationModal(() => { onMockAPICollectionDeleteConfirmed(collection.CollectionId); },collection.CollectionId); });
                     });
                     
 }
@@ -347,6 +356,13 @@ function populateMockAPICollectionDetailsPanel(collectionId) {
     .catch(error => {
         console.error('Error fetching mock API collection details:', error);
     });
+}
+
+
+function showMockAPICollectionDeleteConfirmationModal(onConfirm, collectionId) {
+    $('#deleteModal').modal('show');
+    $('#confirmDelete').off('click').on('click', onConfirm);
+    document.getElementById('collection-id-to-delete').textContent = collectionId;
 }
 
 

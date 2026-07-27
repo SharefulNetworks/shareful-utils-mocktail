@@ -300,7 +300,7 @@ function updateMockAPICollectionTable(mockAPICollectionMetadataData) {
     // After deletion, you might want to refresh the table or remove the row from the UI.
 
     //finally close the deletion dialog
-    $('#deleteModal').modal('hide'); 
+    $('#mockAPICollectionDeleteModal').modal('hide'); 
   }
 
   const tbody = document.querySelector("#mockApiTable tbody");
@@ -323,6 +323,17 @@ function updateMockAPICollectionDetailsPanelOverview(mockAPICollectionDetails) {
 }
 
 function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDetailsEndpoints) {
+
+   //first define function that is called when mock api collection endpoint deletion is confirmed.
+  const onMockAPICollectionEndpointDeleteConfirmed = (endpointId) => {
+    console.log(`Confirmed delete of endpoint with ID: ${endpointId}`);
+    // Here you would typically call your backend API to delete the endpoint.
+    // After deletion, you might want to refresh the table or remove the row from the UI.
+
+    //finally close the deletion dialog
+    $('#mockAPICollectionEndpointDeleteModal').modal('hide'); 
+  }
+
   const tbody = document.querySelector("#mockApiCollectionEndpointsTable tbody");
   tbody.innerHTML = ""; // Clear existing rows
   mockAPICollectionDetailsEndpoints.forEach((endpoint) => {
@@ -330,7 +341,7 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
                                       endpoint.Path, 
                                       endpoint.Method, 
                                      () => { console.log(`Edit ${endpoint.Path}`); }, 
-                                     () => { console.log(`Delete ${endpoint.Path}`); });
+                                     () => { console.log(`Delete ${endpoint.Path}`); showMockAPICollectionEndpointDeleteConfirmationModal(() => { onMockAPICollectionEndpointDeleteConfirmed(endpoint.Id); },endpoint.Id); });
                     });
 }
 
@@ -360,9 +371,15 @@ function populateMockAPICollectionDetailsPanel(collectionId) {
 
 
 function showMockAPICollectionDeleteConfirmationModal(onConfirm, collectionId) {
-    $('#deleteModal').modal('show');
+    $('#mockAPICollectionDeleteModal').modal('show');
     $('#confirmDelete').off('click').on('click', onConfirm);
     document.getElementById('collection-id-to-delete').textContent = collectionId;
+}
+
+function showMockAPICollectionEndpointDeleteConfirmationModal(onConfirm, endpointId) {
+    $('#mockAPICollectionEndpointDeleteModal').modal('show');
+    $('#confirmDeleteEndpoint').off('click').on('click', onConfirm);
+    document.getElementById('collection-endpoint-id-to-delete').textContent = endpointId;
 }
 
 

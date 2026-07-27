@@ -337,8 +337,9 @@
           </div>
         </section>
 
-        <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+        <!-- Mock API Collection Delete Modal -->
+      <div class="modal fade" id="mockAPICollectionDeleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalTitle" aria-hidden="true">
+       <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
 
             <div class="modal-header">
@@ -361,6 +362,40 @@
                 </button>
 
                 <button type="button" class="btn btn-danger" id="confirmDelete">
+                    Delete
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+  
+      <!-- Mock API Collection Endpoint Delete Modal -->
+      <div class="modal fade" id="mockAPICollectionEndpointDeleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalTitle" aria-hidden="true">
+       <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteEndpointModalTitle">
+                    Delete Mock API Collection Endpoint
+                </h5>
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                Are you sure you want to delete Mock API Collection Endpoint with id: <span id="collection-endpoint-id-to-delete" style="font-weight: bold; color: #6777ef;"></span>? This action cannot be undone.
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button type="button" class="btn btn-danger" id="confirmDeleteEndpoint">
                     Delete
                 </button>
             </div>

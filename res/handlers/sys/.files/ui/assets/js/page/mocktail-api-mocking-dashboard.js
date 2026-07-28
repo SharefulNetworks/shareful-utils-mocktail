@@ -8,6 +8,7 @@
 
 //var to hold the endpoint stats chart UI canvas.
 var endpointStatsChart;
+var endpointEditor;
 
 
  //on page load....
@@ -17,7 +18,7 @@ var endpointStatsChart;
   renderAPIEndpointStatsChart();
 
   //setup the mock API collection endpoint editor CodeMirror instance
-  //setupMockAPICollectionEndpointEditor();
+  setupMockAPICollectionEndpointEditor();
 
   // Initial stats fetch on page load
   fetchServerStats();
@@ -75,6 +76,26 @@ function formatJSONForEditor(value) {
   } catch (error) {
     console.error('Unable to format JSON for editor:', error);
     return String(value);
+  }
+}
+
+function validateEndpointEditorJSON() {
+  const validationMessage = document.getElementById('endpoint-json-validation-message');
+  if (!endpointEditor || !validationMessage) {
+    return false;
+  }
+
+  const editorValue = endpointEditor.getValue();
+
+  try {
+    JSON.parse(editorValue);
+    validationMessage.className = 'alert alert-success mt-2 mb-0 py-2 px-3';
+    validationMessage.textContent = 'Valid JSON.';
+    return true;
+  } catch (error) {
+    validationMessage.className = 'alert alert-danger mt-2 mb-0 py-2 px-3';
+    validationMessage.textContent = `Invalid JSON: ${error.message}`;
+    return false;
   }
 }
   
@@ -418,19 +439,45 @@ function showMockAPICollectionEndpointEditorModal(onSave,endpointId) {
 
   $('#mockAPICollectionEndpointEditorModal').modal('show');
   const editorContent = document.getElementById(`endpoint-response-${endpointId}`).value;
-  document.getElementById('endpoint-editor-textarea').value = formatJSONForEditor(editorContent);
+  if (endpointEditor) {
+    endpointEditor.setValue(formatJSONForEditor(editorContent));
+  } else {
+    document.getElementById('endpoint-editor-textarea').value = formatJSONForEditor(editorContent);
+  }
+  validateEndpointEditorJSON();
   $('#confirmEditEndpoint').off('click').on('click', onSave);
   
 }
 
 function setupMockAPICollectionEndpointEditor() {
 
-  const editor = CodeMirror.fromTextArea(document.getElementById("endpoint-editor-textarea"), {
-    mode: { name: "javascript", json: true },
+  endpointEditor = CodeMirror.fromTextArea(document.getElementById("endpoint-editor-textarea"), {
+    mode: "application/json",
+    theme: "darcula",
 
     lineNumbers: true,
 
-    lint: true,
+    lint: {
+      getAnnotations: CodeMirror.lint.json,
+      lintOnChange: false,
+      highlightLines: true,
+      delay: 0,
+      onUpdateLinting: function(_annotationsNotSorted, annotations) {
+        const validationMessage = document.getElementById('endpoint-json-validation-message');
+        if (!validationMessage) {
+          return;
+        }
+
+        if (annotations.length === 0) {
+          return;
+        }
+
+        const firstError = annotations[0];
+        const message = firstError && firstError.message ? firstError.message : 'Invalid JSON.';
+        validationMessage.className = 'alert alert-danger mt-2 mb-0 py-2 px-3';
+        validationMessage.textContent = `Invalid JSON: ${message}`;
+      }
+    },
 
     matchBrackets: true,
     autoCloseBrackets: true,
@@ -442,6 +489,23 @@ function setupMockAPICollectionEndpointEditor() {
         "CodeMirror-foldgutter"
     ]
 });
+
+  $('#mockAPICollectionEndpointEditorModal').on('shown.bs.modal', function () {
+    if (endpointEditor) {
+      endpointEditor.refresh();
+      validateEndpointEditorJSON();
+      endpointEditor.performLint();
+    }
+  });
+
+  endpointEditor.on('keyup', function() {
+    validateEndpointEditorJSON();
+    endpointEditor.performLint();
+  });
+
+  endpointEditor.on('change', function() {
+    validateEndpointEditorJSON();
+  });
 }
 
 

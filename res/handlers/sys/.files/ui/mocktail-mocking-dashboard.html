@@ -32,6 +32,7 @@
 
   <!-- Code Mirror-->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/theme/darcula.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/lint/lint.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/foldgutter.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.js"></script>
@@ -436,6 +437,9 @@
 
             <div class="modal-body">
                <textarea name="endpoint-editor" id="endpoint-editor-textarea"></textarea>
+              <div id="endpoint-json-validation-message" class="alert alert-secondary mt-2 mb-0 py-2 px-3" role="alert">
+                JSON validation will appear here.
+              </div>
             </div>
 
             <div class="modal-footer">

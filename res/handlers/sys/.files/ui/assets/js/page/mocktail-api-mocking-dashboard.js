@@ -16,6 +16,8 @@ var endpointStatsChart;
   //render process utilization chart, with initial zeroed data values, these will be updated by the data returned from the server stats API endpoint.
   renderAPIEndpointStatsChart();
 
+  //setup the mock API collection endpoint editor CodeMirror instance
+  //setupMockAPICollectionEndpointEditor();
 
   // Initial stats fetch on page load
   fetchServerStats();
@@ -62,6 +64,19 @@ var endpointStatsChart;
       const data = await resp.json();
       return data;
   }
+
+function formatJSONForEditor(value) {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch (error) {
+    console.error('Unable to format JSON for editor:', error);
+    return String(value);
+  }
+}
   
   // Function to update the dashboard with fetched data
   function updateDashboard(serverStatsData,endpointStatsData,mockAPICollectionMetadataData) {
@@ -265,16 +280,17 @@ var endpointStatsChart;
     tbody.appendChild(tr);
 }
 
-function addMockApiCollectionEndpointRow(endpointId,path, method, onEdit, onDelete) {
+function addMockApiCollectionEndpointRow(endpointId,path, method,response, onEdit, onDelete) {
     const tbody = document.querySelector("#mockApiCollectionEndpointsTable tbody");
 
     const tr = document.createElement("tr");
+    const formattedResponse = formatJSONForEditor(response);
 
     tr.innerHTML = `
         <td>${endpointId}</td>
         <td>${path}</td>
         <td>${method}</td>  
-        
+    <input type ="hidden" id="endpoint-response-${endpointId}" value='${formattedResponse.replace(/'/g, "&#39;")}'>
         <td>
             <a class="btn btn-primary btn-action mr-1" title="Edit">
                 <i class="fas fa-pencil-alt"></i>
@@ -336,6 +352,11 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
 
   const onMockAPICollectionEndpointEditConfirmed = (endpointId) => {
     console.log(`Confirmed edit of endpoint with ID: ${endpointId}`);
+
+    //grab the edited response from the CodeMirror editor
+    const editedResponse = document.getElementById('endpoint-editor-textarea').value;
+    console.log(`Edited response for endpoint ${endpointId}: ${editedResponse}`);
+
     // Here we call the backend API to edit the endpoint.
   
 
@@ -350,7 +371,8 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
       addMockApiCollectionEndpointRow(endpoint.Id, 
                                       endpoint.Path, 
                                       endpoint.Method, 
-                                     () => { console.log(`Edit ${endpoint.Path}`); showMockAPICollectionEndpointEditorModal(() => { onMockAPICollectionEndpointEditConfirmed(endpoint.Id); },endpoint.Response); },
+                                      endpoint.Response,
+                                     () => { console.log(`Edit ${endpoint.Path}`); showMockAPICollectionEndpointEditorModal(() => { onMockAPICollectionEndpointEditConfirmed(endpoint.Id); },endpoint.Id); },
                                      () => { console.log(`Delete ${endpoint.Path}`); showMockAPICollectionEndpointDeleteConfirmationModal(() => { onMockAPICollectionEndpointDeleteConfirmed(endpoint.Id); },endpoint.Id); });
                     });
 }
@@ -392,15 +414,16 @@ function showMockAPICollectionEndpointDeleteConfirmationModal(onConfirm, endpoin
     document.getElementById('collection-endpoint-id-to-delete').textContent = endpointId;
 }
 
-function showMockAPICollectionEndpointEditorModal(onSave,editorContent) {
+function showMockAPICollectionEndpointEditorModal(onSave,endpointId) {
 
   $('#mockAPICollectionEndpointEditorModal').modal('show');
-  document.getElementById('endpoint-editor-textarea').value = editorContent;
+  const editorContent = document.getElementById(`endpoint-response-${endpointId}`).value;
+  document.getElementById('endpoint-editor-textarea').value = formatJSONForEditor(editorContent);
   $('#confirmEditEndpoint').off('click').on('click', onSave);
   
 }
 
-function setupMockAPICollectionEndpointEditor(collectionId) {
+function setupMockAPICollectionEndpointEditor() {
 
   const editor = CodeMirror.fromTextArea(document.getElementById("endpoint-editor-textarea"), {
     mode: { name: "javascript", json: true },

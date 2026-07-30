@@ -105,6 +105,24 @@ var endpointEditor;
   }
 
 
+    //fetches data from the backend API via PUT request
+  async function fetchFromBackendJSONAPIviaPUT(endpointURL, payload) {
+    const resp = await fetch(endpointURL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! status: ${resp.status}`);
+    }
+    const data = await resp.json();
+    return data;
+  }
+
+
 
 function formatJSONForEditor(value) {
   if (typeof value === 'string') {
@@ -348,9 +366,9 @@ function addMockApiCollectionEndpointRow(endpointId,path, method,response, onEdi
     const formattedResponse = formatJSONForEditor(response);
 
     tr.innerHTML = `
-        <td>${endpointId}</td>
-        <td>${path}</td>
-        <td>${method}</td>  
+        <td id="endpoint-id-${endpointId}">${endpointId}</td>
+        <td id="endpoint-path-${endpointId}">${path}</td>
+        <td id="endpoint-method-${endpointId}">${method}</td>  
     <input type ="hidden" id="endpoint-response-${endpointId}" value='${formattedResponse.replace(/'/g, "&#39;")}'>
         <td>
             <a class="btn btn-primary btn-action mr-1" title="Edit">
@@ -400,7 +418,7 @@ function updateMockAPICollectionDetailsPanelOverview(mockAPICollectionDetails) {
   document.getElementById('collection-id').textContent = mockAPICollectionDetails.CollectionId;
 }
 
-function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDetailsEndpoints) {
+function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDetailsEndpoints,collId) {
 
    //first define function that is called when mock api collection endpoint deletion is confirmed.
   const onMockAPICollectionEndpointDeleteConfirmed = (endpointId) => {
@@ -415,15 +433,19 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
     $('#mockAPICollectionEndpointDeleteModal').modal('hide'); 
   }
 
-  const onMockAPICollectionEndpointEditConfirmed = (endpointId) => {
+  const onMockAPICollectionEndpointEditConfirmed = (endpointId, collectionId) => {
     console.log(`Confirmed edit of endpoint with ID: ${endpointId}`);
 
-    //grab the edited response from the CodeMirror editor
-    const editedResponse = document.getElementById('endpoint-editor-textarea').value;
+    // grab the edited values from the modal fields/editor
+    const endpointMethodInput = document.getElementById('endpoint-method-input');
+    const endpointPathInput = document.getElementById('endpoint-path-input');
+    const endpointMethod = endpointMethodInput ? endpointMethodInput.value.trim().toUpperCase() : '';
+    const endpointPath = endpointPathInput ? endpointPathInput.value.trim() : '';
+    const editedResponse = endpointEditor ? endpointEditor.getValue() : document.getElementById('endpoint-editor-textarea').value;
     console.log(`Edited response for endpoint ${endpointId}: ${editedResponse}`);
 
     // Here we call the backend API to edit the endpoint.
-  
+    apiCallMockAPICollectionEndpointUpdate(endpointId, collectionId, endpointMethod, endpointPath, editedResponse);
 
     //finally close the edit dialog
     $('#mockAPICollectionEndpointEditorModal').modal('hide');
@@ -437,7 +459,7 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
                                       endpoint.Path, 
                                       endpoint.Method, 
                                       endpoint.Response,
-                                     () => { console.log(`Edit ${endpoint.Path}`); showMockAPICollectionEndpointEditorModal(() => { onMockAPICollectionEndpointEditConfirmed(endpoint.Id); },endpoint.Id); },
+                                     () => { console.log(`Edit ${endpoint.Path}`); showMockAPICollectionEndpointEditorModal(() => { onMockAPICollectionEndpointEditConfirmed(endpoint.Id, collId); },endpoint.Id); },
                                      () => { console.log(`Delete ${endpoint.Path}`); showMockAPICollectionEndpointDeleteConfirmationModal(
                                                                                                   () => { onMockAPICollectionEndpointDeleteConfirmed(endpoint.Id); },
                                                                                                   endpoint.Id); });
@@ -461,7 +483,7 @@ function populateMockAPICollectionDetailsPanel(collectionId) {
     fetchFromBackendJSONAPIviaGET(`api/collections/${collectionId}`)
     .then(mockAPICollectionDetails => {
         updateMockAPICollectionDetailsPanelOverview(mockAPICollectionDetails);
-        updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDetails.Endpoints);
+        updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDetails.Endpoints, collectionId);
     })
     .catch(error => {
         console.error('Error fetching mock API collection details:', error);
@@ -472,7 +494,6 @@ function populateMockAPICollectionDetailsPanel(collectionId) {
 function showMockAPICollectionDeleteConfirmationModal(onConfirm, collectionId) {
     $('#mockAPICollectionDeleteModal').modal('show');
     $('#confirmDelete').off('click').on('click', onConfirm);
-    console.log("COL ID: "+collectionId)
     document.getElementById('collection-id-to-delete').textContent = collectionId;
 }
 
@@ -485,7 +506,25 @@ function showMockAPICollectionEndpointDeleteConfirmationModal(onConfirm, endpoin
 function showMockAPICollectionEndpointEditorModal(onSave,endpointId) {
 
   $('#mockAPICollectionEndpointEditorModal').modal('show');
+
+  //get the current path for the endpoint from the table row, and set it as the value of the path input field in the modal.
+  const pathElement = document.getElementById(`endpoint-path-${endpointId}`);
+  const path = pathElement ? pathElement.textContent.trim() : '';
+  document.getElementById('endpoint-path-input').value = path;
+
+  //get the current method for the endpoint from the table row, and set it as the value of the method input field in the modal.
+  const methodElement = document.getElementById(`endpoint-method-${endpointId}`);
+  const method = methodElement ? methodElement.textContent.trim().toUpperCase() : '';
+  const methodInput = document.getElementById('endpoint-method-input');
+  methodInput.value = method;
+  if (!methodInput.value) {
+    methodInput.value = 'GET';
+  }
+
+
+  //get the current response for the endpoint from the hidden input field in the table row, and set it as the value of the CodeMirror editor.
   const editorContent = document.getElementById(`endpoint-response-${endpointId}`).value;
+
   if (endpointEditor) {
     endpointEditor.setValue(formatJSONForEditor(editorContent));
   } else {
@@ -613,9 +652,6 @@ function apiCallMockAPICollectionCreate(){
 
 }
 
-function apiCallMockAPICollectionUpdate(){
-
-}
 
 function apiCallMockAPICollectionDelete(collectionId){
 
@@ -634,7 +670,39 @@ function apiCallMockAPICollectionDelete(collectionId){
 
 }
 
-function apiCallMockAPICollectionEndpointUpdate(){
+function apiCallMockAPICollectionEndpointUpdate(endpointId,collectionId,endpointMethod,endpointPath,updatedResponse){
+
+    let normalizedResponse = updatedResponse;
+    if (typeof updatedResponse === 'string') {
+      try {
+        normalizedResponse = JSON.parse(updatedResponse);
+      } catch (_error) {
+        normalizedResponse = updatedResponse;
+      }
+    }
+
+    //build up payload which will contain  the endpoint path, method and response,
+    const endpointPayload = {
+        Path: endpointPath || '',
+        Method: endpointMethod || '',
+        Response: normalizedResponse
+    };
+
+    console.log('Endpoint update payload:', endpointPayload);
+
+    fetchFromBackendJSONAPIviaPUT(`api/collections/${collectionId}/endpoints/${endpointId}`, endpointPayload)
+    .then(data => {
+      console.log('Mock API Collection Endpoint updated:', data);
+      // Close the modal
+      $('#mockAPICollectionEndpointEditorModal').modal('hide');
+
+      // Refresh the endpoints panel to show the updated endpoint
+      populateMockAPICollectionDetailsPanel(collectionId);
+
+    })
+    .catch(error => {
+      console.error('Error updating Mock API Collection Endpoint:', error);
+    });
 
 }
 

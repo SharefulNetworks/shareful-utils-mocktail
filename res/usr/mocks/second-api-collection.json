@@ -5,10 +5,10 @@
   "Version": 1.0,
   "Endpoints": [
     {
-      "Path": "/api/v1/profiles/{profileId}/",
+      "Path": "/api/v1/profiles/addresses",
       "Method": "POST",
       "Response": {
-        "Body": "Hello From Endpoint"
+        "Body": "New Endpoint Updated"
       },
       "Id": "1"
     },
@@ -48,11 +48,9 @@
       "EnableDynamicParamSubstitution": "false"
     },
     {
-      "Path": "/api/v1/profiles/{profileId}/preferences9",
-      "Method": "GET",
-      "Response": {
-        "Body": "A test body"
-      },
+      "Path": "null",
+      "Method": "",
+      "Response": "null",
       "Id": "6"
     }
   ]

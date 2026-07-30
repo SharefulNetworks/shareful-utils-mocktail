@@ -499,6 +499,37 @@
             </div>
 
             <div class="modal-body">
+                <span>Update the endpoint details and hit <span style="color: #6777ef; font-weight: bold;"><i>save changes</i></span> to persist any modifications.</span><br/><br/>
+                <div class="form-group">
+                  <label>Path</label>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <div class="input-group-text">
+                        <i class="fas fa-globe" style="color: #6777ef;"></i>
+                      </div>
+                    </div>
+                    <input type="text" id="endpoint-path-input" class="form-control" placeholder="Enter the path for this endpoint"
+                      name="path">
+                  </div>
+                </div>
+              
+                 <div class="form-group">
+                  <label>Method</label>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <div class="input-group-text">
+                        <i class="fas fa-exchange-alt" style="color: #6777ef;"></i>
+                      </div>
+                    </div>
+                    <select id="endpoint-method-input" class="form-control" placeholder="Enter the method for this endpoint"
+                      name="method">
+                      <option value="GET">GET</option>
+                      <option value="POST">POST</option>
+                      <option value="PUT">PUT</option>
+                      <option value="DELETE">DELETE</option>
+                    </select>
+                  </div>
+                </div>
                <textarea name="endpoint-editor" id="endpoint-editor-textarea"></textarea>
               <div id="endpoint-json-validation-message" class="alert alert-secondary mt-2 mb-0 py-2 px-3" role="alert">
                 JSON validation will appear here.

@@ -57,8 +57,7 @@ var endpointEditor;
     }
   }
 
-  //fetches the mock API collection metadata from the MockingController, this is used to populate the main Mocktail dashboard, 
-  // table with the list of mock API collections 
+  //fetches data from the backend API via GET request
   async function fetchFromBackendJSONAPIviaGET(endpointURL){
 
       const resp = await fetch(endpointURL);
@@ -69,6 +68,26 @@ var endpointEditor;
       return data;
   }
 
+
+  //fetches from the backend API via a DELETE request.
+  async function fetchFromBackendJSONAPIviaDELETE(endpointURL) {
+    const resp = await fetch(endpointURL, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! status: ${resp.status}`);
+    }
+    const data = await resp.json();
+    return data;
+  }
+
+
+
+  //fetches data from the backend API via POST request
   async function fetchFromBackendJSONAPIviaPOST(endpointURL, payload) {
     const resp = await fetch(endpointURL, {
       method: 'POST',
@@ -354,8 +373,9 @@ function updateMockAPICollectionTable(mockAPICollectionMetadataData) {
   //first define function that is called when mock api collection deletion is confirmed.
   const onMockAPICollectionDeleteConfirmed = (collectionId) => {
     console.log(`Confirmed delete of collection with ID: ${collectionId}`);
-    // Here you would typically call your backend API to delete the collection.
-    // After deletion, you might want to refresh the table or remove the row from the UI.
+
+    // Here we call the backend API to delete the collection.
+     apiCallMockAPICollectionDelete(collectionId);
 
     //finally close the deletion dialog
     $('#mockAPICollectionDeleteModal').modal('hide'); 
@@ -385,8 +405,11 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
    //first define function that is called when mock api collection endpoint deletion is confirmed.
   const onMockAPICollectionEndpointDeleteConfirmed = (endpointId) => {
     console.log(`Confirmed delete of endpoint with ID: ${endpointId}`);
+    
     // Here we call the backend API to delete the endpoint.
-    // After deletion, we refresh the table.
+   
+
+     
 
     //finally close the deletion dialog
     $('#mockAPICollectionEndpointDeleteModal').modal('hide'); 
@@ -415,7 +438,9 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
                                       endpoint.Method, 
                                       endpoint.Response,
                                      () => { console.log(`Edit ${endpoint.Path}`); showMockAPICollectionEndpointEditorModal(() => { onMockAPICollectionEndpointEditConfirmed(endpoint.Id); },endpoint.Id); },
-                                     () => { console.log(`Delete ${endpoint.Path}`); showMockAPICollectionEndpointDeleteConfirmationModal(() => { onMockAPICollectionEndpointDeleteConfirmed(endpoint.Id); },endpoint.Id); });
+                                     () => { console.log(`Delete ${endpoint.Path}`); showMockAPICollectionEndpointDeleteConfirmationModal(
+                                                                                                  () => { onMockAPICollectionEndpointDeleteConfirmed(endpoint.Id); },
+                                                                                                  endpoint.Id); });
                     });
 }
 
@@ -447,6 +472,7 @@ function populateMockAPICollectionDetailsPanel(collectionId) {
 function showMockAPICollectionDeleteConfirmationModal(onConfirm, collectionId) {
     $('#mockAPICollectionDeleteModal').modal('show');
     $('#confirmDelete').off('click').on('click', onConfirm);
+    console.log("COL ID: "+collectionId)
     document.getElementById('collection-id-to-delete').textContent = collectionId;
 }
 
@@ -591,7 +617,20 @@ function apiCallMockAPICollectionUpdate(){
 
 }
 
-function apiCallMockAPICollectionDelete(){
+function apiCallMockAPICollectionDelete(collectionId){
+
+   fetchFromBackendJSONAPIviaDELETE(`api/collections/${collectionId}`)
+    .then(data => {
+      console.log('Mock API Collection deleted:', data);
+      // Close the modal
+      $('#mockAPICollectionDeleteModal').modal('hide');
+
+      // Refresh the dashboard to remove the deleted collection
+      fetchServerStats();
+    })
+    .catch(error => {
+      console.error('Error deleting Mock API Collection:', error);
+    });
 
 }
 

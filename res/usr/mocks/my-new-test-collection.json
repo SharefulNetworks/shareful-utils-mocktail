@@ -1,0 +1,7 @@
+{
+  "Name": "My New Test Collection",
+  "Description": "Just a new text mock api collection",
+  "CollectionId": "my-new-test-collection",
+  "Version": 1.0,
+  "Endpoints": []
+}

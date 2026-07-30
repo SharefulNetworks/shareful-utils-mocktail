@@ -20,6 +20,9 @@ var endpointEditor;
   //setup the mock API collection endpoint editor CodeMirror instance
   setupMockAPICollectionEndpointEditor();
 
+  //setup the UI button event listeners
+  setupUIBtnEventListeners();
+
   // Initial stats fetch on page load
   fetchServerStats();
   
@@ -36,14 +39,14 @@ var endpointEditor;
 
      
       //first general server stats from the AdminController...
-      const serverStatsResponseData = await fetchFromBackendJSONAPI('../admin/api/serverstats');
+      const serverStatsResponseData = await fetchFromBackendJSONAPIviaGET('../admin/api/serverstats');
 
       //then fetch the endpoint stats from the MockingController...
-      const endpointStatsResponseData = await fetchFromBackendJSONAPI('api/collections/endpointstats');
+      const endpointStatsResponseData = await fetchFromBackendJSONAPIviaGET('api/collections/endpointstats');
 
       //next fetch mock API collection metadata from the MockingController, this is used to populate the main Mocktail dashboard, 
       //table with the list of mock API collections 
-      const mockAPICollectionMetadataResponseData = await fetchFromBackendJSONAPI('api/collections');``
+      const mockAPICollectionMetadataResponseData = await fetchFromBackendJSONAPIviaGET('api/collections');``
 
 
       //finally update the dashboard with the fetched data from both endpoints.
@@ -56,7 +59,7 @@ var endpointEditor;
 
   //fetches the mock API collection metadata from the MockingController, this is used to populate the main Mocktail dashboard, 
   // table with the list of mock API collections 
-  async function fetchFromBackendJSONAPI(endpointURL){
+  async function fetchFromBackendJSONAPIviaGET(endpointURL){
 
       const resp = await fetch(endpointURL);
       if (!resp.ok) {
@@ -65,6 +68,24 @@ var endpointEditor;
       const data = await resp.json();
       return data;
   }
+
+  async function fetchFromBackendJSONAPIviaPOST(endpointURL, payload) {
+    const resp = await fetch(endpointURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! status: ${resp.status}`);
+    }
+    const data = await resp.json();
+    return data;
+  }
+
+
 
 function formatJSONForEditor(value) {
   if (typeof value === 'string') {
@@ -124,7 +145,7 @@ function validateEndpointEditorJSON() {
 
   function updateAPIEndpointStatsChart(endpointStats){
 
-     console.log("Updating API Endpoint Stats Chart with data: ", endpointStats);
+     //console.log("Updating API Endpoint Stats Chart with data: ", endpointStats);
 
       //update each of the entries in the array of endpoint stats to the chart data, and then update the chart.
       //the chart data is an array of the top 10 endpoints that have been called since the last update, as returned from the backend MockingController.
@@ -412,7 +433,7 @@ function populateMockAPICollectionDetailsPanel(collectionId) {
 
     //then crucially fetch the mock API collection details from the MockingController, this is used to populate the main Mocktail dashboard, 
     //table with the list of mock API collections 
-    fetchFromBackendJSONAPI(`api/collections/${collectionId}`)
+    fetchFromBackendJSONAPIviaGET(`api/collections/${collectionId}`)
     .then(mockAPICollectionDetails => {
         updateMockAPICollectionDetailsPanelOverview(mockAPICollectionDetails);
         updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDetails.Endpoints);
@@ -446,6 +467,12 @@ function showMockAPICollectionEndpointEditorModal(onSave,endpointId) {
   }
   validateEndpointEditorJSON();
   $('#confirmEditEndpoint').off('click').on('click', onSave);
+  
+}
+
+function showMockAPICollectionCreationModal(onCreate) {
+  $('#mockAPICollectionCreationModal').modal('show');
+  $('#confirmCreateCollection').off('click').on('click', onCreate);
   
 }
 
@@ -506,6 +533,78 @@ function setupMockAPICollectionEndpointEditor() {
   endpointEditor.on('change', function() {
     validateEndpointEditorJSON();
   });
+}
+
+
+function setupUIBtnEventListeners() {
+
+
+  $('#addMockAPICollectionBtn').on('click', function() {
+    // Handle add endpoint button click
+    console.log("Add Mock API Collection button clicked");
+
+    //call helper to show the Mock API Collection creation modal passing in a callback function
+    //to execute when the user confirms the creation of a new mock API collection.
+    showMockAPICollectionCreationModal(() => {
+      console.log("Create Collection confirmed");
+
+      //call the backend API to create the new mock API collection.
+      apiCallMockAPICollectionCreate();
+
+    });
+
+  });
+}
+
+
+function apiCallMockAPICollectionCreate(){
+
+      console.log("Calling backend API to create new Mock API Collection...");
+
+      //grab values from the collection name and description fields.
+      const collectionName = document.getElementById('collectionName').value;
+      const collectionDescription = document.getElementById('collectionDescription').value;
+
+      //create a JSON object comprising of these fields to send to the backend API endpoint.
+      const newCollectionData = {
+        Name: collectionName,
+        Description: collectionDescription
+      };
+
+      //send the new collection data to the backend API endpoint to create the new mock API collection.
+      fetchFromBackendJSONAPIviaPOST('api/collections', newCollectionData)
+      .then(data => {
+        console.log('New Mock API Collection created:', data);
+        // Close the modal
+        $('#mockAPICollectionCreationModal').modal('hide');
+
+        // Refresh the dashboard to show the new collection
+        fetchServerStats();
+      })
+      .catch(error => {
+        console.error('Error creating new Mock API Collection:', error);
+      });
+
+}
+
+function apiCallMockAPICollectionUpdate(){
+
+}
+
+function apiCallMockAPICollectionDelete(){
+
+}
+
+function apiCallMockAPICollectionEndpointUpdate(){
+
+}
+
+function apiCallMockAPICollectionEndpointDelete(){
+
+}
+
+function apiCallMockAPICollectionEndpointCreate(){
+
 }
 
 

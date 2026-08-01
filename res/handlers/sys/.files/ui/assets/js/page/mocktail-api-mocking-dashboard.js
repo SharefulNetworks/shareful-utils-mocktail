@@ -422,13 +422,12 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
 
    //first define function that is called when mock api collection endpoint deletion is confirmed.
   const onMockAPICollectionEndpointDeleteConfirmed = (endpointId) => {
-    console.log(`Confirmed delete of endpoint with ID: ${endpointId}`);
-    
+    console.log("Confirmed delete of endpoint with ID: ", endpointId, " in collection with ID: ", collId);
+
     // Here we call the backend API to delete the endpoint.
+    apiCallMockAPICollectionEndpointDelete(collId, endpointId);
+
    
-
-     
-
     //finally close the deletion dialog
     $('#mockAPICollectionEndpointDeleteModal').modal('hide'); 
   }
@@ -706,7 +705,20 @@ function apiCallMockAPICollectionEndpointUpdate(endpointId,collectionId,endpoint
 
 }
 
-function apiCallMockAPICollectionEndpointDelete(){
+function apiCallMockAPICollectionEndpointDelete(collectionId, endpointId){
+
+  fetchFromBackendJSONAPIviaDELETE(`api/collections/${collectionId}/endpoints/${endpointId}`)
+    .then(data => {
+      console.log('Mock API Collection Endpoint deleted:', data);
+      // Close the modal
+      $('#mockAPICollectionEndpointDeleteModal').modal('hide');
+
+      // Refresh the endpoints panel to remove the deleted endpoint
+      populateMockAPICollectionDetailsPanel(collectionId);
+    })
+    .catch(error => {
+      console.error('Error deleting Mock API Collection Endpoint with ID from collection with ID:', endpointId, 'in collection:', collectionId, ':', error);
+    });
 
 }
 

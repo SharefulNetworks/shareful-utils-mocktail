@@ -502,33 +502,58 @@ function showMockAPICollectionEndpointDeleteConfirmationModal(onConfirm, endpoin
     document.getElementById('collection-endpoint-id-to-delete').textContent = endpointId;
 }
 
-function showMockAPICollectionEndpointEditorModal(onSave,endpointId) {
+
+
+function showMockAPICollectionEndpointEditorModal(onSave,endpointId,forCreation = false) {
 
   $('#mockAPICollectionEndpointEditorModal').modal('show');
 
-  //get the current path for the endpoint from the table row, and set it as the value of the path input field in the modal.
-  const pathElement = document.getElementById(`endpoint-path-${endpointId}`);
-  const path = pathElement ? pathElement.textContent.trim() : '';
-  document.getElementById('endpoint-path-input').value = path;
+  if (forCreation) {
 
-  //get the current method for the endpoint from the table row, and set it as the value of the method input field in the modal.
-  const methodElement = document.getElementById(`endpoint-method-${endpointId}`);
-  const method = methodElement ? methodElement.textContent.trim().toUpperCase() : '';
-  const methodInput = document.getElementById('endpoint-method-input');
-  methodInput.value = method;
-  if (!methodInput.value) {
-    methodInput.value = 'GET';
-  }
+    // Clear the form for creating a new endpoint
+    document.getElementById('endpoint-path-input').value = '';
+    document.getElementById('endpoint-method-input').value = 'GET';
+
+    //build a default response with an empty body and set it as the value of the CodeMirror editor.
+    const defaultResponse = {
+      "Body": {}
+    };
 
 
-  //get the current response for the endpoint from the hidden input field in the table row, and set it as the value of the CodeMirror editor.
-  const editorContent = document.getElementById(`endpoint-response-${endpointId}`).value;
+    if (endpointEditor) {
+      endpointEditor.setValue(JSON.stringify(defaultResponse, null, 2));
+    } else {
+      document.getElementById('endpoint-editor-textarea').value = JSON.stringify(defaultResponse, null, 2);
+    }
 
-  if (endpointEditor) {
-    endpointEditor.setValue(formatJSONForEditor(editorContent));
   } else {
-    document.getElementById('endpoint-editor-textarea').value = formatJSONForEditor(editorContent);
-  }
+
+      //get the current path for the endpoint from the table row, and set it as the value of the path input field in the modal.
+      const pathElement = document.getElementById(`endpoint-path-${endpointId}`);
+      const path = pathElement ? pathElement.textContent.trim() : '';
+      document.getElementById('endpoint-path-input').value = path;
+    
+      //get the current method for the endpoint from the table row, and set it as the value of the method input field in the modal.
+      const methodElement = document.getElementById(`endpoint-method-${endpointId}`);
+      const method = methodElement ? methodElement.textContent.trim().toUpperCase() : '';
+      const methodInput = document.getElementById('endpoint-method-input');
+      methodInput.value = method;
+      if (!methodInput.value) {
+        methodInput.value = 'GET';
+      }
+    
+    
+      //get the current response for the endpoint from the hidden input field in the table row, and set it as the value of the CodeMirror editor.
+      const editorContent = document.getElementById(`endpoint-response-${endpointId}`).value;
+    
+      if (endpointEditor) {
+        endpointEditor.setValue(formatJSONForEditor(editorContent));
+      } else {
+        document.getElementById('endpoint-editor-textarea').value = formatJSONForEditor(editorContent);
+      }
+   
+ }
+
   validateEndpointEditorJSON();
   $('#confirmEditEndpoint').off('click').on('click', onSave);
   
@@ -603,6 +628,7 @@ function setupMockAPICollectionEndpointEditor() {
 function setupUIBtnEventListeners() {
 
 
+  //attach function for the add mock API collection button click event, this will show the modal for creating a new mock API collection.
   $('#addMockAPICollectionBtn').on('click', function() {
     // Handle add endpoint button click
     console.log("Add Mock API Collection button clicked");
@@ -618,6 +644,45 @@ function setupUIBtnEventListeners() {
     });
 
   });
+
+
+  //attach function for the add mock API collection endpoint button click event, this will show the modal for creating a new endpoint.
+  $('#addMockAPICollectionEndpointBtn').on('click', function() {
+    // Handle add endpoint button click
+    console.log("Add Mock API Collection Endpoint button clicked");
+
+    //grab referece to the collection id from the overview panel, this is the collection that the new endpoint will be added to.
+    const targetCollectionId = document.getElementById('collection-id').textContent.trim();
+    console.log("Collection ID for new endpoint: ", targetCollectionId);
+
+
+    // define cunction to execute once the endpoint creation is confirmed.
+    const onMockAPICollectionEndpointCreationConfirmed = (collectionId) => {
+         console.log(`Confirmed creation of new endpoint for collection ID: ${collectionId}`);
+     
+         // grab the edited values from the modal fields/editor
+         const endpointMethodInput = document.getElementById('endpoint-method-input');
+         const endpointPathInput = document.getElementById('endpoint-path-input');
+         const endpointMethod = endpointMethodInput ? endpointMethodInput.value.trim().toUpperCase() : '';
+         const endpointPath = endpointPathInput ? endpointPathInput.value.trim() : '';
+         const editedResponse = endpointEditor ? endpointEditor.getValue() : document.getElementById('endpoint-editor-textarea').value;
+
+        // Here we call the backend API to create the endpoint.
+        apiCallMockAPICollectionEndpointCreate(targetCollectionId, endpointMethod, endpointPath, editedResponse);
+
+        //finally close the edit dialog
+        $('#mockAPICollectionEndpointEditorModal').modal('hide');
+     
+    }
+     
+
+    //call helper to show the Mock API Collection Endpoint creation modal passing in a callback function
+    //to execute when the user confirms the creation of a new mock API collection endpoint.
+    showMockAPICollectionEndpointEditorModal(() => { onMockAPICollectionEndpointCreationConfirmed(targetCollectionId); }, null, true);
+
+  });
+
+  
 }
 
 
@@ -722,8 +787,48 @@ function apiCallMockAPICollectionEndpointDelete(collectionId, endpointId){
 
 }
 
-function apiCallMockAPICollectionEndpointCreate(){
+function apiCallMockAPICollectionEndpointCreate(
+  collectionId,
+  endpointMethod,
+  endpointPath,
+  endpointResponse,
+) {
+  let normalizedResponse = endpointResponse;
+  if (typeof endpointResponse === "string") {
+    try {
+      normalizedResponse = JSON.parse(endpointResponse);
+    } catch (_error) {
+      normalizedResponse = endpointResponse;
+    }
+  }
 
+  //build up payload which will contain  the endpoint path, method and response,
+  const endpointPayload = {
+    Path: endpointPath || "",
+    Method: endpointMethod || "",
+    Response: normalizedResponse,
+  };
+
+  console.log("Endpoint creation payload:", endpointPayload);
+
+  fetchFromBackendJSONAPIviaPOST(
+    `api/collections/${collectionId}/endpoints`,
+    endpointPayload
+  )
+    .then((data) => {
+      console.log("Mock API Collection Endpoint created:", data);
+      // Close the modal
+      $("#mockAPICollectionEndpointEditorModal").modal("hide");
+
+      // Refresh the endpoints panel to show the new endpoint
+      populateMockAPICollectionDetailsPanel(collectionId);
+    })
+    .catch((error) => {
+      console.error(
+        "Error creating Mock API Collection Endpoint:",
+        error
+      );
+    });
 }
 
 

@@ -38,12 +38,6 @@
       },
       "Id": "5",
       "EnableDynamicParamSubstitution": "false"
-    },
-    {
-      "Path": "null",
-      "Method": "",
-      "Response": "null",
-      "Id": "6"
     }
   ]
 }

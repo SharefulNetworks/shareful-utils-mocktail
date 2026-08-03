@@ -221,6 +221,16 @@ apiCreateMockAPICollection(){
     newMockAPIName=$(ParseJSONField "$requestBody" '.Name')
     newMockAPIDescription=$(ParseJSONField "$requestBody" '.Description')
 
+    # a name and description are required, if they are not provided return a 400 error to the client.
+    if [ -z "$newMockAPIName" ] || [ -z "$newMockAPIDescription" ]; then
+        local err_status_code=400
+        local error_content={}
+        error_content=$(SetJSONField "$error_content" '.status' "400")
+        error_content=$(SetJSONField "$error_content" '.statusMessage' "Bad Request - Missing required fields in request body. Name and Description are required.")
+        SendBashletErrorResponse "$err_status_code" "$error_content" "$request"
+        return 1
+    fi
+
     # generate a collection id from the provided name by converting it to lowercase, replacing spaces with hyphens,
     # and removing any non-alphanumeric characters except hyphens.
     newMockAPIId=$(generateCollectionIdFromName "$newMockAPIName")
@@ -555,6 +565,34 @@ apiUpdateMockAPICollectionEndpoint(){
     # parse the optional EnableDynamicParamSubstitution field if its provided.
     local enableDynamicParamSubstitution=$(ParseJSONField "$requestBody" '.EnableDynamicParamSubstitution')
 
+    # check that a value has been provided for the required fields, if not return a 400 error to the client.
+    if [ -z "$newEndpointPath" ] || [ -z "$newEndpointMethod" ] || [ -z "$newEndpointResponse" ]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '400')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Missing required fields in request body. Path, Method and Response are required.")
+        SendBashletErrorResponse "400"  "$responseBody" "$request"
+        return 1
+    fi
+
+    # ensure that method is GET,POST,PUT,PATCH or DELETE, (case insensitive) if not return a 400 error to the client.
+    if ! [[ "$newEndpointMethod" =~ ^(GET|POST|PUT|PATCH|DELETE)$ ]]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '400')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Invalid method. Only GET, POST, PUT, PATCH and DELETE are supported.")
+        SendBashletErrorResponse "400"  "$responseBody" "$request"
+        return 1
+    fi
+
+    # the Response field must include a Body, if not return a 400 error to the client.
+    local body=$(ParseJSONField "$newEndpointResponse" '.Body')
+    if [ -z "$body" ]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '400')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Invalid response. Response must include a Body.")
+        SendBashletErrorResponse "400"  "$responseBody" "$request"
+        return 1
+    fi  
+   
 
     # update the existing endpoint with the detals obtained from the request.
     local updatedEndpoint

@@ -222,7 +222,8 @@ apiCreateMockAPICollection(){
     newMockAPIDescription=$(ParseJSONField "$requestBody" '.Description')
 
     # a name and description are required, if they are not provided return a 400 error to the client.
-    if [ -z "$newMockAPIName" ] || [ -z "$newMockAPIDescription" ]; then
+    # the provided must also be greater than 3 characters in length, if not return a 400 error to the client.
+    if [ -z "$newMockAPIName" ] || [ -z "$newMockAPIDescription" ] || [ ${#newMockAPIName} -lt 4 ] || [ ${#newMockAPIDescription} -lt 4 ]; then
         local err_status_code=400
         local error_content={}
         error_content=$(SetJSONField "$error_content" '.status' "400")

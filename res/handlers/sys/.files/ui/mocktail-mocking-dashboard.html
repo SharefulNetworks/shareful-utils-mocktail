@@ -183,7 +183,7 @@
             </div>
             <div class="col-lg-3 col-md-6 col-sm-6 col-12">
               <div class="card card-statistic-1">
-                <div class="card-icon bg-danger">
+                <div class="card-icon" style="background-color: rgb(172, 83, 101);">
                   <i class="fas fa-exclamation-triangle"></i>
                 </div>
                 <div class="card-wrap">
@@ -451,7 +451,7 @@
 
 
       <!-- Mock API Collection Error Modal -->
-      <div class="modal fade" id="mockAPICollectionErrorModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalTitle" aria-hidden="true">
+      <div class="modal fade" id="mockAPICollectionErrorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalTitle" aria-hidden="true">
        <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
 
@@ -466,11 +466,11 @@
             </div>
 
             <div class="modal-body">
-                An API Mocking Application error occurred: <span id="app-error-msg" style="font-weight: bold; color: rgb(172, 83, 101);"></span> click ok to dismiss.
+                An API Mocking Application error occurred: <br/><span id="app-error-msg" style="font-weight: bold; color: rgb(172, 83, 101);"></span><br> click ok to dismiss.
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">
                     OK
                 </button>
 

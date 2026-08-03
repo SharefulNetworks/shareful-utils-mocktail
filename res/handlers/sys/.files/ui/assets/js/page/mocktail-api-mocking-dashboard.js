@@ -62,7 +62,9 @@ var endpointEditor;
 
       const resp = await fetch(endpointURL);
       if (!resp.ok) {
-        throw new Error(`HTTP error! status: ${resp.status}`);
+       const respText = await resp.text();
+       console.log(`HTTP error! status: ${resp.status} Response: ${respText}`);
+       throw new Error(`${respText}`);
       }
       const data = await resp.json();
       return data;
@@ -79,8 +81,11 @@ var endpointEditor;
     });
 
     if (!resp.ok) {
-      throw new Error(`HTTP error! status: ${resp.status}`);
+      const respText = await resp.text();
+      console.log(`HTTP error! status: ${resp.status} Response: ${respText}`);
+      throw new Error(`${respText}`);
     }
+
     const data = await resp.json();
     return data;
   }
@@ -98,7 +103,9 @@ var endpointEditor;
     });
 
     if (!resp.ok) {
-      throw new Error(`HTTP error! status: ${resp.status}`);
+      const respText = await resp.text();
+      console.log(`HTTP error! status: ${resp.status} Response: ${respText}`);
+      throw new Error(`${respText}`);
     }
     const data = await resp.json();
     return data;
@@ -116,7 +123,9 @@ var endpointEditor;
     });
 
     if (!resp.ok) {
-      throw new Error(`HTTP error! status: ${resp.status}`);
+      const respText = await resp.text();
+      console.log(`HTTP error! status: ${resp.status} Response: ${respText}`);
+      throw new Error(`${respText}`);
     }
     const data = await resp.json();
     return data;
@@ -704,14 +713,23 @@ function apiCallMockAPICollectionCreate(){
       fetchFromBackendJSONAPIviaPOST('api/collections', newCollectionData)
       .then(data => {
         console.log('New Mock API Collection created:', data);
+
         // Close the modal
         $('#mockAPICollectionCreationModal').modal('hide');
-
+       
         // Refresh the dashboard to show the new collection
         fetchServerStats();
       })
       .catch(error => {
         console.error('Error creating new Mock API Collection:', error);
+        //hide initial modal, as the creation failed, and show the error modal to the user.
+         $('#mockAPICollectionCreationModal').modal('hide');
+
+         // Show error modal
+         errorMsgHeading = 'Error Creating Mock API Collection';
+         errorMsgJSON = JSON.parse(error.message);
+         document.getElementById('app-error-msg').innerHTML = `<b>${errorMsgHeading}</b>. <br/> ${errorMsgJSON.statusMessage}`;
+         $('#mockAPICollectionErrorModal').modal('show');
       });
 
 }

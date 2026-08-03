@@ -747,7 +747,18 @@ function apiCallMockAPICollectionDelete(collectionId){
       fetchServerStats();
     })
     .catch(error => {
-      console.error('Error deleting Mock API Collection:', error);
+
+       console.error('Error deleting Mock API Collection:', error);
+
+       //hide initial modal, as the creation failed, and show the error modal to the user.
+       $('#mockAPICollectionCreationModal').modal('hide');
+
+       // Show error modal
+       errorMsgHeading = 'Error Deleting Mock API Collection';
+       errorMsgJSON = JSON.parse(error.message);
+       document.getElementById('app-error-msg').innerHTML = `<b>${errorMsgHeading}</b>. <br/> ${errorMsgJSON.statusMessage}`;
+       $('#mockAPICollectionErrorModal').modal('show');
+
     });
 
 }
@@ -784,6 +795,15 @@ function apiCallMockAPICollectionEndpointUpdate(endpointId,collectionId,endpoint
     })
     .catch(error => {
       console.error('Error updating Mock API Collection Endpoint:', error);
+
+        //hide initial modal, as the creation failed, and show the error modal to the user.
+       $('#mockAPICollectionCreationModal').modal('hide');
+
+       // Show error modal
+       errorMsgHeading = 'Error Updating Mock API Collection Endpoint';
+       errorMsgJSON = JSON.parse(error.message);
+       document.getElementById('app-error-msg').innerHTML = `<b>${errorMsgHeading}</b>. <br/> ${errorMsgJSON.statusMessage}`;
+       $('#mockAPICollectionErrorModal').modal('show');
     });
 
 }
@@ -801,6 +821,15 @@ function apiCallMockAPICollectionEndpointDelete(collectionId, endpointId){
     })
     .catch(error => {
       console.error('Error deleting Mock API Collection Endpoint with ID from collection with ID:', endpointId, 'in collection:', collectionId, ':', error);
+
+        //hide initial modal, as the creation failed, and show the error modal to the user.
+       $('#mockAPICollectionCreationModal').modal('hide');
+
+       // Show error modal
+       errorMsgHeading = 'Error Deleting Mock API Collection Endpoint';
+       errorMsgJSON = JSON.parse(error.message);
+       document.getElementById('app-error-msg').innerHTML = `<b>${errorMsgHeading}</b>. <br/> ${errorMsgJSON.statusMessage}`;
+       $('#mockAPICollectionErrorModal').modal('show');
     });
 
 }
@@ -846,6 +875,19 @@ function apiCallMockAPICollectionEndpointCreate(
         "Error creating Mock API Collection Endpoint:",
         error
       );
+
+
+        //hide initial modal, as the creation failed, and show the error modal to the user.
+       $('#mockAPICollectionCreationModal').modal('hide');
+
+       // Show error modal
+       errorMsgHeading = 'Error Creating Mock API Collection Endpoint';
+       errorMsgJSON = JSON.parse(error.message);
+       document.getElementById('app-error-msg').innerHTML = `<b>${errorMsgHeading}</b>. <br/> ${errorMsgJSON.statusMessage}`;
+       $('#mockAPICollectionErrorModal').modal('show');
+
+
+
     });
 }
 

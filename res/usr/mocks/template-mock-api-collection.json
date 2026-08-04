@@ -1,6 +1,6 @@
 {
   "Name": "Template Mock API Collection",
-  "Description": "This document may be used as a template to manually create other Mock API collections. Simply copy this file and add further endpoints as appropriate. IMPORTANT: Every collection **MUST** be assigned a unique collection id.  See the example mock api collections (basic and advanced) for the full range of supported options.",
+  "Description": "This document may be used as a template to manually create other Mock API collections from scratch in JSON (i.e. without making use of the UI), Simply copy this file and add further endpoints as appropriate. IMPORTANT: Every collection **MUST** be assigned a unique collection id.  See the example mock api collections (basic and advanced) for the full range of supported options.",
   "Version": "1.0",
   "CollectionId": "1234",
   "Endpoints": [

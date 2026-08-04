@@ -367,6 +367,15 @@ apiDeleteMockAPICollection(){
         return 1
     fi
 
+    # if this is a SYSTEM endpoint, as denoted by an id with an x prefix, then it should be permitted for it to be deleted
+    if [[ "$collectionId" =~ ^x[0-9]+$ ]]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '403')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Forbidden - Mock API Collection with Id: $collectionId is a SYSTEM collection and cannot be deleted.")
+        SendBashletErrorResponse "403"  "$responseBody" "$request"
+        return 1
+    fi
+
     # if the collection exists in the BashletContext key-value store, if it does not exist, return a 404 error to the client.
     if ! KVExists "$collectionId"; then
         local responseBody={}
@@ -404,6 +413,15 @@ apiCreateMockAPICollectionEndpoint(){
 
     # parse the collection id from the request path.
     local collectionId=$(ParseBashletRequestPathParam "$request" "collectionId")
+
+    # if this is a SYSTEM endpoint, as denoted by an id with an x prefix, then it should be permitted for it to be updated
+    if [[ "$collectionId" =~ ^x[0-9]+$ ]]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '403')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Forbidden - Mock API Collection with Id: $collectionId  is a SYSTEM collection and cannot be updated.")
+        SendBashletErrorResponse "403"  "$responseBody" "$request"
+        return 1
+    fi
 
     echo "MockingController: Parsed collectionId: $collectionId" >&2
 
@@ -526,6 +544,15 @@ apiUpdateMockAPICollectionEndpoint(){
     # then the endpoint id
     local endpointId=$(ParseBashletRequestPathParam "$request" "endpointId")
 
+    # if this is a SYSTEM endpoint, as denoted by an id with an x prefix, then it should be permitted for it to be updated
+    if [[ "$collectionId" =~ ^x[0-9]+$ ]]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '403')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Forbidden - Mock API Collection endpoint with id: $endpointId relates to collection Id: $collectionId which is a SYSTEM collection and cannot be updated.")
+        SendBashletErrorResponse "403"  "$responseBody" "$request"
+        return 1
+    fi
+
      # next attempt to obtain reference to the Mock API collection from the BashletContext key-value store, if it does not exist, return a 404 error to the client.
     if ! KVExists "$collectionId"; then
         local responseBody={}
@@ -642,7 +669,16 @@ apiDeleteMockAPICollectionEndpoint(){
     local endpointId
     endpointId=$(ParseBashletRequestPathParam "$request" "endpointId")
 
-     # next attempt to obtain reference to the Mock API collection from the BashletContext key-value store, if it does not exist, return a 404 error to the client.
+    # if this is a SYSTEM endpoint, as denoted by an id with an x prefix, then it should be permitted for it to be updated
+    if [[ "$collectionId" =~ ^x[0-9]+$ ]]; then
+        local responseBody={}
+        responseBody=$(SetJSONField "$responseBody" '.status' '403')
+        responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Forbidden - Mock API Collection endpoint with id: $endpointId relates to collection Id: $collectionId which is a SYSTEM collection and cannot be updated.")
+        SendBashletErrorResponse "403"  "$responseBody" "$request"
+        return 1
+    fi
+
+    # next attempt to obtain reference to the Mock API collection from the BashletContext key-value store, if it does not exist, return a 404 error to the client.
     if ! KVExists "$collectionId"; then
         local responseBody={}
         responseBody=$(SetJSONField "$responseBody" '.status' '404')

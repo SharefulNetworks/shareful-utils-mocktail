@@ -444,6 +444,13 @@ function updateMockAPICollectionDetailsPanelEndpointsTable(mockAPICollectionDeta
   const onMockAPICollectionEndpointEditConfirmed = (endpointId, collectionId) => {
     console.log(`Confirmed edit of endpoint with ID: ${endpointId}`);
 
+    //check if the JSON in the editor is valid before proceeding
+    if (!validateEndpointEditorJSON()) {
+      console.error("Invalid JSON in the editor. Please correct the errors before saving.");
+      alert("Invalid JSON in the editor. Please correct the errors before saving.");
+      return;
+    }
+
     // grab the edited values from the modal fields/editor
     const endpointMethodInput = document.getElementById('endpoint-method-input');
     const endpointPathInput = document.getElementById('endpoint-path-input');
@@ -677,6 +684,13 @@ function setupUIBtnEventListeners() {
     // define cunction to execute once the endpoint creation is confirmed.
     const onMockAPICollectionEndpointCreationConfirmed = (collectionId) => {
          console.log(`Confirmed creation of new endpoint for collection ID: ${collectionId}`);
+
+         //check if the JSON in the editor is valid before proceeding
+         if (!validateEndpointEditorJSON()) {
+           console.error("Invalid JSON in the editor. Please correct the errors before saving.");
+           alert("Invalid JSON in the editor. Please correct the errors before saving.");
+           return;
+         }
      
          // grab the edited values from the modal fields/editor
          const endpointMethodInput = document.getElementById('endpoint-method-input');

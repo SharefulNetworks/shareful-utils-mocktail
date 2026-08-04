@@ -242,7 +242,7 @@ var processUtilisationChart;
             <a class="btn btn-primary btn-action mr-1" title="Edit">
                 <i class="fas fa-pencil-alt"></i>
             </a>
-            <a class="btn btn-danger btn-action" title="Delete">
+            <a class="btn btn-danger btn-action" title="Delete" style="color: #fff; background-color: rgb(172, 83, 101); border-color: rgb(172, 83, 101);">
                 <i class="fas fa-trash"></i>
             </a>
         </td>

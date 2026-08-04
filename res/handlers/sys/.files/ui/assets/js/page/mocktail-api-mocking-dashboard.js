@@ -523,6 +523,15 @@ function showMockAPICollectionEndpointEditorModal(onSave,endpointId,forCreation 
     document.getElementById('endpoint-path-input').value = '';
     document.getElementById('endpoint-method-input').value = 'GET';
 
+    //update modal title to reflect that this op relates to the creation of a new endpoint
+    document.getElementById('editorModalTitle').textContent = 'Create New Mock API Collection Endpoint';
+
+    //update buttomn text to reflect that this op relates to the creation of a new endpoint
+    document.getElementById('confirmEditEndpoint').textContent = 'Create Endpoint';
+
+    //set the update modals main content to reflect that this op relates to the creation of a new endpoint.
+    document.getElementById('update-modal-main-text').textContent = 'Enter the details for the new endpoint.';
+
     //build a default response with an empty body and set it as the value of the CodeMirror editor.
     const defaultResponse = {
       "Body": {}

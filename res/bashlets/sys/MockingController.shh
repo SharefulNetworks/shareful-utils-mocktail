@@ -460,7 +460,7 @@ apiCreateMockAPICollectionEndpoint(){
     # next validate that the response includes a Body it may also include a Header object and status code, but these are optional
     # if not, return a 400 error to the client.
     local body=$(ParseJSONField "$newEndpointResponse" '.Body')
-    if [ -z "$body" ]; then
+    if [ -z "$body" ] || [ "$body" = "null" ]; then
         local responseBody={}
         responseBody=$(SetJSONField "$responseBody" '.status' '400')
         responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Invalid response. Response must include a Body.")
@@ -586,7 +586,7 @@ apiUpdateMockAPICollectionEndpoint(){
 
     # the Response field must include a Body, if not return a 400 error to the client.
     local body=$(ParseJSONField "$newEndpointResponse" '.Body')
-    if [ -z "$body" ]; then
+    if [ -z "$body" ] || [ "$body" = "null" ]; then
         local responseBody={}
         responseBody=$(SetJSONField "$responseBody" '.status' '400')
         responseBody=$(SetJSONField "$responseBody" '.statusMessage' "Bad Request - Invalid response. Response must include a Body.")

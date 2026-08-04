@@ -29,15 +29,6 @@
         "Body": "Hello From Endpoint"
       },
       "Id": "4"
-    },
-    {
-      "Path": "/api/v1/profiles/{profileId}/preferences4",
-      "Method": "POST",
-      "Response": {
-        "Body": "A test body"
-      },
-      "Id": "5",
-      "EnableDynamicParamSubstitution": "false"
     }
   ]
 }

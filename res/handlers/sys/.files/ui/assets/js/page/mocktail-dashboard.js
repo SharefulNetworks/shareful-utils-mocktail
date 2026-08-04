@@ -198,8 +198,8 @@ var processUtilisationChart;
         addMockApiRow(collection.Name, 
                       collection.CollectionId,     //the collection id, preceeded with a forward slash, is the root path for the mock API collection, so we can display it in the table.
                       collection.EndpointCount, 
-                      () => { console.log(`Edit ${collection.Name}`); }, 
-                      () => { console.log(`Delete ${collection.Name}`); });
+                      () => { console.log(`Edit ${collection.Name}`); displayDashboardSwitchConfirmationDialog() }, 
+                      () => { console.log(`Delete ${collection.Name}`); displayDashboardSwitchConfirmationDialog() });
                       });
   }
 
@@ -252,6 +252,17 @@ var processUtilisationChart;
     tr.querySelector(".btn-danger").addEventListener("click", onDelete);
 
     tbody.appendChild(tr);
+}
+
+
+function displayDashboardSwitchConfirmationDialog(){
+
+  if (window.confirm("You will need to switch the API Mocking Dashboard to complete this action, would you like to proceed?")) {
+    window.open(" ../../sys/mock/dashboard", "_self");
+  } else {
+    console.log("User canceled the switch dashboard action.");
+  }
+
 }
 
 

@@ -354,11 +354,11 @@ function validateEndpointEditorJSON() {
         <td><a href="#" class="font-weight-600">/${rootPath}</a></td>
         <td>${endpointCount}</td>
         <td>
-            <a class="btn btn-primary btn-action mr-1" title="Edit">
+            <a class="btn btn-primary btn-action mr-1" title="Edit API Collection Add, Edit or Delete Endpoints">
                 <i class="fas fa-pencil-alt"></i>
             </a>
            
-             <a class="btn btn-danger btn-action" data-toggle="tooltip" title="Delete" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')" style="color: #fff; background-color: rgb(172, 83, 101); border-color: rgb(172, 83, 101);"><i class="fas fa-trash"></i></a>
+             <a class="btn btn-danger btn-action" data-toggle="tooltip" title="Delete Entire Mock API Collection" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')" style="color: #fff; background-color: rgb(172, 83, 101); border-color: rgb(172, 83, 101);"><i class="fas fa-trash"></i></a>
         </td>
     `;
 
@@ -380,11 +380,11 @@ function addMockApiCollectionEndpointRow(endpointId,path, method,response, onEdi
         <td id="endpoint-method-${endpointId}">${method}</td>  
     <input type ="hidden" id="endpoint-response-${endpointId}" value='${formattedResponse.replace(/'/g, "&#39;")}'>
         <td>
-            <a class="btn btn-primary btn-action mr-1" title="Edit">
+            <a class="btn btn-primary btn-action mr-1" title="Edit Mock API Collection Endpoint">
                 <i class="fas fa-pencil-alt"></i>
             </a>
           
-             <a class="btn btn-danger btn-action" style="color: #fff; background-color: rgb(172, 83, 101); border-color: rgb(172, 83, 101);" data-toggle="tooltip" title="Delete" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')"><i class="fas fa-trash"></i></a>
+             <a class="btn btn-danger btn-action" style="color: #fff; background-color: rgb(172, 83, 101); border-color: rgb(172, 83, 101);" data-toggle="tooltip" title="Delete Endpoint From Mock API Collection" data-confirm="Are You Sure?|This action can not be undone. Do you want to continue?" data-confirm-yes="alert('Deleted')"><i class="fas fa-trash"></i></a>
         </td>
     `;
 

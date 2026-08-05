@@ -33,6 +33,7 @@ trap teardown EXIT INT TERM
 startup() {
   echo "Starting Mocktail server..." >&2
   acquireScriptDependencies
+  applySubScriptFilePermissions
   configureServer
   exportSharedVariables # export shared variables that the handler (sub)  scripts may need to reference.
   initialiseBashletEngine # call private helper function to initialise the BashletEngine.
@@ -309,6 +310,24 @@ clearMMAPFiles() {
     echo "Clearing memory-mapped files..." >&2
     rm -f "$PROCESS_USAGE_HISTORY_STATS_MMAP_FILE" "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE"
     echo "Memory-mapped files cleared." >&2
+}
+
+# we iterate over all sub directories from the root script directory and assign any script files found 
+# as a result, execution permissions via chmod +x to ensure they can be executed by the server when needed.
+# as the script files are NOT suffixed with .sh or .bash, we cannot rely on the file extension to determine 
+# if they are executable scripts, thus we must read the first line of each file to check for the shebang (#!) which indicates it is a script file.
+applySubScriptFilePermissions() {
+    echo "Applying file permissions..." >&2
+
+    find "$SCRIPT_DIR/res" -type f -exec bash -c '
+        for file; do
+            if head -n 1 "$file" | grep -q "^#!"; then
+                chmod +x "$file"
+            fi
+        done
+    ' bash {} + 
+   
+    echo "File permissions applied." >&2
 }
 
 

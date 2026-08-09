@@ -33,7 +33,7 @@ trap teardown EXIT INT TERM
 startup() {
   echo "Starting Mocktail server..." >&2
   acquireScriptDependencies
-  applySubScriptFilePermissions
+  # applyServerFilePermissions # apply file permissions to all server files, including sub scripts, internal and system files.
   configureServer
   exportSharedVariables # export shared variables that the handler (sub)  scripts may need to reference.
   initialiseBashletEngine # call private helper function to initialise the BashletEngine.
@@ -315,7 +315,8 @@ clearMMAPFiles() {
 # we iterate over all sub directories from the root script directory and assign any script files found 
 # as a result, execution permissions via chmod +x to ensure they can be executed by the server when needed.
 # as the script files are NOT suffixed with .sh or .bash, we cannot rely on the file extension to determine 
-# if they are executable scripts, thus we must read the first line of each file to check for the shebang (#!) which indicates it is a script file.
+# if they are executable scripts, thus we must read the first line of each file to check for the shebang (#!) 
+# which indicates it is a script file.
 applySubScriptFilePermissions() {
     echo "Applying file permissions..." >&2
 
@@ -323,12 +324,48 @@ applySubScriptFilePermissions() {
         for file; do
             if head -n 1 "$file" | grep -q "^#!"; then
                 chmod +x "$file"
+
             fi
         done
     ' bash {} + 
    
     echo "File permissions applied." >&2
 }
+
+
+# apply readonly permissions to any files in the internal directory, i.e we remove write permissions.
+# here we check if the path contains internal and apply the permissions accordingly.
+applyInternalFilePermissions() {
+    echo "Applying readonly permissions to internal files..." >&2
+
+    find "$SCRIPT_DIR/res" -type f -path "*/internal/*" -exec chmod a-w {} +
+
+    echo "Readonly permissions applied to internal files." >&2
+}
+
+
+# apply readonly permissions to any files in the system directory, i.e we remove write permissions.
+applySystemFilePermissions() {
+  
+    echo "Applying readonly permissions to system files..." >&2
+
+    find "$SCRIPT_DIR/res" -type f -path "*/sys/*" -exec chmod a-w {} +
+
+    echo "Readonly permissions applied to system files." >&2
+}
+
+
+applyServerFilePermissions(){
+  
+    echo "Applying file permissions to server files..." >&2
+
+    applySubScriptFilePermissions
+    applyInternalFilePermissions
+    applySystemFilePermissions
+
+    echo "File permissions applied to server files." >&2
+}
+
 
 
 # call script entry point.

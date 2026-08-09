@@ -62,6 +62,18 @@ handleRequest(){
    path=$(parseRequestPath "$requestJSON")
    protocol=$(parseRequestProtocol "$requestJSON")
 
+
+   # if the request method is OPTIONS, we will respond with a 200 OK and the appropriate CORS headers, as this is a pre-flight request
+   # and is handled at the server level, without the need to route to a specific handler. Support for OPTIONS at the application level
+   # will br added in later releases.
+   if [[ "$method" == "OPTIONS" ]]; then
+       echo "root-handler: Received an OPTIONS request, responding with 200 OK and CORS headers..." >&2
+       DispatchOptionsResponse "$path" "$method" "$requestJSON"
+       return 0
+   fi
+
+
+
    # issue a call into our utility method to attempt to resolve route for the path parsed from the request
    # taking care ton pass in the path to THIS handlers routes config
    local config_path="${SCRIPT_DIR}/res/handlers/internal/root-handler-routes.json"

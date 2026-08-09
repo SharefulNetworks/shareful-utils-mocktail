@@ -14,6 +14,9 @@ source "${SCRIPT_DIR}/res/handlers/internal/utils/mime-utils" #we use path relat
 # import/source the BashletEngine so we can delegate to it for handling requests associated with Bashlet route types.
 source "${SCRIPT_DIR}/res/bashlets/internal/BashletEngine" #we use path relative to this script, the BashletEngine is located in the "
 
+# import the config utility functions this will aid us in parsing config details from the main server config file, for CORS and other server functions.
+source "${SCRIPT_DIR}/res/handlers/internal/utils/config-utils"
+
 # PUBLIC FUNCTION: reads and parses the request read from the socket into an array of headers and a body, taking care to handle the case where the 
 # request may not have a body, and return the headers and body as separate variables.
 ReadAndParseRequest(){ 
@@ -298,6 +301,96 @@ DispatchErrorResponse(){
 
 
 }
+
+ # PUBLIC FUNCTION: dispatches an OPTIONS response to the client based on the provided path, method and protocol.
+ DispatchOptionsResponse(){
+    local path="$1"
+    local method="$2"
+    local fullRequestObject="$3"
+
+    # parse the origin header from the request in order to determine if the request is being made from localhost
+    # as this will determine what headers we send back in the response.`
+    local origin=$(parseRequestHeader "$fullRequestObject" "Origin")
+
+     # where the origin is NOT local host and not * we will read the server config to determine if the origin is allowed, if not we 
+     # will return a 403 Forbidden response.
+     # read current server configuration data from the JSON config file.
+    configData="$(ReadServerJSONConfig)"
+    if [[ -z "$configData" ]]; then
+        echo "handler-utils: failed to read server configuration data from config file." >&2
+        DispatchErrorResponse 500 "Failed to read server configuration data from config file." "application/json" "$path" "$method" "$fullRequestObject"
+        return 1
+    fi
+
+    printf "HTTP/1.1 204 No Content\r\n"
+
+    if [[ -z "$origin" ]]; then
+        echo "handler-utils: No Origin header found in request for path: $path, method: $method.." >&2
+    else
+        # if the requests originates from localhost..
+        echo "handler-utils: Origin header found in request for path: $path, method: $method, origin: $origin" >&2
+        if [[ "$origin" =~ ^https?://localhost(:[0-9]+)?$ ]]; then
+            echo "handler-utils: Request for path: $path, method: $method is from localhost, sending appropriate CORS headers." >&2
+            printf "Access-Control-Allow-Origin: %s\r\n" "$origin" 
+            printf "Access-Control-Allow-Credentials: true\r\n"
+
+             # set the remaining CORS headers for the OPTIONS response, as appropriate.
+             printf "Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\n"
+             printf "Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
+             printf "Access-Control-Max-Age: 3600\r\n"
+             printf "Connection: close\r\n"
+             printf "\r\n" 
+        else
+            echo "handler-utils: Request for path: $path, method: $method is NOT from localhost, sending appropriate CORS headers." >&2
+
+            # read the allowed origins from the server config and check if the origin is in the list, if not we will return a 403 Forbidden response.
+            local allowed_origins
+            allowed_origins=ParseJSONConfigSecuritySetting "$configData" "AllowedOrigins"
+
+            # if the allowed origins is empty or null we will return a 403 Forbidden response.
+            if [[ -z "$allowed_origins" || "$allowed_origins" == "null" ]]; then
+                echo "handler-utils: No allowed origins defined in server config, sending 403 Forbidden response for path: $path, method: $method, origin: $origin" >&2
+                DispatchErrorResponse 403 "No allowed origins defined in server config." "application/json" "$path" "$method" "$fullRequestObject"
+                return 1
+            fi
+
+            # if the allowed origins is all i.e "*" we will allow the request and send the appropriate CORS headers.
+            if [[ "$allowed_origins" == "*" ]]; then
+                echo "handler-utils: Allowed origins is set to '*', allowing request for path: $path, method: $method, origin: $origin" >&2
+                printf "Access-Control-Allow-Origin: *\r\n"
+
+                # set the remaining CORS headers for the OPTIONS response, as appropriate.
+                printf "Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\n"
+                printf "Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
+                printf "Access-Control-Max-Age: 3600\r\n"
+                printf "Connection: close\r\n"
+                printf "\r\n" 
+            else
+                # check if the origin is in the list of allowed origins, if not we will return a 403 Forbidden response.
+                if ! echo "$allowed_origins" | jq -e --arg origin "$origin" 'index($origin)' >/dev/null; then
+                    echo "handler-utils: Origin: $origin is NOT in the list of allowed origins, sending 403 Forbidden response for path: $path, method: $method" >&2
+                    DispatchErrorResponse 403 "Origin: $origin is NOT in the list of allowed origins." "application/json" "$path" "$method" "$fullRequestObject"
+                    return 1
+                fi
+
+                # if we reach here it means the origin is in the list of allowed origins, so we will send the appropriate CORS headers.
+                echo "handler-utils: Origin: $origin is in the list of allowed origins, sending appropriate CORS headers for path: $path, method: $method" >&2
+                printf "Access-Control-Allow-Origin: %s\r\n" "$origin"
+
+                # set the remaining CORS headers for the OPTIONS response, as appropriate.
+                printf "Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\n"
+                printf "Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
+                printf "Access-Control-Max-Age: 3600\r\n"
+                printf "Connection: close\r\n"
+                printf "\r\n" 
+            fi
+            
+            
+        fi
+    fi
+
+
+ }
 
 # Genertes a SHA-512 hash of the provided input string and returns the hash value.
 ToSha512() {

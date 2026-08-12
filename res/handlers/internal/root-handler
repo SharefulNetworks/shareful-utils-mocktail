@@ -49,7 +49,9 @@ GetCurrentServerProcessCount() {
 # which may be directly referenced in .html file served by the system handler, 
 handleRequest(){
 
-   echo "root-handler: Received a request, processing..." >&2
+   #echo "root-handler: Received a request, processing..." >&2
+   Log "INFO" "Root handler received a request, processing..."
+
   
    # check the handling of this request will not cause us to exceed the maximum process limit.
    checkProcessLimit
@@ -67,7 +69,7 @@ handleRequest(){
    # and is handled at the server level, without the need to route to a specific handler. Support for OPTIONS at the application level
    # will br added in later releases.
    if [[ "$method" == "OPTIONS" ]]; then
-       echo "root-handler: Received an OPTIONS request, responding with 200 OK and CORS headers..." >&2
+       Log "INFO" "root-handler: Received an OPTIONS request, responding with 200 OK and CORS headers..."
        DispatchOptionsResponse "$path" "$method" "$requestJSON"
        return 0
    fi
@@ -95,11 +97,11 @@ handleRequest(){
 # the preveiling config, where this IS the case the the call to this handler will immediately
 # return an appropriate error response will be dispatched to the caller.
 checkProcessLimit() {
-  if [[ -n "$MAX_PROCESSES" ]]; then
+    if [[ -n "$MAX_PROCESSES" ]]; then
     current_server_processes=$(GetCurrentServerProcessCount)
-    echo "root-handler: Current processes: $current_server_processes" >&2
+    Log "INFO" "root-handler: Current processes: $current_server_processes"
     if (( current_server_processes > MAX_PROCESSES )); then
-      echo "root-handler: Maximum process limit reached ($current_server_processes), refusing connection." >&2
+      Log "ERROR" "root-handler: Maximum process limit reached ($current_server_processes), refusing connection."
       DispatchErrorResponse 429 "Max concurrent request limit reached" "application/json" "$path" "$method" "$requestJSON" 
       exit 1
     fi

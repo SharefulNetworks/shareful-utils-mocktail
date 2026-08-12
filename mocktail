@@ -31,8 +31,9 @@ trap teardown EXIT INT TERM
 
 
 startup() {
-  echo "Starting Mocktail server..." >&2
+  Log "INFO" "Starting Mocktail server..."
   acquireScriptDependencies
+  exportUtilityFunctions # export utility functions that the handler (sub) scripts may need to reference.
   # applyServerFilePermissions # apply file permissions to all server files, including sub scripts, internal and system files.
   configureServer
   exportSharedVariables # export shared variables that the handler (sub)  scripts may need to reference.
@@ -44,16 +45,16 @@ startup() {
 
 
 teardown() {
-  echo "Stopping Mocktail server..." >&2
+  Log "INFO" "Stopping Mocktail server..."
   stopProcessUsageMonitor
   stopListening
   clearMMAPFiles
-  echo "Mocktail server stopped." >&2
+  Log "INFO" "Mocktail server stopped."
 }
 
 startListening(){
 
-  echo "Starting Mocktail server on port $LISTEN_PORT..." >&2
+  Log "INFO" "Starting Mocktail server on port $LISTEN_PORT..."
   
   # spin up a socat process to start listening on the specified port taking care to specify our root handler subscript.
   # ensure the base64 annotation metadata is exported in this parent shell
@@ -67,7 +68,7 @@ startListening(){
   SOCAT_PID=$!
 
   # log status message to indicate the server is running and listening for requests.
-  echo "Mocktail server is running on port $LISTEN_PORT"
+  Log "INFO" "Mocktail server is running on port $LISTEN_PORT"
 
   # wait for the socat process to exit, which will happen when the server is stopped or if it encounters a critical error.
   wait "$SOCAT_PID"
@@ -76,7 +77,7 @@ startListening(){
 
 stopListening(){
 
-   echo "Stopping Mocktail server (PID: $SOCAT_PID)..." >&2
+  Log "INFO" "Stopping Mocktail server (PID: $SOCAT_PID)..."
 
    if [[ -n "$SOCAT_PID" ]]; then
    
@@ -87,60 +88,60 @@ stopListening(){
     kill "$SOCAT_PID" 2>/dev/null || true
   
   else
-    echo "No active Mocktail server process found to stop." >&2
+    Log "ERROR" "No active Mocktail server process found to stop."
   fi
-
-  echo "Mocktail server stopped." >&2
+  
+  Log "INFO" "Mocktail server stopped."
 
 }
 
 acquireScriptDependencies() {
 
 
-  echo "Checking for required dependencies..." >&2
+  Log "INFO" "Checking for required dependencies..."
 
   # check if socat is installed, which is required for the server to function.
   if ! command -v socat &> /dev/null; then
-    echo "Error: socat is not installed and is required for the Mocktail server to function, installing socat..." >&2
+    Log "ERROR" "Error: socat is not installed and is required for the Mocktail server to function, installing socat..."
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
       sudo apt-get update && sudo apt-get install -y socat
     elif [[ "$OSTYPE" == "darwin"* ]]; then
       brew install socat
     else
-      echo "Unsupported OS type: $OSTYPE. Please install socat manually." >&2
+      Log "ERROR" "Unsupported OS type: $OSTYPE. Please install socat manually."
       exit 1
     fi
   else
-    echo "socat is already installed." >&2
+    Log "INFO" "socat is already installed."
   fi
 
 
   # check if JQ is installed, which is required for the server to function.
   if ! command -v jq &> /dev/null; then
-    echo "Error: jq is not installed and is required for the Mocktail server to function, installing jq..." >&2
+    Log "ERROR" "Error: jq is not installed and is required for the Mocktail server to function, installing jq..."
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
       sudo apt-get update && sudo apt-get install -y jq
     elif [[ "$OSTYPE" == "darwin"* ]]; then
       brew install jq
     else
-      echo "Unsupported OS type: $OSTYPE. Please install jq manually." >&2
+      Log "ERROR" "Unsupported OS type: $OSTYPE. Please install jq manually."
       exit 1
     fi
   else
-    echo "jq is already installed." >&2
+    Log "INFO" "jq is already installed."
   fi
 
 
-  echo "All dependencies are satisfied." >&2
+  Log "INFO" "All dependencies are satisfied."
 }
 
 # configures server settings based on the main JSON system configuration file, setting global variables accordingly.
 configureServer() {
-  echo "Configuring Mocktail server..." >&2
+  Log "INFO" "Configuring Mocktail server..."
 
   # check if the configuration file exists, if not create a default one.
   if [[ ! -f "$SCRIPT_DIR/res/config.json" ]]; then
-    echo "Configuration file not found at $SCRIPT_DIR/res/config.json, creating a default configuration file..." >&2
+    Log "INFO" "Configuration file not found at $SCRIPT_DIR/res/config.json, creating a default configuration file..."
 
     # create the config file.
     createDefaultConfigFile
@@ -161,12 +162,12 @@ configureServer() {
   AUTH_TOKEN_COOKIE_NAME=$(ParseJSONConfigSecuritySetting "$config_json" "AuthTokenCookieName") || exit 1
   AUTH_TOKEN_EXPIRATION_MINUTES=$(ParseJSONConfigSecuritySetting "$config_json" "TokenExpirationMinutes") || exit 1
   ADMIN_USER_EMAIL=$(ParseJSONConfigSecuritySetting "$config_json" "Email") || exit 1
-  echo "Mocktail server configured with MaxProcesses=$MAX_PROCESSES, MaxProcessRuntime=$MAX_PROCESS_RUNTIME, ListenPort=$LISTEN_PORT, AuthTokenExpirationMinutes=$AUTH_TOKEN_EXPIRATION_MINUTES" >&2
+  Log "INFO" "Mocktail server configured with MaxProcesses=$MAX_PROCESSES, MaxProcessRuntime=$MAX_PROCESS_RUNTIME, ListenPort=$LISTEN_PORT, AuthTokenExpirationMinutes=$AUTH_TOKEN_EXPIRATION_MINUTES"
 }
 
 
 initialiseBashletEngine() {
-  echo "Mocktail: Initialising Bashlet Engine..." >&2
+  Log "INFO" "Mocktail: Initialising Bashlet Engine..."
   # call into the BashletEngine script to initialise it, which will resolve any bashlet routes defined in the route configs.
   source "${SCRIPT_DIR}/res/bashlets/internal/BashletEngine"
   InitBashletEngine
@@ -216,7 +217,7 @@ createDefaultConfigFile(){
 }
 EOL
 
-  echo "Default configuration file created at $SCRIPT_DIR/res/config.json" >&2
+  Log "INFO" "Default configuration file created at $SCRIPT_DIR/res/config.json"
 }
 
 # Gets the current count of running server processes.
@@ -286,30 +287,30 @@ monitorProcessUsage() {
 # starts the process usage monitor function in the background, which will track the number of active processes over time and update a JSON file
 # with the current process count for each minute of the last hour.
 startProcessUsageMonitor() {
-    echo "Starting process usage monitor in background..." >&2
+  Log "INFO" "Starting process usage monitor in background..."
     monitorProcessUsage &
     PROCESS_MONITOR_PID=$!
-    echo "Process usage monitor started in background with PID: $PROCESS_MONITOR_PID" >&2
+  Log "INFO" "Process usage monitor started in background with PID: $PROCESS_MONITOR_PID"
 }
 
 stopProcessUsageMonitor() {
-   echo "Stopping process usage monitor..." >&2
+   Log "INFO" "Stopping process usage monitor..."
    if [[ -n "$PROCESS_MONITOR_PID" ]]; then
-        echo "Stopping process usage monitor (PID: $PROCESS_MONITOR_PID)..." >&2
+    Log "INFO" "Stopping process usage monitor (PID: $PROCESS_MONITOR_PID)..."
         kill "$PROCESS_MONITOR_PID" 2>/dev/null || true
         wait "$PROCESS_MONITOR_PID" 2>/dev/null || true
         PROCESS_MONITOR_PID=""
-        echo "Process usage monitor stopped." >&2
+    Log "INFO" "Process usage monitor stopped."
     else
-        echo "No active process usage monitor found to stop." >&2
+    Log "ERROR" "No active process usage monitor found to stop."
     fi
-    echo "Process usage monitor stopped." >&2
+  Log "INFO" "Process usage monitor stopped."
 }
 
 clearMMAPFiles() {
-    echo "Clearing memory-mapped files..." >&2
-    rm -f "$PROCESS_USAGE_HISTORY_STATS_MMAP_FILE" "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE"
-    echo "Memory-mapped files cleared." >&2
+  Log "INFO" "Clearing memory-mapped files..."
+  rm -f "$PROCESS_USAGE_HISTORY_STATS_MMAP_FILE" "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE"
+  Log "INFO" "Memory-mapped files cleared."
 }
 
 # we iterate over all sub directories from the root script directory and assign any script files found 
@@ -318,7 +319,7 @@ clearMMAPFiles() {
 # if they are executable scripts, thus we must read the first line of each file to check for the shebang (#!) 
 # which indicates it is a script file.
 applySubScriptFilePermissions() {
-    echo "Applying file permissions..." >&2
+  Log "INFO" "Applying file permissions..."
 
     find "$SCRIPT_DIR/res" -type f -exec bash -c '
         for file; do
@@ -329,41 +330,80 @@ applySubScriptFilePermissions() {
         done
     ' bash {} + 
    
-    echo "File permissions applied." >&2
+    Log "INFO" "File permissions applied."
 }
 
 
 # apply readonly permissions to any files in the internal directory, i.e we remove write permissions.
 # here we check if the path contains internal and apply the permissions accordingly.
 applyInternalFilePermissions() {
-    echo "Applying readonly permissions to internal files..." >&2
+  Log "INFO" "Applying readonly permissions to internal files..."
 
     find "$SCRIPT_DIR/res" -type f -path "*/internal/*" -exec chmod a-w {} +
 
-    echo "Readonly permissions applied to internal files." >&2
+    Log "INFO" "Readonly permissions applied to internal files."
 }
 
 
 # apply readonly permissions to any files in the system directory, i.e we remove write permissions.
 applySystemFilePermissions() {
   
-    echo "Applying readonly permissions to system files..." >&2
+  Log "INFO" "Applying readonly permissions to system files..."
 
     find "$SCRIPT_DIR/res" -type f -path "*/sys/*" -exec chmod a-w {} +
 
-    echo "Readonly permissions applied to system files." >&2
+    Log "INFO" "Readonly permissions applied to system files."
 }
 
 
 applyServerFilePermissions(){
   
-    echo "Applying file permissions to server files..." >&2
+  Log "INFO" "Applying file permissions to server files..."
 
     applySubScriptFilePermissions
     applyInternalFilePermissions
     applySystemFilePermissions
 
-    echo "File permissions applied to server files." >&2
+    Log "INFO" "File permissions applied to server files."
+}
+
+# utility function to provide structured logging to stderr, with timestamp and log level. This function will be exported
+# so it may be availble to any and all subcripts that may need to log messages to stderr, including the root handler and any sub handlers.
+Log() {
+    local level="$1"
+    local message="$2"
+    local timestamp
+
+    # convert log level to numeric value for comparison with configured log level
+    local level_idx
+    level_idx=$(toLogLevelIdx "$level")
+
+    # get the configured log-level for the application.
+    local LOG_LEVEL
+    LOG_LEVEL=$(ParseJSONConfigGeneralSetting "$(ReadServerJSONConfig ".")" "LogLevel") || exit 1
+
+    # compare log level with configured log level, if the log level is less than or equal to the configured log level, we will log the message.
+    if [[ "$level_idx" -le "$LOG_LEVEL" ]]; then
+      timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+      echo "[$timestamp]: [$level] $message" >&2
+    fi
+}
+
+exportUtilityFunctions(){
+  export -f Log
+  export -f toLogLevelIdx
+}
+
+toLogLevelIdx() {
+  local level="$1"
+  case "$level" in
+    "ERROR") echo 1 ;;
+    "WARNING") echo 2 ;;
+    "INFO") echo 3 ;;
+    "DEBUG") echo 4 ;;
+    "TRACE") echo 5 ;;
+    *) echo 0 ;; # Unknown level
+  esac
 }
 
 

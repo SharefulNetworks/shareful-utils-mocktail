@@ -1,11 +1,14 @@
 #!/bin/bash
 
 #utils to support the various bashlet operations, including synchronized local file system read and write,etc.
-echo "BashletContext: Loaded BashletContext helper/utility functions... " >&2
+Log "INFO" "BashletContext: Loaded BashletContext helper/utility functions... "
 
 
 # souce the mime-utils library, which provides a set of utility functions for working with MIME types.
 source "${SCRIPT_DIR}/res/handlers/internal/utils/mime-utils"
+
+# source the config helpers so Log can resolve the configured log level.
+source "${SCRIPT_DIR}/res/handlers/internal/utils/config-utils"
 
 
 
@@ -179,7 +182,7 @@ KVStore(){
    value="$2"
    callingBashlet=$(basename "${BASH_SOURCE[1]}")
 
-   echo "Store: Storing data in the BashletContext key-value store..." >&2
+  Log "INFO" "Store: Storing data in the BashletContext key-value store..."
 
    # create a composite key using the the provided key and the calling bashlet name. This ensure each bashlets
    # key-value store data isolated from other bashlets, even if they use the same key names.
@@ -225,7 +228,7 @@ KVRead(){
     key="$1"
     callingBashlet=$(basename "${BASH_SOURCE[1]}")
 
-    echo "Read: Reading data from the BashletContext key-value store..." >&2
+    Log "INFO" "Read: Reading data from the BashletContext key-value store..."
 
     # create a composite key using the the provided key and the calling bashlet name.
     compositeKey="${callingBashlet}:${key}"
@@ -255,7 +258,7 @@ KVExists(){
     key="$1"
     callingBashlet=$(basename "${BASH_SOURCE[1]}")
 
-    echo "Exists: Checking if key exists in the BashletContext key-value store..." >&2
+    Log "INFO" "Exists: Checking if key exists in the BashletContext key-value store..."
 
     # create a composite key using the the provided key and the calling bashlet name.
     compositeKey="${callingBashlet}:${key}"
@@ -286,7 +289,7 @@ KVDelete(){
     key="$1"
     callingBashlet=$(basename "${BASH_SOURCE[1]}")
 
-    echo "Delete: Deleting key from the BashletContext key-value store..." >&2
+    Log "INFO" "Delete: Deleting key from the BashletContext key-value store..."
 
     # create a composite key using the the provided key and the calling bashlet name.
     compositeKey="${callingBashlet}:${key}"
@@ -550,7 +553,7 @@ SetJSONBoolean() {
         true|false)
             ;;
         *)
-            echo "SetJSONBoolean: value must be 'true' or 'false'" >&2
+            Log "ERROR" "SetJSONBoolean: value must be 'true' or 'false'"
             return 1
             ;;
     esac
@@ -567,7 +570,7 @@ SetJSONNumber() {
     local value="$3"
 
     if ! jq -en --arg value "$value" '$value | tonumber' >/dev/null 2>&1; then
-        echo "SetJSONNumber: '$value' is not a valid number" >&2
+        Log "ERROR" "SetJSONNumber: '$value' is not a valid number"
         return 1
     fi
 
@@ -645,7 +648,7 @@ DoForwardBashletRequest(){
   # $bashletRequest.
   forwardPath="$(ParseBashletRequestHeader "$bashletRequest" 'X-Forward-To')"
   if [[ -z "$forwardPath" ]]; then
-      echo "DoForwardBashletRequest: No X-Forward-To header found in request, cannot forward request." >&2
+      Log "ERROR" "DoForwardBashletRequest: No X-Forward-To header found in request, cannot forward request."
       return 1
   fi
 
@@ -695,10 +698,10 @@ SendBashletErrorResponse(){
     local err_status_message
     err_status_message="$(GetStatusMsgForCode $err_status_code)"
    if requestAcceptsHtml "$full_request_object"; then
-        echo "SendBashletErrorResponse: client accepts HTML, redirecting to user friendly error page..." >&2
+        Log "INFO" "SendBashletErrorResponse: client accepts HTML, redirecting to user friendly error page..."
         DispatchBashletRedirectResponse "/sys/ui/errors-dynamic.html?status=$err_status_code&message=$err_status_message&content=$err_content"
    else
-       echo "SendBashletErrorResponse: client does not accept HTML, sending JSON error response..." >&2
+      Log "INFO" "SendBashletErrorResponse: client does not accept HTML, sending JSON error response..."
        sendErrorResponse "$err_status_code" "$err_content" "$short_content_type"
    fi    
    return 1
@@ -797,7 +800,8 @@ SetCookieInBashletResponse() {
                 ;;
 
             *)
-                echo "Unknown cookie option: $key" >&2
+                Log "ERROR" "Unknown cookie option: $key"
+                
                 return 1
                 ;;
 
@@ -1032,7 +1036,7 @@ GetServerProcessUtilizationHistory() {
     local utilization_history_file="${PROCESS_USAGE_HISTORY_STATS_MMAP_FILE}"
 
     if [[ ! -f "$utilization_history_file" ]]; then
-        echo "GetServerProcessUtilizationHistory: Utilization history file not found at $utilization_history_file" >&2
+      Log "ERROR" "GetServerProcessUtilizationHistory: Utilization history file not found at $utilization_history_file"
         return 1
     fi
 

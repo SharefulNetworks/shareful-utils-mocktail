@@ -5,7 +5,7 @@
 # such as request parsing, route resolution and response generation/return.
 
 # log messsag to indicate that the script has been successfully loaded/sourced
-echo "handler-utils: Loaded handler utility functions." >&2
+Log "INFO" "handler-utils: Loaded handler utility functions."
 
 # import/source the mime type utility functions, which are used by the static route handling logic to determine the correct content type to return for static resources.
 source "${SCRIPT_DIR}/res/handlers/internal/utils/mime-utils" #we use path relative to this script, the utilities both share the same parent "utils" directory.
@@ -43,7 +43,7 @@ ReadAndParseRequest(){
     query_raw=""
   fi
 
-  echo "handler-utils: Received request>>>>: $method $path $protocol " >&2
+  Log "INFO" "handler-utils: Received request>>>>: $method $path $protocol "
   #echo "QUERY STRING IS: $query_string" >&2
 
   # parse headers into json objects of key value pairs, taking care to handle the case where the request may not have any headers, and return the headers as a json object.
@@ -167,7 +167,7 @@ ResolveRouteFromPath() {
  local config_path="$2"
  local route_info
 
- echo "handler-utils: Resolving route for path: $path using configuration standby..." >&2
+  Log "INFO" "handler-utils: Resolving route for path: $path using configuration standby..."
 
  # Use jq to select the longest matching wildcard route, then extract the
  # route type and handler script for sub-handler routes.
@@ -192,10 +192,10 @@ ResolveRouteFromPath() {
 
  # where we have found a matching route return it.
  if [[ -n "$route_info" ]]; then
-     echo "handler-utils: Successfully resolved route for path: $path" >&2
+    Log "INFO" "handler-utils: Successfully resolved route for path: $path"
      echo "$route_info"
   else
-        echo "handler-utils: No matching route found for path: $path" >&2
+        Log "INFO" "handler-utils: No matching route found for path: $path"
         echo "" # return empty string to indicate no route found 
  fi
    
@@ -206,7 +206,7 @@ ResolveRouteFromPath() {
 # parameter to this function. Where the specified route type is unsupported an appropriate error
 # response will be generated and returned to the client.
 HandleRequestAccordingToRoute() {
-  echo "handler-utils: Handling request for path: $path according to resolved route..." >&2
+  Log "INFO" "handler-utils: Handling request for path: $path according to resolved route..."
   local route_info="$1"
   local path="$2"
   local method="$3"
@@ -226,9 +226,9 @@ HandleRequestAccordingToRoute() {
         handleBashletRouteRequest "$route_info" "$path" "$method" "$protocol" "$request_json_object"
         ;;
     *)
-        echo "root-handler: Unsupported route type: $route_type for path: $path, sending error response." >&2
+        Log "ERROR" "root-handler: Unsupported route type: $route_type for path: $path, sending error response."
         DispatchErrorResponse 500 "Unsupported route type: $route_type for path: $path" "application/json" "$path" "$method" "$request_json_object"
-        echo "root-handler: Default response sent for path: $path, closing connection." >&2
+        Log "INFO" "root-handler: Default response sent for path: $path, closing connection."
         ;;
   esac
 
@@ -285,7 +285,7 @@ DispatchErrorResponse(){
    # esnure that the status code begins with a 4 or 5 to indicate a client or server error respectively, 
    # if not we default to a 500 internal server error.
     if [[ ! "$statusCode" =~ ^[45] ]]; then
-        echo "handler-utils: Invalid error status code: $statusCode, defaulting to 500 Internal Server Error." >&2
+      Log "ERROR" "handler-utils: Invalid error status code: $statusCode, defaulting to 500 Internal Server Error."
         statusCode=500
         content="Internal Server Error - An invalid error status code was provided. The path was: $path. The  method was: $method. The original error status code was: $1. The original error content was: $content"
     fi
@@ -317,7 +317,7 @@ DispatchErrorResponse(){
      # read current server configuration data from the JSON config file.
     configData="$(ReadServerJSONConfig)"
     if [[ -z "$configData" ]]; then
-        echo "handler-utils: failed to read server configuration data from config file." >&2
+      Log "ERROR" "handler-utils: failed to read server configuration data from config file."
         DispatchErrorResponse 500 "Failed to read server configuration data from config file." "application/json" "$path" "$method" "$fullRequestObject"
         return 1
     fi
@@ -325,12 +325,12 @@ DispatchErrorResponse(){
     printf "HTTP/1.1 204 No Content\r\n"
 
     if [[ -z "$origin" ]]; then
-        echo "handler-utils: No Origin header found in request for path: $path, method: $method.." >&2
+      Log "INFO" "handler-utils: No Origin header found in request for path: $path, method: $method.."
     else
-        # if the requests originates from localhost..
-        echo "handler-utils: Origin header found in request for path: $path, method: $method, origin: $origin" >&2
+      # if the requests originates from localhost..
+      Log "INFO" "handler-utils: Origin header found in request for path: $path, method: $method, origin: $origin"
         if [[ "$origin" =~ ^https?://localhost(:[0-9]+)?$ ]]; then
-            echo "handler-utils: Request for path: $path, method: $method is from localhost, sending appropriate CORS headers." >&2
+        Log "INFO" "handler-utils: Request for path: $path, method: $method is from localhost, sending appropriate CORS headers."
             printf "Access-Control-Allow-Origin: %s\r\n" "$origin" 
             printf "Access-Control-Allow-Credentials: true\r\n"
 
@@ -341,7 +341,7 @@ DispatchErrorResponse(){
              printf "Connection: close\r\n"
              printf "\r\n" 
         else
-            echo "handler-utils: Request for path: $path, method: $method is NOT from localhost, sending appropriate CORS headers." >&2
+            Log "INFO" "handler-utils: Request for path: $path, method: $method is NOT from localhost, sending appropriate CORS headers."
 
             # read the allowed origins from the server config and check if the origin is in the list, if not we will return a 403 Forbidden response.
             local allowed_origins
@@ -349,14 +349,14 @@ DispatchErrorResponse(){
 
             # if the allowed origins is empty or null we will return a 403 Forbidden response.
             if [[ -z "$allowed_origins" || "$allowed_origins" == "null" ]]; then
-                echo "handler-utils: No allowed origins defined in server config, sending 403 Forbidden response for path: $path, method: $method, origin: $origin" >&2
+              Log "ERROR" "handler-utils: No allowed origins defined in server config, sending 403 Forbidden response for path: $path, method: $method, origin: $origin"
                 DispatchErrorResponse 403 "No allowed origins defined in server config." "application/json" "$path" "$method" "$fullRequestObject"
                 return 1
             fi
 
             # if the allowed origins is all i.e "*" we will allow the request and send the appropriate CORS headers.
             if [[ "$allowed_origins" == "*" ]]; then
-                echo "handler-utils: Allowed origins is set to '*', allowing request for path: $path, method: $method, origin: $origin" >&2
+                Log "INFO" "handler-utils: Allowed origins is set to '*', allowing request for path: $path, method: $method, origin: $origin"
                 printf "Access-Control-Allow-Origin: *\r\n"
 
                 # set the remaining CORS headers for the OPTIONS response, as appropriate.
@@ -368,13 +368,13 @@ DispatchErrorResponse(){
             else
                 # check if the origin is in the list of allowed origins, if not we will return a 403 Forbidden response.
                 if ! echo "$allowed_origins" | jq -e --arg origin "$origin" 'index($origin)' >/dev/null; then
-                    echo "handler-utils: Origin: $origin is NOT in the list of allowed origins, sending 403 Forbidden response for path: $path, method: $method" >&2
+                    Log "ERROR" "handler-utils: Origin: $origin is NOT in the list of allowed origins, sending 403 Forbidden response for path: $path, method: $method"
                     DispatchErrorResponse 403 "Origin: $origin is NOT in the list of allowed origins." "application/json" "$path" "$method" "$fullRequestObject"
                     return 1
                 fi
 
                 # if we reach here it means the origin is in the list of allowed origins, so we will send the appropriate CORS headers.
-                echo "handler-utils: Origin: $origin is in the list of allowed origins, sending appropriate CORS headers for path: $path, method: $method" >&2
+                Log "INFO" "handler-utils: Origin: $origin is in the list of allowed origins, sending appropriate CORS headers for path: $path, method: $method"
                 printf "Access-Control-Allow-Origin: %s\r\n" "$origin"
 
                 # set the remaining CORS headers for the OPTIONS response, as appropriate.
@@ -415,7 +415,7 @@ ComputePassphrase() {
 # where the route type is unsupported or no valid script is provided an appropriate error response will be generated 
 # and returned to the client.
 handleSubHandlerRouteRequest() {
-  echo "handler-utils: Handling request for path: $path according to SubHandler route type..." >&2
+  Log "INFO" "handler-utils: Handling request for path: $path according to SubHandler route type..."
   local route_info="$1"
   local request_path="$2"
   local request_method="$3"
@@ -430,7 +430,7 @@ handleSubHandlerRouteRequest() {
   if [[ "$route_type" == "sub-handler" && -n "$route_sub_handler_script" ]]; then
     route_sub_handler_script="${route_sub_handler_script#/}"  # parse the relative sub-handler script path from the config, ensuring we remove any leading slash to avoid issues when constructing the full path.
     route_sub_handler_script="${SCRIPT_DIR}/${route_sub_handler_script}" # construct the full path to the sub-handler script by combining the basescript directory path with the relative path from the config.
-    echo "root-handler: Routing to sub-handler script: $route_sub_handler_script for path: $request_path" >&2
+    Log "INFO" "root-handler: Routing to sub-handler script: $route_sub_handler_script for path: $request_path"
     
     # before delegating to the sub-handler script we need to strip the matched prefix from the path, this is because the sub-handlers will 
     # expect paths to be relative to their own defined route path, for example if we have a route with the path "/usr" and a request comes in 
@@ -441,7 +441,7 @@ handleSubHandlerRouteRequest() {
     "$route_sub_handler_script" "$request_path" "$request_method" "$request_protocol" "/$stripped_request_path" "$request_json_object"
     return $?
   else
-    echo "handler-utils: Unsupported route type: $route_type or script definition for SubHandler route type associated with path: $request_path, sending default response." >&2
+    Log "ERROR" "handler-utils: Unsupported route type: $route_type or script definition for SubHandler route type associated with path: $request_path, sending default response."
     DispatchErrorResponse 500 "Unsupported route type: $route_type for path: $request_path" "application/json" "$request_path" "$request_method" "$request_json_object"
   fi
 }
@@ -452,7 +452,7 @@ handleSubHandlerRouteRequest() {
 #returning its contents in the response body, where the route type is unsupported or no valid file path is provided 
 #an appropriate error response will be generated and returned to the client.
 handleStaticRouteRequest() {
-  echo "handler-utils: Handling request for path: $path according to Static route type..." >&2
+  Log "INFO" "handler-utils: Handling request for path: $path according to Static route type..."
 
   # for static routes we will have a path to a static resource i.e. file, defined in the config
   # we parse those details here then attempt to read the file into memory and return its contents
@@ -477,7 +477,7 @@ handleStaticRouteRequest() {
     absolute_file_path=""
     if [[ "$route_path" == *"*" ]]; then
      
-        echo "handler-utils: Handling request for wildcard static route, stripping wildcard character AND trailing slash (if it exists) from route path..." >&2
+        Log "INFO" "handler-utils: Handling request for wildcard static route, stripping wildcard character AND trailing slash (if it exists) from route path..."
         
         # we need to strip the wildcard character from the end of the route path, we also want to ensure we strip any trailing slash that may be left after removing 
         # the wildcard character as this will interfere with our path resolution logic later on.
@@ -504,55 +504,55 @@ handleStaticRouteRequest() {
             absolute_file_path="${SCRIPT_DIR}/${base}"
           fi
         fi
-        echo "handler-utils: final file path for static (wildcard) route is: $absolute_file_path" >&2
+        Log "INFO" "handler-utils: final file path for static (wildcard) route is: $absolute_file_path"
 
     else
-      echo "handler-utils: Handling request for non-wildcard static route..." >&2  
+      Log "INFO" "handler-utils: Handling request for non-wildcard static route..."  
       # build up absilute path to the file by concatenting the base script directory with the file path defined in the config for this route, this will allow us to correctly resolve the file on disk that corresponds to the request.
       absolute_file_path="${SCRIPT_DIR}/${route_file_path#/}"
-      echo "handler-utils: final file path for static route is: $absolute_file_path" >&2
+      Log "INFO" "handler-utils: final file path for static route is: $absolute_file_path"
     fi
 
 
     # next, irrespective of how we derive the path to file, we validate that the final file path exists on the system before proceeding.
     if [[ -f "$absolute_file_path" ]]; then
-      echo "handler-utils: Successfully found static resource for path: $path at file path: $route_file_path" >&2
+      Log "INFO" "handler-utils: Successfully found static resource for path: $path at file path: $route_file_path"
 
       # Determine MIME type from filename and stream the file to the client
       local content_type
       content_type=$(getMimeType "$absolute_file_path")
       dispatchFileResponse "$absolute_file_path" "$content_type"
 
-    echo "handler-utils: Static resource response sent for path: $path, closing connection." >&2
+    Log "INFO" "handler-utils: Static resource response sent for path: $path, closing connection."
     elif [[ -d "$absolute_file_path" ]]; then
       
       #echo "absolute_file_path: $absolute_file_path, script file path: $SCRIPT_DIR" >> log.txt
 
-      echo "handler-utils: Static resource path is a directory for path: $path at file path: $route_file_path, looking for default index file..." >&2
+      Log "INFO" "handler-utils: Static resource path is a directory for path: $path at file path: $route_file_path, looking for default index file..."
       # Check if there's an index.html file in the directory
       if [[ -f "$absolute_file_path/index.html" ]]; then
         dispatchFileResponse "$absolute_file_path/index.html" "text/html"
-        echo "handler-utils: Static resource response sent for path: $path, found index.html, closing connection." >&2
+        Log "INFO" "handler-utils: Static resource response sent for path: $path, found index.html, closing connection."
       #final check: if the provided path is the server www root and no index.html exist we return the default mocktail welcome page to the client.
       elif [[ "$absolute_file_path" == "/home/gilesthompson/erudite/shareful-oss/shareful-utils-mocktail/res/usr/www" ]]; then
         dispatchFileResponse "${SCRIPT_DIR}/res/handlers/internal/xmocktail-welcome-page.html" "text/html"
-        echo "handler-utils: Static resource response sent for path: $path, found index.htm, closing connection." >&2
+        Log "INFO" "handler-utils: Static resource response sent for path: $path, found index.htm, closing connection."
       else
         DispatchErrorResponse 404 "The provided path references a directory that DOES NOT contain an index.html file" "application/json" "$request_path" "$request_method" "$request_json_object"
       fi
     else
-      echo "handler-utils: Static resource file not found for path: $path at file path: $route_file_path, the absolute file path was: $absolute_file_path, sending error response." >&2
+      Log "ERROR" "handler-utils: Static resource file not found for path: $path at file path: $route_file_path, the absolute file path was: $absolute_file_path, sending error response."
       DispatchErrorResponse 404 "The requested resource was not found" "application/json" "$request_path" "$request_method" "$request_json_object"
     fi
   else
-    echo "handler-utils: Unsupported route type: $route_type or file path definition for Static route type associated with path: $path, sending error response." >&2
+    Log "ERROR" "handler-utils: Unsupported route type: $route_type or file path definition for Static route type associated with path: $path, sending error response."
     DispatchErrorResponse 500 "Unsupported route type: $route_type or file path definition for Static route type associated with path: $path" "application/json" "$request_path" "$request_method" "$request_json_object"
   fi    
   
 }
 
 handleBashletRouteRequest() {
-  echo "handler-utils: Handling request for path: $path according to Bashlet route type..." >&2
+  Log "INFO" "handler-utils: Handling request for path: $path according to Bashlet route type..."
   local route_info="$1"
   local request_path="$2"
   local request_method="$3"
@@ -566,19 +566,19 @@ handleBashletRouteRequest() {
   # ensure the route type is of type bashlet and a request object has been provided.
   if [[ "$route_type" == "bashlet" && -n "$request_json_object" ]]; then
 
-    echo "handler-utils: Routing to Bashlet Engine for path: $request_path" >&2
+    Log "INFO" "handler-utils: Routing to Bashlet Engine for path: $request_path"
 
     # delegate to the BashletEngine to handle the request, passing in the request object as a parameter.
     DelegateRequestToBashletEngine "$route_path" "$request_json_object" "$request_path"
   else
-    echo "handler-utils: Unsupported route type: $route_type or missing request object for Bashlet route type associated with path: $request_path, sending error response." >&2
+    Log "ERROR" "handler-utils: Unsupported route type: $route_type or missing request object for Bashlet route type associated with path: $request_path, sending error response."
     DispatchErrorResponse 500 "Unsupported route type: $route_type for path: $request_path" "application/json" "$request_path" "$request_method" "$request_json_object"
   fi    
 
 }
 
 handleJsonResponseRouteRequest(){
-    echo "handler-utils: Handling request for path: $path according to JsonResponse route type..." >&2
+    Log "INFO" "handler-utils: Handling request for path: $path according to JsonResponse route type..."
 }
 
 

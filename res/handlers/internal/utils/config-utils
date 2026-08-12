@@ -70,7 +70,7 @@ UpdateConfigFile() {
     tempFile="$(mktemp "${configPath}.tmp.XXXXXX")" || return 1
     if ! jq '.' <<< "$newConfig" > "$tempFile"; then
         rm -f "$tempFile"
-        echo "UpdateConfigFile: refusing to write invalid JSON to $configPath" >&2
+        Log "ERROR" "UpdateConfigFile: refusing to write invalid JSON to $configPath"
         return 1
     fi
     mv "$tempFile" "$configPath"
@@ -85,3 +85,14 @@ GetStoredPassphraseFromConfig() {
     readConfig="$(ReadServerJSONConfig)"
     ParseJSONConfigSecuritySetting "$readConfig" "Passphrase"
 }
+
+export -f ReadServerJSONConfig
+export -f ParseJSONConfigField
+export -f SetJSONConfigField
+export -f ParseJSONConfigGeneralSetting
+export -f ParseJSONConfigSecuritySetting
+export -f SetJSONConfigGeneralSettings
+export -f SetJSONConfigSecuritySettings
+export -f SetJSONConfigSecuritySetting
+export -f UpdateConfigFile
+export -f GetStoredPassphraseFromConfig

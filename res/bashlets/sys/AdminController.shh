@@ -18,7 +18,7 @@ doSignin(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside doSignin..." >&2
+    Log "INFO" "AdminController: inside doSignin..."
 
     # 0) PREAMBLE: Ensure we have loaded in the data required to undertake the signin process.
 
@@ -26,7 +26,7 @@ doSignin(){
     # the login attempt and return an error to the user.
     storedPassphrase="$(GetStoredPassphraseFromConfig)"
     if [ -z "$storedPassphrase" ]; then
-        echo "AdminController: No stored auth passphrase found in config file, login attempt rejected." >&2
+        Log "ERROR" "AdminController: No stored auth passphrase found in config file, login attempt rejected."
 
         local err_status_code=403
         local err_content="Forbidden - No stored auth passphrase found in config file, login attempt rejected. <a href='/sys/signup'><u><b>Please create an System Admin account</b></u></a>,before attempting to signin."
@@ -59,7 +59,7 @@ doSignin(){
     if [[ -n "$authCookie" ]]; then
         if CheckAuthSessionToken "$authCookie" "$storedPassphrase"; then
             
-            echo "AdminController: user is already logged in to a valid session, redirecting to: home" >&2
+            Log "INFO" "AdminController: user is already logged in to a valid session, redirecting to: home"
             
             # redirect user to the provided "signin success" url.
             DispatchBashletRedirectResponse "$successredirectURL" "$response"
@@ -85,7 +85,7 @@ doSignin(){
 
     # Next, compare the computed passphrase with the stored passphrase, if they match then the login is successful, otherwise return an error to the user.
     if [ "$passphrase" == "$storedPassphrase" ]; then
-        echo "AdminController: login successful, redirecting to: $successredirectURL" >&2
+        Log "INFO" "AdminController: login successful, redirecting to: $successredirectURL"
 
         # generate session token for the user, which is a JSON object containing a timestamp, a random salt value and a token signature.
         sessionToken="$(GenerateAuthSessionToken "$passphrase")"
@@ -97,7 +97,7 @@ doSignin(){
         # redirect user to the provided "signin success" url.
         DispatchBashletRedirectResponse "$successredirectURL" "$response"
     else
-        echo "AdminController: login failed - invalid credentials." >&2
+        Log "ERROR" "AdminController: login failed - invalid credentials."
 
        
         # prep error message to be set back to the client as a query parameter in the redirect URL, so that the login page can display the error message to the user.
@@ -125,12 +125,12 @@ doSignup(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside doSignup..." >&2
+    Log "INFO" "AdminController: inside doSignup..."
 
     # read current server configuration data from the JSON config file.
     configData="$(ReadServerJSONConfig)"
     if [[ -z "$configData" ]]; then
-        echo "AdminController: failed to read server configuration data from config file." >&2
+        Log "ERROR" "AdminController: failed to read server configuration data from config file."
 
         local err_status_code=500
         local err_content="Internal Server Error - Failed to read server configuration data from config file (config.json). If the file exists its likely corrupted, please delete it and restart the server."
@@ -142,7 +142,7 @@ doSignup(){
     # we will reject any further signup attempts.
     existingPassphrase="$(ParseJSONConfigSecuritySetting "$configData" "Passphrase")"
     if [ -n "$existingPassphrase" ]; then
-        echo "AdminController: signup attempt rejected - admin user already exists." >&2
+        Log "ERROR" "AdminController: signup attempt rejected - admin user already exists."
 
         local err_status_code=403
         local err_content="Forbidden - An existing admin user already exists; only one admin user can be created. <a href='/sys/signin'><u><b>Please login to the existing account</b></u></a>, if you have forgotten your password please visit the password reset page. "
@@ -167,7 +167,7 @@ doSignup(){
     updatedConfigData="$(SetJSONConfigSecuritySetting "$updatedConfigData" "Email" "$email")"
 
     if [[ -z "$updatedConfigData" ]]; then
-        echo "AdminController: failed to update config data with new passphrase." >&2
+        Log "ERROR" "AdminController: failed to update config data with new passphrase."
 
         local err_status_code=500
         local err_content="Internal Server Error - Failed to update config data with the new passphrase."
@@ -201,14 +201,14 @@ doSignout(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside doSignout..." >&2
+    Log "INFO" "AdminController: inside doSignout..."
  
     # firstly validate the user is actually logged in by checking for the presence of the auth cookie in the request, 
     # if it is not present we will return an error to the user.
     authCookie="$(getAuthCookieFromRequest "$request")"
     if [[ -z "$authCookie" ]]; then
 
-        echo "AdminController: signout attempt rejected - user is not currently logged in." >&2
+        Log "ERROR" "AdminController: signout attempt rejected - user is not currently logged in."
 
         local err_status_code=400
         local err_content="Bad Request - User is not currently logged in."
@@ -235,7 +235,7 @@ viewAdminDashboard(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside viewAdminDashboard, forwarding to admin dashboard..." >&2
+    Log "INFO" "AdminController: inside viewAdminDashboard, forwarding to admin dashboard..."
 
     ForwardBashletRequest "/sys/ui/mocktail-dashboard.html"
 
@@ -247,7 +247,7 @@ viewGeneralSettings(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside viewGeneralSettingsPage, forwarding to general settings page..." >&2
+    Log "INFO" "AdminController: inside viewGeneralSettingsPage, forwarding to general settings page..."
 
     ForwardBashletRequest "/sys/ui/mocktail-general-settings.html"
 
@@ -259,7 +259,7 @@ viewGeneralSettingsDetail(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside viewGeneralSettingsDetailPage, forwarding to general settings detail page..." >&2
+    Log "INFO" "AdminController: inside viewGeneralSettingsDetailPage, forwarding to general settings detail page..."
 
 
 
@@ -281,7 +281,7 @@ apiGetServerStats(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside apiGetServerStats..." >&2
+    Log "INFO" "AdminController: inside apiGetServerStats..."
 
     # get the Mocktail server's process utilization history.
     local processUtilizationHistory
@@ -315,12 +315,12 @@ apiGetSettings(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside apiGetSettings..." >&2
+    Log "INFO" "AdminController: inside apiGetSettings..."
 
     # read current server configuration data from the JSON config file.
     configData="$(ReadServerJSONConfig)"
     if [[ -z "$configData" ]]; then
-        echo "AdminController: failed to read server configuration data from config file." >&2
+        Log "ERROR" "AdminController: failed to read server configuration data from config file."
 
         local err_status_code=500
         local err_content="Internal Server Error - Failed to read server configuration data from config file (config.json). If the file exists its likely corrupted, please delete it and restart the server."
@@ -339,12 +339,12 @@ apiUpdateSettings(){
     request="$1"
     response="$2"
 
-    echo "AdminController: inside apiUpdateSettings..." >&2
+    Log "INFO" "AdminController: inside apiUpdateSettings..."
 
     # read current server configuration data from the JSON config file.
     configData="$(ReadServerJSONConfig)"
     if [[ -z "$configData" ]]; then
-        echo "AdminController: failed to read server configuration data from config file." >&2
+        Log "ERROR" "AdminController: failed to read server configuration data from config file."
 
         local err_status_code=500
         local err_content="Internal Server Error - Failed to read server configuration data from config file (config.json). If the file exists its likely corrupted, please delete it and restart the server."
@@ -355,7 +355,7 @@ apiUpdateSettings(){
     # parse the posted JSON body from the request, which contains the updated settings.
     updatedSettings="$(ParseBashletRequestBody "$request")"
     if [[ -z "$updatedSettings" ]]; then
-        echo "AdminController: failed to parse updated settings from request body." >&2
+        Log "ERROR" "AdminController: failed to parse updated settings from request body."
 
         local err_status_code=400
         local err_content="Bad Request - Failed to parse updated settings from request body."

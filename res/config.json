@@ -1,11 +1,12 @@
 {
   "Name": "Mocktail System Configuration",
-  "Description": "Defines various Mocktail Server configuration properties and settings.",
+  "Description": "Defines various Mocktail Server configuration properties and settings. Log Levels are as follwos: 1: Error, 2: Warning, 3: Info, 4: Debug, 5: Trace",
   "Version": "1.0",
   "GeneralSettings": {
     "ListeningPort": 3333,
     "MaxConcurrentProcesses": 55,
-    "MaxHandlerProcessRuntime": 11
+    "MaxHandlerProcessRuntime": 11,
+    "LogLevel": 3  
   },
   "SecuritySettings": {
     "Email": "gilest@hotmail.co.uk",

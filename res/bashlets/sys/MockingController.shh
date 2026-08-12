@@ -19,6 +19,9 @@ MOCK_API_COLLECTION_ENDPOINT_STATS_KEY="mockAPICollectionEndpointStats" # key us
 # import/source the BashletContext helper functions to support parsing of the incoming request object and constructing the response object.
 source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
 
+# source the config helpers so Log can resolve the configured log level.
+source "$SCRIPT_DIR/res/handlers/internal/utils/config-utils"
+
 # import/source the MockingController helper functions to support the return of responses to clients as defined in the Mock API collection JSON files.
 source "$SCRIPT_DIR/res/handlers/internal/utils/mock-utils"
 
@@ -29,7 +32,7 @@ source "$SCRIPT_DIR/res/handlers/internal/utils/mock-utils"
 # key-value store for immediate access.
 init(){
 
-   echo "MockingController: Initializing MockingController Bashlet..." >&2
+    Log "INFO" "MockingController: Initializing MockingController Bashlet..."
 
    # load all mock api collection from the host file system into memory and store them to the BashletContext key-value store, 
    # using their Collection ID as the key, this allows the MockingController to resolve requests to specific Mock API endpoints...
@@ -42,7 +45,7 @@ init(){
 
    mockAPICollectionMetaDataArr=$(KVRead "$MOCK_API_COLLECTION_METADATA_KEY")
 
-   echo "Loaded Mock API collections metadata: $mockAPICollectionMetaDataArr" >&2
+    Log "INFO" "Loaded Mock API collections metadata: $mockAPICollectionMetaDataArr"
 
 }
 
@@ -126,7 +129,7 @@ viewMockingDashboard(){
     request="$1"
     response="$2"
 
-    echo "MockingController: Inside viewMockingDashboard function..." >&2
+    Log "INFO" "MockingController: Inside viewMockingDashboard function..."
 
     ForwardBashletRequest "/sys/ui/mocktail-mocking-dashboard.html"
    
@@ -153,7 +156,7 @@ apiListMockAPICollections(){
     request="$1"
     response="$2"
 
-    echo "MockingController: Inside apiListMockAPICollections function..." >&2
+    Log "INFO" "MockingController: Inside apiListMockAPICollections function..."
 
     # attempt to load mock api collection metadata from the BashletContext key-value store,
     # if it exists, otherwise return an empty array. The data should have been loaded into 
@@ -177,7 +180,7 @@ apiGetMockAPICollection(){
     request="$1"
     response="$2"
 
-    echo "MockingController: Inside apiGetMockAPICollection function..." >&2
+    Log "INFO" "MockingController: Inside apiGetMockAPICollection function..."
 
     # parse the collection id from the request path.
     local collectionId
@@ -212,7 +215,7 @@ apiCreateMockAPICollection(){
     request="$1"
     response="$2"
 
-    echo "MockingController: Inside apiCreateMockAPICollection function..." >&2
+    Log "INFO" "MockingController: Inside apiCreateMockAPICollection function..."
 
     # parse the posted JSON body from the request, which contains the new Mock API collection details,
     requestBody="$(ParseBashletRequestBody "$request")"
@@ -284,7 +287,7 @@ apiUpdateMockAPICollection(){
     request="$1"
     response="$2"
 
-    echo "MockingController: Inside apiUpdateMockAPICollection function..." >&2
+    Log "INFO" "MockingController: Inside apiUpdateMockAPICollection function..."
 
     # parse the collection id from the request path.
     collectionId=$(ParseBashletRequestPathParam "$request" "collectionId")
@@ -353,7 +356,7 @@ apiDeleteMockAPICollection(){
     request="$1"
     response="$2"
 
-    echo "MockingController: Inside apiDeleteMockAPICollection function..." >&2
+    Log "INFO" "MockingController: Inside apiDeleteMockAPICollection function..."
 
      # parse the collection id from the request path.
      collectionId=$(ParseBashletRequestPathParam "$request" "collectionId")
@@ -409,7 +412,7 @@ apiCreateMockAPICollectionEndpoint(){
     request="$1"
     response="$2"
 
-    echo "MockingController: Inside apiCreateMockAPICollectionEndpoint function..." >&2
+    Log "INFO" "MockingController: Inside apiCreateMockAPICollectionEndpoint function..."
 
     # parse the collection id from the request path.
     local collectionId=$(ParseBashletRequestPathParam "$request" "collectionId")
@@ -423,7 +426,7 @@ apiCreateMockAPICollectionEndpoint(){
         return 1
     fi
 
-    echo "MockingController: Parsed collectionId: $collectionId" >&2
+    Log "INFO" "MockingController: Parsed collectionId: $collectionId"
 
     # if the collection id is empty, return a 400 error to the client.
     if [ -z "$collectionId" ]; then
@@ -536,7 +539,7 @@ apiUpdateMockAPICollectionEndpoint(){
     request="$1"
     response="$2"
 
-    echo "MockingController: Inside apiUpdateMockAPICollectionEndpoint function..." >&2
+    Log "INFO" "MockingController: Inside apiUpdateMockAPICollectionEndpoint function..."
 
     # we start by parsing both path parameters from the request, first the collection id...
     local collectionId=$(ParseBashletRequestPathParam "$request" "collectionId")
@@ -566,7 +569,7 @@ apiUpdateMockAPICollectionEndpoint(){
     local existingMockAPICollection
     existingMockAPICollection=$(KVRead "$collectionId")
 
-    echo "Existing Mock API Collection: $existingMockAPICollection" >&2
+    Log "INFO" "Existing Mock API Collection: $existingMockAPICollection"
 
     # next check that the endpoint exists in the Mock API collection, if it does not exist, return a 404 error to the client.
     # if an endpoint with the specified path and method already exists in the Mock API collection, return a 400 error to the client.
@@ -659,7 +662,7 @@ apiDeleteMockAPICollectionEndpoint(){
     response="$2"   
 
 
-    echo "MockingController: Inside apiDeleteMockAPICollectionEndpoint function..." >&2
+    Log "INFO" "MockingController: Inside apiDeleteMockAPICollectionEndpoint function..."
 
     # we start by parsing both path parameters from the request, first the collection id...
     local collectionId
@@ -691,7 +694,7 @@ apiDeleteMockAPICollectionEndpoint(){
     local existingMockAPICollection
     existingMockAPICollection=$(KVRead "$collectionId")
 
-    echo "Existing Mock API Collection: $existingMockAPICollection" >&2
+    Log "INFO" "Existing Mock API Collection: $existingMockAPICollection"
 
     # next check that the endpoint exists in the Mock API collection, if it does not exist, return a 404 error to the client.
     # if an endpoint with the specified path and method already exists in the Mock API collection, return a 400 error to the client.
@@ -727,7 +730,7 @@ apiGetMockAPICollectionEndpointStats(){
     request="$1"
     response="$2"
 
-    echo "MockingController: Inside apiGetMockAPICollectionEndpointStats function..." >&2
+    Log "INFO" "MockingController: Inside apiGetMockAPICollectionEndpointStats function..."
 
     # attempt to load mock api endpoint stats from the BashletContext key-value store,
     # if it exists, otherwise return an empty array. The data should have been loaded into 
@@ -920,7 +923,7 @@ invokeEndpoint(){
         endpointPath="${endpointPath%/}"
     fi
 
-    echo "The endpoint path is: $endpointPath" >&2
+    Log "INFO" "The endpoint path is: $endpointPath"
 
     # parse request method, used when resolving the endpoint definition.
     requestMethod=$(ParseBashletRequestMethod "$request")
@@ -930,7 +933,7 @@ invokeEndpoint(){
 
     # where a collection could not be found with the provided collection id, return a 404 error to the client.
     if [[ $? -ne 0 ]]; then
-        echo "MockingController: No Mock API collection found with Id: $collectionId" >&2
+        Log "ERROR" "MockingController: No Mock API collection found with Id: $collectionId"
         
         # prep and return 404 error
         local err_status_code=404
@@ -939,13 +942,13 @@ invokeEndpoint(){
         return 1
     fi
 
-    echo "MockingController: Resolved Mock API Collection Id: $collectionId from request path." >&2
+    Log "INFO" "MockingController: Resolved Mock API Collection Id: $collectionId from request path."
 
     # resolve target endpoint from the collection, preferring exact static path matches
     # before falling back to parameterized path matches (e.g. /users/{userId}).
     matchedEndpoint=$(ResolveMockEndpoint "$mockAPICollection" "$endpointPath" "$requestMethod")
     if [[ $? -ne 0 || -z "$matchedEndpoint" ]]; then
-        echo "MockingController: No endpoint matched path '$endpointPath' for method '$requestMethod' in collection '$collectionId'" >&2
+        Log "ERROR" "MockingController: No endpoint matched path '$endpointPath' for method '$requestMethod' in collection '$collectionId'"
 
         local err_status_code=404
         local err_content="Not Found - No endpoint matched path: $endpointPath for method: $requestMethod"
@@ -953,7 +956,7 @@ invokeEndpoint(){
         return 1
     fi
 
-    echo "MockingController: Resolved Mock API Endpoint for path '$endpointPath' and method '$requestMethod' in collection '$collectionId'" >&2
+    Log "INFO" "MockingController: Resolved Mock API Endpoint for path '$endpointPath' and method '$requestMethod' in collection '$collectionId'"
 
     # update endpoint stats to reflect that the endpoint has been invoked, these stats will be ultimately used by the Mocking UI dashboard.
     updateMockAPICollectionEndpointStats "$collectionId" "$matchedEndpoint"
@@ -972,10 +975,10 @@ lookupMockAPICollectionById(){
     # attempt to get value from the BashletContexts key-value store
     if  KVExists "$collectionId"; then
         mock_json=$(KVRead "$collectionId")
-        echo "MockingController: Found Mock API collection with Id: $collectionId" >&2
+        Log "INFO" "MockingController: Found Mock API collection with Id: $collectionId"
         echo "$mock_json"
     else
-        echo "MockingController: No Mock API collection found with Id: $collectionId" >&2
+        Log "ERROR" "MockingController: No Mock API collection found with Id: $collectionId"
         return 1
     fi
 
@@ -997,7 +1000,7 @@ loadMockAPICollections(){
    for mock_file in "$mockAPICollectionsDirPath"/*.json; do
        [[ -e "$mock_file" ]] || continue
 
-        echo "MockingController: Loading Mock API collection from file: $mock_file" >&2
+        Log "INFO" "MockingController: Loading Mock API collection from file: $mock_file"
 
         mock_json=$(ReadMockAPICollection "$mock_file")
 
@@ -1022,7 +1025,7 @@ loadMockAPICollections(){
         # 3. This update now safely persists in parent memory!
         mockAPICollectionMetaDataArr="$(AppendJSONArrayItem "$mockAPICollectionMetaDataArr" "$mockAPICollectionMetadata")"
 
-        echo "MockingController: Loaded Mock API collection with Id: $collectionId and Name: $name" >&2
+        Log "INFO" "MockingController: Loaded Mock API collection with Id: $collectionId and Name: $name"
 
     done
  
@@ -1069,13 +1072,13 @@ generateResponseFromMatchedEndpoint(){
     # if the response body is a string is a single string equal to "ECHO" (case insensitive) then generate an echo response, 
     # the body provided in the request. Is merely echoed back as the response body.
     if [[ "${responseBody,,}" == "echo" ]]; then
-        echo "MockingController: Generating dynamic response for matched endpoint." >&2
+        Log "INFO" "MockingController: Generating dynamic response for matched endpoint."
         generateEchoedResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
     elif [[ "$statusCode" == "302" ]]; then
-        echo "MockingController: Generating redirect response for matched endpoint." >&2
+        Log "INFO" "MockingController: Generating redirect response for matched endpoint."
         generateRedirectResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
     else
-        echo "MockingController: Generating static response for matched endpoint." >&2
+        Log "INFO" "MockingController: Generating static response for matched endpoint."
         generateStaticResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
     fi
    
@@ -1095,7 +1098,7 @@ generateEchoedResponseFromMatchedEndpoint(){
     # request body is used to define the response body that will be returned.
     requestMethod="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Method')"
     if [[ "$requestMethod" != "POST" ]]; then
-        echo "MockingController: Echo responses can only be generated for POST requests, but the matched endpoint is defined for method: $requestMethod" >&2
+        Log "ERROR" "MockingController: Echo responses can only be generated for POST requests, but the matched endpoint is defined for method: $requestMethod"
         local err_status_code=400
         local err_content="Bad Request - Echo responses can only be generated for POST requests, but the matched endpoint is defined for method: $requestMethod"
         SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
@@ -1134,7 +1137,7 @@ generateStaticResponseFromMatchedEndpoint(){
 
     # if dynamic parameter substitution is enabled, substitute the parameters in the response body.
     if [[ "$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.EnableDynamicParamSubstitution // false')" == "true" ]]; then
-        echo "MockingController: Dynamic parameter substitution is enabled for matched endpoint, substituting parameters in response body." >&2
+        Log "INFO" "MockingController: Dynamic parameter substitution is enabled for matched endpoint, substituting parameters in response body."
         responseBody="$(executeDynamicParameterSubstitution "$request" "$matchedEndpoint")"
     fi
 
@@ -1161,7 +1164,7 @@ generateRedirectResponseFromMatchedEndpoint(){
     # for 302 status codes.
     statusCode="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Response.StatusCode // 302')"
     if [[ "$statusCode" != "302" ]]; then
-        echo "MockingController: Redirect responses can only be generated for 302 status codes, but the matched endpoint is defined for status code: $statusCode" >&2
+        Log "ERROR" "MockingController: Redirect responses can only be generated for 302 status codes, but the matched endpoint is defined for status code: $statusCode"
         local err_status_code=500
         local err_content="Internal Server Error - Redirect responses can only be generated for 302 status codes, but the matched endpoint is defined for status code: $statusCode"
         SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
@@ -1174,7 +1177,7 @@ generateRedirectResponseFromMatchedEndpoint(){
     
     # if the response body is not an array, return a 400 error to the client.
     if ! IsAnArray "$responseBody"; then
-        echo "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with a response body of type: $(GetJsonType "$responseBody")" >&2
+        Log "ERROR" "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with a response body of type: $(GetJsonType "$responseBody")"
         local err_status_code=500
         local err_content="Internal Server Error - Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with a response body of type: $(GetJsonType "$responseBody")"
         SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
@@ -1183,7 +1186,7 @@ generateRedirectResponseFromMatchedEndpoint(){
 
     #  if the response body is an array, but it is empty, return a 500 error to the client.
     if [[ $(ArrayLength "$responseBody") -eq 0 ]]; then
-        echo "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array." >&2
+        Log "ERROR" "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array."
         local err_status_code=500
         local err_content="Internal Server Error - Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array."
         SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
@@ -1211,10 +1214,10 @@ generateRedirectResponseFromMatchedEndpoint(){
         if [[ -n "$incIndex" ]]; then
             # if the inc index is provided, use that index to select the redirect url from the array, if the index is valid.
             if [[ "$incIndex" -ge 0 && "$incIndex" -lt "$arrayLength" ]]; then
-                echo "MockingController: Using provided inc index '$incIndex' to select redirect url from array of length '$arrayLength'." >&2
+                Log "INFO" "MockingController: Using provided inc index '$incIndex' to select redirect url from array of length '$arrayLength'."
                 redirectUrl="${redirectUrls[$incIndex]}"
             else
-                echo "MockingController: The provided inc index '$incIndex' is out of bounds for the redirect urls array of length '$arrayLength'." >&2
+                Log "ERROR" "MockingController: The provided inc index '$incIndex' is out of bounds for the redirect urls array of length '$arrayLength'."
                 local err_status_code=400
                 local err_content="Bad Request - The provided inc index '$incIndex' is out of bounds for the redirect urls array of length '$arrayLength'."
                 SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
@@ -1223,7 +1226,7 @@ generateRedirectResponseFromMatchedEndpoint(){
         elif [[ -n "$excIndex" ]]; then
             # if the exc index is provided, exclude that index from the array and select a random redirect url from the remaining urls, if the index is valid.
             if [[ "$excIndex" -ge 0 && "$excIndex" -lt "$arrayLength" ]]; then
-                echo "MockingController: Using provided exc index '$excIndex' to exclude redirect url from array of length '$arrayLength'." >&2
+                Log "INFO" "MockingController: Using provided exc index '$excIndex' to exclude redirect url from array of length '$arrayLength'."
                 # create a new array excluding the specified index
                 local filteredRedirectUrls=()
                 for i in "${!redirectUrls[@]}"; do
@@ -1234,7 +1237,7 @@ generateRedirectResponseFromMatchedEndpoint(){
                 # select a random redirect url from the filtered array
                 local filteredArrayLength=${#filteredRedirectUrls[@]}
                 if [[ $filteredArrayLength -eq 0 ]]; then
-                    echo "MockingController: The provided exc index '$excIndex' excludes all redirect urls from the array, resulting in an empty array." >&2
+                    Log "ERROR" "MockingController: The provided exc index '$excIndex' excludes all redirect urls from the array, resulting in an empty array."
                     local err_status_code=400
                     local err_content="Bad Request - The provided exc index '$excIndex' excludes all redirect urls from the array, resulting in an empty array."
                     SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
@@ -1242,7 +1245,7 @@ generateRedirectResponseFromMatchedEndpoint(){
                 fi
                 redirectUrl="${filteredRedirectUrls[RANDOM % $filteredArrayLength]}"
             else
-                echo "MockingController: The provided exc index '$excIndex' is out of bounds for the redirect urls array of length '$arrayLength'." >&2
+                Log "ERROR" "MockingController: The provided exc index '$excIndex' is out of bounds for the redirect urls array of length '$arrayLength'."
                 local err_status_code=400
                 local err_content="Bad Request - The provided exc index '$excIndex' is out of bounds for the redirect urls array of length '$arrayLength'."
                 SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
@@ -1250,11 +1253,11 @@ generateRedirectResponseFromMatchedEndpoint(){
             fi
         else
             # if neither inc nor exc are provided, select a random redirect url from the array.
-            echo "MockingController: No inc or exc index provided, selecting a random redirect url from array of length '$arrayLength'." >&2
+            Log "INFO" "MockingController: No inc or exc index provided, selecting a random redirect url from array of length '$arrayLength'."
             redirectUrl="${redirectUrls[RANDOM % $arrayLength]}"
         fi
     else
-        echo "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array." >&2
+        Log "ERROR" "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array."
         local err_status_code=500
         local err_content="Internal Server Error - Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array."       
         SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
@@ -1291,7 +1294,7 @@ executeDynamicParameterSubstitution(){
 
     # if the endpoint body is not an object, return a 400 error to the client.
     if ! IsAnObject "$endpointBody"; then
-        echo "MockingController: Endpoint body must be defined as an object, but the matched endpoint is defined with a body of type: $(GetJsonType "$endpointBody")" >&2
+        Log "ERROR" "MockingController: Endpoint body must be defined as an object, but the matched endpoint is defined with a body of type: $(GetJsonType "$endpointBody")"
         local err_status_code=500
         local err_content="Internal Server Error - Endpoint body must be defined as an object, but the matched endpoint is defined with a body of type: $(GetJsonType "$endpointBody")"
         SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
@@ -1303,7 +1306,7 @@ executeDynamicParameterSubstitution(){
         # check if the request has a query string parameter with the same name as the key in the endpoint body, if so, override the value in the endpoint body with the value from the request parameter.
         requestParamValue="$(ParseBashletRequestQueryStringParam "$request" "$key")"
         if [[ -n "$requestParamValue" ]]; then
-            echo "MockingController: Overriding endpoint body attribute '$key' with value from request parameter: $requestParamValue" >&2
+            Log "INFO" "MockingController: Overriding endpoint body attribute '$key' with value from request parameter: $requestParamValue"
             endpointBody="$(SetMockAPICollectionField "$endpointBody" ".$key" "$requestParamValue")"
         fi
     done < <(ParseMockAPICollectionField "$endpointBody" 'to_entries[] | "\(.key)\t\(.value)"') 

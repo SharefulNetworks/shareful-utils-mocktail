@@ -1,6 +1,6 @@
 #!/bin/bash
 
-Log "INFO" "BashletEngine: Loaded BashletEngine component.."
+Log "DEBUG" "BashletEngine: Loaded BashletEngine component.."
 
 # source the bashlet-utils script, which provides utility functions for bashlet operations, including parsing request objects and other common tasks.
 source "${SCRIPT_DIR}/res/bashlets/internal/BashletContext"
@@ -33,7 +33,7 @@ BASHLET_ANNOTATION_METADATA=""
 # public facing functions the BashletEngine exports.
 InitBashletEngine() {
 
-    Log "INFO" "BashletEngine: Initializing Bashlet Engine..."
+   Log "DEBUG" "BashletEngine: Initializing Bashlet Engine..."
 
   # resolve bashlets from the route configs, which will populate the ROUTE_PATH_TO_BASHLET_PATH associative array.
   resolveBashletsFromRouteConfigs
@@ -55,7 +55,7 @@ InitBashletEngine() {
 
 DelegateRequestToBashletEngine() {
 
-    Log "INFO" "BashletEngine: Delegating request to bashlet..."
+   Log "DEBUG" "BashletEngine: Delegating request to bashlet..."
   
     # obtain references to the route path and request object passed in as arguments.
     local route_path="$1"
@@ -93,7 +93,7 @@ DelegateRequestToBashletEngine() {
     fi
         
 
-    Log "INFO" "BashletEngine: Delegating request to bashlet: $absolute_bashlet_file_path"
+   Log "DEBUG" "BashletEngine: Delegating request to bashlet: $absolute_bashlet_file_path"
 
     # Source the bashlet file to make its functions available in the current shell context
     # shellcheck source=/dev/null
@@ -109,12 +109,12 @@ DelegateRequestToBashletEngine() {
     # specify relative to the containing bashlets route path.
     sanitized_request_path="$(EnsureLeadingSlash "$sanitized_request_path")"
 
-    Log "INFO" "bashlet engine: final targtet bashlet function path: $sanitized_request_path"
+   Log "DEBUG" "bashlet engine: final targtet bashlet function path: $sanitized_request_path"
 
     # parse the request method from the request object
     request_method="$(ParseBashletRequestMethod "$bashletRequest")"
 
-    Log "INFO" "bashlet engine: final targtet bashlet function method: $request_method"
+   Log "DEBUG" "bashlet engine: final targtet bashlet function method: $request_method"
 
     # var to hold target route parsed from the bashlet annotation metadata.
     local route_metadata
@@ -197,7 +197,7 @@ DelegateRequestToBashletEngine() {
             ' <<< "$BASHLET_ANNOTATION_METADATA_FROM_PARENT_PROC"
     )"
 
-    Log "INFO" "ROUTE DATA IS: $route_metadata"
+   Log "DEBUG" "ROUTE DATA IS: $route_metadata"
 
     # if no route metadata was found for the specified request path, we return a 404 error to the client 
     # to indicate that no function route in the bashlet matched the request path.
@@ -216,7 +216,7 @@ DelegateRequestToBashletEngine() {
     # to the signin page so that they can be redirected back to it after successful authentication.
     if [[ "$(jq -r '.Secure // false' <<< "$route_metadata")" == "true" ]]; then
 
-        Log "INFO" "BashletEngine: Route is marked as secure, checking if user has authenticated on the server..."
+       Log "DEBUG" "BashletEngine: Route is marked as secure, checking if user has authenticated on the server..."
 
 
         # check if the user is authenticated by checking for the presence of the auth cookie in the request object.
@@ -235,7 +235,7 @@ DelegateRequestToBashletEngine() {
         # if the auth cookoie does not exist or is invalid we redirect the user to the signin page, 
         # passing the original request path as a query parameter for redirection after successful signin.
         if [[ -z "$authCookie" ]] || [[ "$authCookieValid" -eq 1 ]]; then
-            Log "INFO" "BashletEngine: Received request to secure route: $sanitized_request_path, but user is not currently authenticated, redirecting to signin page..."
+           Log "DEBUG" "BashletEngine: Received request to secure route: $sanitized_request_path, but user is not currently authenticated, redirecting to signin page..."
 
             # Build up the signin success path, this is the location we will redirect the user to after successful signin, which is the original request path they were attempting to access.
             # NOTE: The signin success path MUST be absolute as the redirect will be peformed by the browser as a brand new request.
@@ -290,7 +290,7 @@ DelegateRequestToBashletEngine() {
 
     # otherwise where the bashlet route config is correct and the function exists, we can now invoke 
     # the bashlet function, passing in the request object and a default response object. 
-    Log "INFO" "BashletEngine: Resolved '$sanitized_request_path' -> '$func_name'"
+   Log "DEBUG" "BashletEngine: Resolved '$sanitized_request_path' -> '$func_name'"
 
     # store the route-relative path separately so existing callers can still access the mounted URL via .path,
     # while path helpers operate against the matched bashlet subpath.
@@ -325,7 +325,7 @@ DelegateRequestToBashletEngine() {
     local xRequestCompletedHeader
     xRequestCompletedHeader="$(ParseBashletResponseHeader "$bashletResponse" 'X-Request-Completed')"
         if [[ -n "$xRequestCompletedHeader" ]]; then
-        Log "INFO" "BashletEngine: Request has already been completed by the bashlet function, no further response will be sent to the client."
+       Log "DEBUG" "BashletEngine: Request has already been completed by the bashlet function, no further response will be sent to the client."
         return 0
     fi
     
@@ -337,7 +337,7 @@ DelegateRequestToBashletEngine() {
     if [[ -z "$xForwardToHeader" ]]; then
 
        # where the X-FORWARD-TO header does not exist, we can safely dispatch the response object to the caller.
-    Log "INFO" "BashletEngine: Dispatching response to client..."
+   Log "DEBUG" "BashletEngine: Dispatching response to client..."
        # dispatch the response object to the caller, which may have been modified by the bashlet function invoked.
        if [[ $request_method == "HEAD" ]]; then
            # For HEAD requests, we should not return a body, so we clear the body in the response object.
@@ -347,7 +347,7 @@ DelegateRequestToBashletEngine() {
        # if the response body wasn't set we send one of two default success responses...
        if [[ -z "$(ParseJSONField "$bashletResponse" '.body')" ]]; then
 
-           Log "INFO" "BashletEngine: Response body was not set by bashlet handler function, sending default success response..."
+          Log "DEBUG" "BashletEngine: Response body was not set by bashlet handler function, sending default success response..."
 
            if requestAcceptsHtml "$bashletRequest"; then
                ForwardBashletRequest "/sys/ui/success-200-default.html"
@@ -371,13 +371,13 @@ DelegateRequestToBashletEngine() {
                DispatchBashletResponse "$bashletResponse"
            fi
        else
-               Log "INFO" "BashletEngine: Response body was set by bashlet handler function."
+              Log "DEBUG" "BashletEngine: Response body was set by bashlet handler function."
             DispatchBashletResponse "$bashletResponse"
        fi
       
     else
        # where the X-FORWARD-TO header exists, we do not dispatch a response to the client, instead we log that the request is being forwarded.
-    Log "INFO" "BashletEngine: Request is being forwarded to: $xForwardToHeader"
+   Log "DEBUG" "BashletEngine: Request is being forwarded to: $xForwardToHeader"
        DoForwardBashletRequest
     fi
 
@@ -396,21 +396,21 @@ DelegateRequestToBashletEngine() {
 # resolveBashletsFromRouteConfigs - resolves bashlets from the route configs and populates the ROUTE_PATH_TO_BASHLET_PATH associative array.
 resolveBashletsFromRouteConfigs(){
 
-    Log "INFO" "BashletEngine: Resolving bashlets from route configs..."
+   Log "DEBUG" "BashletEngine: Resolving bashlets from route configs..."
 
   # iterate over the array of route config paths, checking for existence and readability, and if so, parse the JSON to extract any bashlet routes defined.
   for config_path in "${ROUTE_CONFIGS[@]}"; do
 
     if [[ -f "$config_path" && -r "$config_path" ]]; then
     
-    Log "INFO" "BashletEngine: Parsing route config: $config_path"
+   Log "DEBUG" "BashletEngine: Parsing route config: $config_path"
       # parse the JSON to extract bashlet routes (assuming a specific structure) and store them in an associative array or similar structure for later use.
       # This is a placeholder for actual JSON parsing logic, which may involve jq or similar tools.
       # Example: bashlet_routes=$(jq '.routes[] | select(.type == "bashlet")' "$config_path")
       # Use process substitution instead of piping into while to avoid a subshell
       # so assignments to the associative array persist in this shell.
       while IFS=$'\t' read -r route_path bashlet_path; do
-        Log "INFO" "BashletEngine: Found bashlet route: $route_path -> $bashlet_path"
+       Log "DEBUG" "BashletEngine: Found bashlet route: $route_path -> $bashlet_path"
         ROUTE_PATH_TO_BASHLET_PATH["$route_path"]="$bashlet_path"
       done < <(jq -r '
         (.routes // .Routes // [])[]
@@ -425,7 +425,7 @@ resolveBashletsFromRouteConfigs(){
     fi
   done
 
-    Log "INFO" "BashletEngine: Bashlet resolution complete."
+   Log "DEBUG" "BashletEngine: Bashlet resolution complete."
 
 }
 
@@ -479,7 +479,7 @@ parseBashletAnnotationMetadata() {
         fi
 
         if [[ -n "$params" ]]; then
-            Log "INFO" "BashletEngine: Found annotation params: $params"
+           Log "DEBUG" "BashletEngine: Found annotation params: $params"
             local token
             for token in $params; do
                 local key="${token%%=*}"
@@ -575,19 +575,19 @@ initialiseBashlet() {
     # Check if the bashlet has already been initialized we do this by consulting the BashletEngine's
     # key-value store of initialized bashlets.
     if  KVExists "$bashlet_file_path"; then
-        Log "INFO" "BashletEngine: Bashlet '$bashlet_file_path' has already been loaded, skipping init."
+       Log "DEBUG" "BashletEngine: Bashlet '$bashlet_file_path' has already been loaded, skipping init."
         return 0
     else
-        Log "INFO" "BashletEngine: Bashlet '$bashlet_file_path' has not been initialized, proceeding with init."
+       Log "DEBUG" "BashletEngine: Bashlet '$bashlet_file_path' has not been initialized, proceeding with init."
         KVStore "$bashlet_file_path" 1  # Mark as initialized in the key-value store
     
         # Check if the init function exists in the bashlet, if so we invoke it to perform any application-specific 
         # initialisation tasks, otherwise we log that no init function was found.
         if ( source "$bashlet_file_path"; declare -F init > /dev/null ); then
-            Log "INFO" "BashletEngine: init function FOUND in bashlet '$bashlet_file_path', invoking init()."
+           Log "DEBUG" "BashletEngine: init function FOUND in bashlet '$bashlet_file_path', invoking init()."
             init
         else
-            Log "INFO" "BashletEngine: init function NOT FOUND in bashlet '$bashlet_file_path', skipping init."
+           Log "DEBUG" "BashletEngine: init function NOT FOUND in bashlet '$bashlet_file_path', skipping init."
         fi
 
     fi

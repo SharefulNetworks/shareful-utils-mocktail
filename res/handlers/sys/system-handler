@@ -13,7 +13,7 @@ REQUEST_JSON_OBJECT="$5"
 
 handleRequest(){
 
-  Log "INFO" "system-handler: Received a request associated with (relative) path '$RELATIVE_PATH', processing..."
+ Log "DEBUG" "system-handler: Received a request associated with (relative) path '$RELATIVE_PATH', processing..."
 
    # issue a call into our utility method to attempt to resolve route for the (relative) path 
    # provided to us by the root handler, which will have stripped the base path associated with 

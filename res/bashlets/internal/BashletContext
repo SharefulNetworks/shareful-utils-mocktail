@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #utils to support the various bashlet operations, including synchronized local file system read and write,etc.
-Log "INFO" "BashletContext: Loaded BashletContext helper/utility functions... "
+Log "DEBUG" "BashletContext: Loaded BashletContext helper/utility functions... "
 
 
 # souce the mime-utils library, which provides a set of utility functions for working with MIME types.
@@ -182,7 +182,7 @@ KVStore(){
    value="$2"
    callingBashlet=$(basename "${BASH_SOURCE[1]}")
 
-  Log "INFO" "Store: Storing data in the BashletContext key-value store..."
+ Log "DEBUG" "Store: Storing data in the BashletContext key-value store..."
 
    # create a composite key using the the provided key and the calling bashlet name. This ensure each bashlets
    # key-value store data isolated from other bashlets, even if they use the same key names.
@@ -228,7 +228,7 @@ KVRead(){
     key="$1"
     callingBashlet=$(basename "${BASH_SOURCE[1]}")
 
-    Log "INFO" "Read: Reading data from the BashletContext key-value store..."
+   Log "DEBUG" "Read: Reading data from the BashletContext key-value store..."
 
     # create a composite key using the the provided key and the calling bashlet name.
     compositeKey="${callingBashlet}:${key}"
@@ -258,7 +258,7 @@ KVExists(){
     key="$1"
     callingBashlet=$(basename "${BASH_SOURCE[1]}")
 
-    Log "INFO" "Exists: Checking if key exists in the BashletContext key-value store..."
+   Log "DEBUG" "Exists: Checking if key exists in the BashletContext key-value store..."
 
     # create a composite key using the the provided key and the calling bashlet name.
     compositeKey="${callingBashlet}:${key}"
@@ -289,7 +289,7 @@ KVDelete(){
     key="$1"
     callingBashlet=$(basename "${BASH_SOURCE[1]}")
 
-    Log "INFO" "Delete: Deleting key from the BashletContext key-value store..."
+   Log "DEBUG" "Delete: Deleting key from the BashletContext key-value store..."
 
     # create a composite key using the the provided key and the calling bashlet name.
     compositeKey="${callingBashlet}:${key}"
@@ -698,10 +698,10 @@ SendBashletErrorResponse(){
     local err_status_message
     err_status_message="$(GetStatusMsgForCode $err_status_code)"
    if requestAcceptsHtml "$full_request_object"; then
-        Log "INFO" "SendBashletErrorResponse: client accepts HTML, redirecting to user friendly error page..."
+       Log "DEBUG" "SendBashletErrorResponse: client accepts HTML, redirecting to user friendly error page..."
         DispatchBashletRedirectResponse "/sys/ui/errors-dynamic.html?status=$err_status_code&message=$err_status_message&content=$err_content"
    else
-      Log "INFO" "SendBashletErrorResponse: client does not accept HTML, sending JSON error response..."
+     Log "DEBUG" "SendBashletErrorResponse: client does not accept HTML, sending JSON error response..."
        sendErrorResponse "$err_status_code" "$err_content" "$short_content_type"
    fi    
    return 1

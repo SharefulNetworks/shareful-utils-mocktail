@@ -3,7 +3,7 @@
 # source the config helpers so Log can resolve the configured log level.
 source "${SCRIPT_DIR}/res/handlers/internal/utils/config-utils"
 
-Log "INFO" "mime-utils: Loaded MIME type utility functions."
+Log "DEBUG" "mime-utils: Loaded MIME type utility functions."
 
 declare -A MIME_TYPES=(
     [html]="text/html"

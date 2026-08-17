@@ -31,7 +31,7 @@ trap teardown EXIT INT TERM
 
 
 startup() {
-  Log "INFO" "Starting Mocktail server..."
+ Log "INFO" "Starting Mocktail server..."
   acquireScriptDependencies
   exportUtilityFunctions # export utility functions that the handler (sub) scripts may need to reference.
   # applyServerFilePermissions # apply file permissions to all server files, including sub scripts, internal and system files.
@@ -45,16 +45,16 @@ startup() {
 
 
 teardown() {
-  Log "INFO" "Stopping Mocktail server..."
+ Log "INFO" "Stopping Mocktail server..."
   stopProcessUsageMonitor
   stopListening
   clearMMAPFiles
-  Log "INFO" "Mocktail server stopped."
+ Log "INFO" "Mocktail server stopped."
 }
 
 startListening(){
 
-  Log "INFO" "Starting Mocktail server on port $LISTEN_PORT..."
+ Log "INFO" "Starting Mocktail server on port $LISTEN_PORT..."
   
   # spin up a socat process to start listening on the specified port taking care to specify our root handler subscript.
   # ensure the base64 annotation metadata is exported in this parent shell
@@ -67,8 +67,8 @@ startListening(){
   # immediately capture the socat PID so we can manage it lifecycle, especially for cleanup.
   SOCAT_PID=$!
 
-  # log status message to indicate the server is running and listening for requests.
-  Log "INFO" "Mocktail server is running on port $LISTEN_PORT"
+  # Log status message to indicate the server is running and listening for requests.
+ Log "INFO" "Mocktail server is running on port $LISTEN_PORT"
 
   # wait for the socat process to exit, which will happen when the server is stopped or if it encounters a critical error.
   wait "$SOCAT_PID"
@@ -77,7 +77,7 @@ startListening(){
 
 stopListening(){
 
-  Log "INFO" "Stopping Mocktail server (PID: $SOCAT_PID)..."
+ Log "INFO" "Stopping Mocktail server (PID: $SOCAT_PID)..."
 
    if [[ -n "$SOCAT_PID" ]]; then
    
@@ -91,14 +91,14 @@ stopListening(){
     Log "ERROR" "No active Mocktail server process found to stop."
   fi
   
-  Log "INFO" "Mocktail server stopped."
+ Log "INFO" "Mocktail server stopped."
 
 }
 
 acquireScriptDependencies() {
 
 
-  Log "INFO" "Checking for required dependencies..."
+ Log "INFO" "Checking for required dependencies..."
 
   # check if socat is installed, which is required for the server to function.
   if ! command -v socat &> /dev/null; then
@@ -112,7 +112,7 @@ acquireScriptDependencies() {
       exit 1
     fi
   else
-    Log "INFO" "socat is already installed."
+   Log "INFO" "socat is already installed."
   fi
 
 
@@ -128,20 +128,20 @@ acquireScriptDependencies() {
       exit 1
     fi
   else
-    Log "INFO" "jq is already installed."
+   Log "INFO" "jq is already installed."
   fi
 
 
-  Log "INFO" "All dependencies are satisfied."
+ Log "INFO" "All dependencies are satisfied."
 }
 
 # configures server settings based on the main JSON system configuration file, setting global variables accordingly.
 configureServer() {
-  Log "INFO" "Configuring Mocktail server..."
+ Log "INFO" "Configuring Mocktail server..."
 
   # check if the configuration file exists, if not create a default one.
   if [[ ! -f "$SCRIPT_DIR/res/config.json" ]]; then
-    Log "INFO" "Configuration file not found at $SCRIPT_DIR/res/config.json, creating a default configuration file..."
+   Log "INFO" "Configuration file not found at $SCRIPT_DIR/res/config.json, creating a default configuration file..."
 
     # create the config file.
     createDefaultConfigFile
@@ -162,12 +162,12 @@ configureServer() {
   AUTH_TOKEN_COOKIE_NAME=$(ParseJSONConfigSecuritySetting "$config_json" "AuthTokenCookieName") || exit 1
   AUTH_TOKEN_EXPIRATION_MINUTES=$(ParseJSONConfigSecuritySetting "$config_json" "TokenExpirationMinutes") || exit 1
   ADMIN_USER_EMAIL=$(ParseJSONConfigSecuritySetting "$config_json" "Email") || exit 1
-  Log "INFO" "Mocktail server configured with MaxProcesses=$MAX_PROCESSES, MaxProcessRuntime=$MAX_PROCESS_RUNTIME, ListenPort=$LISTEN_PORT, AuthTokenExpirationMinutes=$AUTH_TOKEN_EXPIRATION_MINUTES"
+ Log "INFO" "Mocktail server configured with MaxProcesses=$MAX_PROCESSES, MaxProcessRuntime=$MAX_PROCESS_RUNTIME, ListenPort=$LISTEN_PORT, AuthTokenExpirationMinutes=$AUTH_TOKEN_EXPIRATION_MINUTES"
 }
 
 
 initialiseBashletEngine() {
-  Log "INFO" "Mocktail: Initialising Bashlet Engine..."
+ Log "INFO" "Mocktail: Initialising Bashlet Engine..."
   # call into the BashletEngine script to initialise it, which will resolve any bashlet routes defined in the route configs.
   source "${SCRIPT_DIR}/res/bashlets/internal/BashletEngine"
   InitBashletEngine
@@ -202,7 +202,8 @@ createDefaultConfigFile(){
   "GeneralSettings": {
       "ListeningPort": 3333,
       "MaxConcurrentProcesses": 55,
-      "MaxHandlerProcessRuntime": 11
+      "MaxHandlerProcessRuntime": 11,
+      "LogLevel": 3 
   },
   "SecuritySettings": {
       "Email": "",
@@ -217,7 +218,7 @@ createDefaultConfigFile(){
 }
 EOL
 
-  Log "INFO" "Default configuration file created at $SCRIPT_DIR/res/config.json"
+ Log "INFO" "Default configuration file created at $SCRIPT_DIR/res/config.json"
 }
 
 # Gets the current count of running server processes.
@@ -287,30 +288,30 @@ monitorProcessUsage() {
 # starts the process usage monitor function in the background, which will track the number of active processes over time and update a JSON file
 # with the current process count for each minute of the last hour.
 startProcessUsageMonitor() {
-  Log "INFO" "Starting process usage monitor in background..."
+ Log "INFO" "Starting process usage monitor in background..."
     monitorProcessUsage &
     PROCESS_MONITOR_PID=$!
-  Log "INFO" "Process usage monitor started in background with PID: $PROCESS_MONITOR_PID"
+ Log "INFO" "Process usage monitor started in background with PID: $PROCESS_MONITOR_PID"
 }
 
 stopProcessUsageMonitor() {
-   Log "INFO" "Stopping process usage monitor..."
+  Log "INFO" "Stopping process usage monitor..."
    if [[ -n "$PROCESS_MONITOR_PID" ]]; then
-    Log "INFO" "Stopping process usage monitor (PID: $PROCESS_MONITOR_PID)..."
+   Log "INFO" "Stopping process usage monitor (PID: $PROCESS_MONITOR_PID)..."
         kill "$PROCESS_MONITOR_PID" 2>/dev/null || true
         wait "$PROCESS_MONITOR_PID" 2>/dev/null || true
         PROCESS_MONITOR_PID=""
-    Log "INFO" "Process usage monitor stopped."
+   Log "INFO" "Process usage monitor stopped."
     else
     Log "ERROR" "No active process usage monitor found to stop."
     fi
-  Log "INFO" "Process usage monitor stopped."
+ Log "INFO" "Process usage monitor stopped."
 }
 
 clearMMAPFiles() {
-  Log "INFO" "Clearing memory-mapped files..."
+ Log "INFO" "Clearing memory-mapped files..."
   rm -f "$PROCESS_USAGE_HISTORY_STATS_MMAP_FILE" "$BASHLET_CONTEXT_KV_STORE_MMAP_FILE"
-  Log "INFO" "Memory-mapped files cleared."
+ Log "INFO" "Memory-mapped files cleared."
 }
 
 # we iterate over all sub directories from the root script directory and assign any script files found 
@@ -319,7 +320,7 @@ clearMMAPFiles() {
 # if they are executable scripts, thus we must read the first line of each file to check for the shebang (#!) 
 # which indicates it is a script file.
 applySubScriptFilePermissions() {
-  Log "INFO" "Applying file permissions..."
+ Log "INFO" "Applying file permissions..."
 
     find "$SCRIPT_DIR/res" -type f -exec bash -c '
         for file; do
@@ -330,51 +331,51 @@ applySubScriptFilePermissions() {
         done
     ' bash {} + 
    
-    Log "INFO" "File permissions applied."
+   Log "INFO" "File permissions applied."
 }
 
 
 # apply readonly permissions to any files in the internal directory, i.e we remove write permissions.
 # here we check if the path contains internal and apply the permissions accordingly.
 applyInternalFilePermissions() {
-  Log "INFO" "Applying readonly permissions to internal files..."
+ Log "INFO" "Applying readonly permissions to internal files..."
 
     find "$SCRIPT_DIR/res" -type f -path "*/internal/*" -exec chmod a-w {} +
 
-    Log "INFO" "Readonly permissions applied to internal files."
+   Log "INFO" "Readonly permissions applied to internal files."
 }
 
 
 # apply readonly permissions to any files in the system directory, i.e we remove write permissions.
 applySystemFilePermissions() {
   
-  Log "INFO" "Applying readonly permissions to system files..."
+ Log "INFO" "Applying readonly permissions to system files..."
 
     find "$SCRIPT_DIR/res" -type f -path "*/sys/*" -exec chmod a-w {} +
 
-    Log "INFO" "Readonly permissions applied to system files."
+   Log "INFO" "Readonly permissions applied to system files."
 }
 
 
 applyServerFilePermissions(){
   
-  Log "INFO" "Applying file permissions to server files..."
+ Log "INFO" "Applying file permissions to server files..."
 
     applySubScriptFilePermissions
     applyInternalFilePermissions
     applySystemFilePermissions
 
-    Log "INFO" "File permissions applied to server files."
+   Log "INFO" "File permissions applied to server files."
 }
 
-# utility function to provide structured logging to stderr, with timestamp and log level. This function will be exported
-# so it may be availble to any and all subcripts that may need to log messages to stderr, including the root handler and any sub handlers.
+# utility function to provide structured Logging to stderr, with timestamp and Log level. This function will be exported
+# so it may be availble to any and all subcripts that may need to Log messages to stderr, including the root handler and any sub handlers.
 Log() {
     local level="$1"
     local message="$2"
     local timestamp
 
-    # convert log level to numeric value for comparison with configured log level
+    # convert Log level to numeric value for comparison with configured Log level
     local level_idx
     level_idx=$(toLogLevelIdx "$level")
 

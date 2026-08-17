@@ -29,12 +29,12 @@ viewProfiles(){
     request="$1"
     response="$2"
 
-    Log "INFO" "ExampleBashlet: inside viewProfiles..."
+   Log "DEBUG" "ExampleBashlet: inside viewProfiles..."
 
 
     # parse body from the request, for GET method, we expect it to be empty
     requestBody="$(ParseBashletRequestBody "$request")"
-    Log "INFO" "THE RECEIVED REQUEST BODY: $requestBody"
+   Log "DEBUG" "THE RECEIVED REQUEST BODY: $requestBody"
 
     # build a mock response body to simulate list of user profiles...
 
@@ -76,7 +76,7 @@ createUserProfile(){
     request="$1"
     response="$2"
 
-    Log "INFO" "ExampleBashlet: inside createUserProfile..."
+   Log "DEBUG" "ExampleBashlet: inside createUserProfile..."
 
   
 
@@ -111,7 +111,7 @@ createUserProfile(){
 
     # parse the body from the received request.
     requestBody="$(ParseBashletRequestBody "$request")"
-    Log "INFO" "THE RECEIVED REQUEST BODY: $requestBody"
+   Log "DEBUG" "THE RECEIVED REQUEST BODY: $requestBody"
 
     # next parse specifc fields from the request body, we'll parse one top-level field
     # and a nested field in the  addresses array. In a real service implementation
@@ -119,11 +119,11 @@ createUserProfile(){
 
     # first the top-level guid field, which is a string.
     guid="$(ParseJSONField "$requestBody" '.guid')"
-    Log "INFO" "THE PARSED GUID FIELD: $guid"
+   Log "DEBUG" "THE PARSED GUID FIELD: $guid"
 
     # next the nested streetname field from the first address object in the addresses array.
     streetname="$(ParseJSONField "$requestBody" '.addresses[0].streetname')"
-    Log "INFO" "THE PARSED STREETNAME FIELD: $streetname"
+   Log "DEBUG" "THE PARSED STREETNAME FIELD: $streetname"
 
     # build up a mock response to indicate that the profile was created successfully.
     successResponseBody="{}"
@@ -149,12 +149,12 @@ updateUserProfile(){
     request="$1"
     response="$2"
 
-    Log "INFO" "ExampleBashlet: inside updateUserProfile..."
+   Log "DEBUG" "ExampleBashlet: inside updateUserProfile..."
 
 
     # parse body from the request, see the POST method for the expected body format.
     requestBody="$(ParseBashletRequestBody "$request")"
-    Log "INFO" "THE RECEIVED REQUEST BODY: $requestBody"
+   Log "DEBUG" "THE RECEIVED REQUEST BODY: $requestBody"
 
     # next parse specifc fields from the request body, we'll parse one top-level field
     # and a nested field from  the  addresses array. In a real service implementation
@@ -162,7 +162,7 @@ updateUserProfile(){
 
     # first the top-level guid field, which is a string.
     guid="$(ParseJSONField "$requestBody" '.guid')"
-    Log "INFO" "THE PARSED GUID FIELD: $guid"
+   Log "DEBUG" "THE PARSED GUID FIELD: $guid"
 
     # Demonstrates the parsing of a nested array field:
     # Obtain the addresses array and iterate over each address object, parsing each field as we go.
@@ -175,7 +175,7 @@ updateUserProfile(){
      county="$(ParseJSONField "$address" '.county')"
      postcode="$(ParseJSONField "$address" '.postcode')"
  
-    Log "INFO" "Parsed Address: $streetNumber, $streetname, $area, $city, $county, $postcode"
+   Log "DEBUG" "Parsed Address: $streetNumber, $streetname, $area, $city, $county, $postcode"
     done < <(ParseJSONField "$requestBody" '.addresses[]')
 
     successResponseBody="{}"
@@ -201,12 +201,12 @@ viewProfilesHead(){
     request="$1"
     response="$2"
 
-    Log "INFO" "ExampleBashlet: inside viewProfilesHead..."
+   Log "DEBUG" "ExampleBashlet: inside viewProfilesHead..."
 
     #update the response body to indicate that the login was successful, 200 is assigned by default.
     SetBashletResponseBody "$response" '{"status": "success", "message": "login successful", "endpoint": "/api/login", "method": "HEAD"}'
 
-    Log "INFO" "THE RECEIVED REQUEST OBJECT: $request"
+   Log "DEBUG" "THE RECEIVED REQUEST OBJECT: $request"
   
 
 }
@@ -221,7 +221,7 @@ viewProfiles2(){
     request="$1"
     response="$2"
 
-    Log "INFO" "ExampleBashlet: inside viewProfiles2..."
+   Log "DEBUG" "ExampleBashlet: inside viewProfiles2..."
 
 }
 
@@ -234,7 +234,7 @@ createProfiles2(){
     request="$1"
     response="$2"
 
-    Log "INFO" "ExampleBashlet: inside createProfiles2..."
+   Log "DEBUG" "ExampleBashlet: inside createProfiles2..."
 
     # for the purposes of this example we will assume that the user has failed to provide a requisite "id" query string parameter
     # and we will return a 400 Bad Request error response to the client....

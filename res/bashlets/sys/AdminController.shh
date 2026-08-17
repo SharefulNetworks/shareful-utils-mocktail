@@ -18,7 +18,7 @@ doSignin(){
     request="$1"
     response="$2"
 
-    Log "INFO" "AdminController: inside doSignin..."
+   Log "DEBUG" "AdminController: inside doSignin..."
 
     # 0) PREAMBLE: Ensure we have loaded in the data required to undertake the signin process.
 
@@ -59,7 +59,7 @@ doSignin(){
     if [[ -n "$authCookie" ]]; then
         if CheckAuthSessionToken "$authCookie" "$storedPassphrase"; then
             
-            Log "INFO" "AdminController: user is already logged in to a valid session, redirecting to: home"
+           Log "DEBUG" "AdminController: user is already logged in to a valid session, redirecting to: home"
             
             # redirect user to the provided "signin success" url.
             DispatchBashletRedirectResponse "$successredirectURL" "$response"
@@ -85,7 +85,7 @@ doSignin(){
 
     # Next, compare the computed passphrase with the stored passphrase, if they match then the login is successful, otherwise return an error to the user.
     if [ "$passphrase" == "$storedPassphrase" ]; then
-        Log "INFO" "AdminController: login successful, redirecting to: $successredirectURL"
+       Log "DEBUG" "AdminController: login successful, redirecting to: $successredirectURL"
 
         # generate session token for the user, which is a JSON object containing a timestamp, a random salt value and a token signature.
         sessionToken="$(GenerateAuthSessionToken "$passphrase")"
@@ -125,7 +125,7 @@ doSignup(){
     request="$1"
     response="$2"
 
-    Log "INFO" "AdminController: inside doSignup..."
+   Log "DEBUG" "AdminController: inside doSignup..."
 
     # read current server configuration data from the JSON config file.
     configData="$(ReadServerJSONConfig)"
@@ -201,7 +201,7 @@ doSignout(){
     request="$1"
     response="$2"
 
-    Log "INFO" "AdminController: inside doSignout..."
+   Log "DEBUG" "AdminController: inside doSignout..."
  
     # firstly validate the user is actually logged in by checking for the presence of the auth cookie in the request, 
     # if it is not present we will return an error to the user.
@@ -235,7 +235,7 @@ viewAdminDashboard(){
     request="$1"
     response="$2"
 
-    Log "INFO" "AdminController: inside viewAdminDashboard, forwarding to admin dashboard..."
+   Log "DEBUG" "AdminController: inside viewAdminDashboard, forwarding to admin dashboard..."
 
     ForwardBashletRequest "/sys/ui/mocktail-dashboard.html"
 
@@ -247,7 +247,7 @@ viewGeneralSettings(){
     request="$1"
     response="$2"
 
-    Log "INFO" "AdminController: inside viewGeneralSettingsPage, forwarding to general settings page..."
+   Log "DEBUG" "AdminController: inside viewGeneralSettingsPage, forwarding to general settings page..."
 
     ForwardBashletRequest "/sys/ui/mocktail-general-settings.html"
 
@@ -259,7 +259,7 @@ viewGeneralSettingsDetail(){
     request="$1"
     response="$2"
 
-    Log "INFO" "AdminController: inside viewGeneralSettingsDetailPage, forwarding to general settings detail page..."
+   Log "DEBUG" "AdminController: inside viewGeneralSettingsDetailPage, forwarding to general settings detail page..."
 
 
 
@@ -281,7 +281,7 @@ apiGetServerStats(){
     request="$1"
     response="$2"
 
-    Log "INFO" "AdminController: inside apiGetServerStats..."
+   Log "DEBUG" "AdminController: inside apiGetServerStats..."
 
     # get the Mocktail server's process utilization history.
     local processUtilizationHistory
@@ -315,7 +315,7 @@ apiGetSettings(){
     request="$1"
     response="$2"
 
-    Log "INFO" "AdminController: inside apiGetSettings..."
+   Log "DEBUG" "AdminController: inside apiGetSettings..."
 
     # read current server configuration data from the JSON config file.
     configData="$(ReadServerJSONConfig)"
@@ -339,7 +339,7 @@ apiUpdateSettings(){
     request="$1"
     response="$2"
 
-    Log "INFO" "AdminController: inside apiUpdateSettings..."
+   Log "DEBUG" "AdminController: inside apiUpdateSettings..."
 
     # read current server configuration data from the JSON config file.
     configData="$(ReadServerJSONConfig)"

@@ -12,6 +12,7 @@ SYSTEM_MOCK_API_COLLECTIONS_BASE_PATH="$SCRIPT_DIR/res/sys/mocks"       # base p
 USER_MOCK_API_COLLECTIONS_BASE_PATH="$SCRIPT_DIR/res/usr/mocks"         # base path to read user-defined Mock API collections from the host file system.
 MOCK_API_COLLECTION_METADATA_KEY="mockAPICollectionsMetaData"           # key used to store the metadata of all loaded Mock API collections in the BashletContext key-value store.
 MOCK_API_COLLECTION_ENDPOINT_STATS_KEY="mockAPICollectionEndpointStats" # key used to store the statistics of all Mock API endpoints in the BashletContext key-value store.
+MOCK_API_COLLECTION_REDIRECT_LOG_COOKIE_BASE_NAME="mocktail-api-collection-redirect-log" # base name for the cookie used to log URLS returned from redirect-type, Mock API Collection endpoints. This serves to effectively prevent the same URL being returned where multiple URLS have been specified as the redirect payload. Each time a redirect URL is returned, it is logged to the cookie, and the next time a redirect endpoint is invoked, the MockingController will check the cookie to see if the URL has already been returned, if it has, it will return the next URL in the list, until all URLs have been returned, at which point it will start again from the first URL in the list. 
 
 
 
@@ -962,7 +963,7 @@ invokeEndpoint(){
     updateMockAPICollectionEndpointStats "$collectionId" "$matchedEndpoint"
 
     # generate the response from the matched endpoint definition and return it to the client.
-    generateResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
+    generateResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint" "$collectionId"
 
 }
 
@@ -1059,6 +1060,7 @@ generateResponseFromMatchedEndpoint(){
     request="$1"
     response="$2"
     matchedEndpoint="$3"
+    collectionId="$4"
 
     local responseBody
     local statusCode
@@ -1073,13 +1075,13 @@ generateResponseFromMatchedEndpoint(){
     # the body provided in the request. Is merely echoed back as the response body.
     if [[ "${responseBody,,}" == "echo" ]]; then
        Log "DEBUG" "MockingController: Generating dynamic response for matched endpoint."
-        generateEchoedResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
+        generateEchoedResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint" "$collectionId"
     elif [[ "$statusCode" == "302" ]]; then
        Log "DEBUG" "MockingController: Generating redirect response for matched endpoint."
-        generateRedirectResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
+        generateRedirectResponseFromMatchedEndpoint2 "$request" "$response" "$matchedEndpoint" "$collectionId"
     else
        Log "DEBUG" "MockingController: Generating static response for matched endpoint."
-        generateStaticResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint"
+        generateStaticResponseFromMatchedEndpoint "$request" "$response" "$matchedEndpoint" "$collectionId"
     fi
    
    
@@ -1090,6 +1092,7 @@ generateEchoedResponseFromMatchedEndpoint(){
     request="$1"
     response="$2"
     matchedEndpoint="$3"
+    collectionId="$4"
 
     local statusCode
     local responseBody
@@ -1125,6 +1128,8 @@ generateStaticResponseFromMatchedEndpoint(){
     request="$1"
     response="$2"
     matchedEndpoint="$3"
+    collectionId="$4"
+    
 
     local statusCode
     local responseBody
@@ -1156,6 +1161,7 @@ generateRedirectResponseFromMatchedEndpoint(){
     request="$1"
     response="$2"
     matchedEndpoint="$3"
+    collectionId="$4"
 
     local statusCode
     local redirectUrl
@@ -1280,6 +1286,178 @@ generateRedirectResponseFromMatchedEndpoint(){
 
 }
 
+generateRedirectResponseFromMatchedEndpoint2(){
+    request="$1"
+    response="$2"
+    matchedEndpoint="$3"
+    collectionId="$4"
+
+    local statusCode
+    local redirectUrl
+
+    # parse the response status code and validate that it's equal to 302, as redirect responses can only be generated 
+    # for 302 status codes.
+    statusCode="$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.Response.StatusCode // 302')"
+    if [[ "$statusCode" != "302" ]]; then
+        Log "ERROR" "MockingController: Redirect responses can only be generated for 302 status codes, but the matched endpoint is defined for status code: $statusCode"
+        local err_status_code=500
+        local err_content="Internal Server Error - Redirect responses can only be generated for 302 status codes, but the matched endpoint is defined for status code: $statusCode"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # parse the response body from the matched endpoint definition, defaults to an empty string if not defined.
+    # this should contain an array of one or more redirect urls.
+    responseBody="$(ParseMockAPICollectionEndpointResponseBody "$matchedEndpoint")"
+    
+    # if the response body is not an array, return a 400 error to the client.
+    if ! IsAnArray "$responseBody"; then
+        Log "ERROR" "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with a response body of type: $(GetJsonType "$responseBody")"
+        local err_status_code=500
+        local err_content="Internal Server Error - Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with a response body of type: $(GetJsonType "$responseBody")"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    #  if the response body is an array, but it is empty, return a 500 error to the client.
+    if [[ $(ArrayLength "$responseBody") -eq 0 ]]; then
+        Log "ERROR" "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array."
+        local err_status_code=500
+        local err_content="Internal Server Error - Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array."
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # convert the json array to a bash array,
+    local redirectUrls
+    mapfile -t redirectUrls < <(JsonArrayToLines "$responseBody")
+    local arrayLength=${#redirectUrls[@]}
+    if [[ $arrayLength -eq 1 ]]; then
+        # if there is only one redirect url in the array, use that as the redirect url.
+        redirectUrl="${redirectUrls[0]}"
+    elif [[ $arrayLength -gt 1 ]]; then
+
+
+
+        # Where there are MULTIPLE redirect URLS defined...
+        # 1) Parse the incoming request query string parameters if it includes inc=[an index] then use that index to
+        #    select the redirect url from the array, 
+        # 2) Conversely if the query string includes exc=[an index] then exclude 
+        #    that index from the array and select a random redirect url from the remaining urls.
+        # 3) If neither inc nor exc are provided in the query string, then select a random redirect url from the array.       
+        local incIndex=$(ParseBashletRequestQueryStringParam "$request" "inc")
+        local excIndex=$(ParseBashletRequestQueryStringParam "$request" "exc")
+        
+        if [[ -n "$incIndex" ]]; then
+            # if the inc index is provided, use that index to select the redirect url from the array, if the index is valid.
+            if [[ "$incIndex" -ge 0 && "$incIndex" -lt "$arrayLength" ]]; then
+               Log "DEBUG" "MockingController: Using provided inc index '$incIndex' to select redirect url from array of length '$arrayLength'."
+                redirectUrl="${redirectUrls[$incIndex]}"
+            else
+                Log "ERROR" "MockingController: The provided inc index '$incIndex' is out of bounds for the redirect urls array of length '$arrayLength'."
+                local err_status_code=400
+                local err_content="Bad Request - The provided inc index '$incIndex' is out of bounds for the redirect urls array of length '$arrayLength'."
+                SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+                return 1
+            fi
+        elif [[ -n "$excIndex" ]]; then
+            # if the exc index is provided, exclude that index from the array and select a random redirect url from the remaining urls, if the index is valid.
+            if [[ "$excIndex" -ge 0 && "$excIndex" -lt "$arrayLength" ]]; then
+               Log "DEBUG" "MockingController: Using provided exc index '$excIndex' to exclude redirect url from array of length '$arrayLength'."
+                # create a new array excluding the specified index
+                local filteredRedirectUrls=()
+                for i in "${!redirectUrls[@]}"; do
+                    if [[ "$i" -ne "$excIndex" ]]; then
+                        filteredRedirectUrls+=("${redirectUrls[$i]}")
+                    fi
+                done
+                # select a random redirect url from the filtered array
+                local filteredArrayLength=${#filteredRedirectUrls[@]}
+                if [[ $filteredArrayLength -eq 0 ]]; then
+                    Log "ERROR" "MockingController: The provided exc index '$excIndex' excludes all redirect urls from the array, resulting in an empty array."
+                    local err_status_code=400
+                    local err_content="Bad Request - The provided exc index '$excIndex' excludes all redirect urls from the array, resulting in an empty array."
+                    SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+                    return 1
+                fi
+                redirectUrl="${filteredRedirectUrls[RANDOM % $filteredArrayLength]}"
+            else
+                Log "ERROR" "MockingController: The provided exc index '$excIndex' is out of bounds for the redirect urls array of length '$arrayLength'."
+                local err_status_code=400
+                local err_content="Bad Request - The provided exc index '$excIndex' is out of bounds for the redirect urls array of length '$arrayLength'."
+                SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+                return 1
+            fi
+        else
+            # if neither inc nor exc are provided, select a random redirect url from the array.
+            # where at all possible we will attempt to avoid redirecting to URLS that have already been redirected to, 
+            # by checking the comma separated list of urls that have already been redirected to as provided by the client via a cookie. 
+             
+            # first build cookie name from the base name and the id of the mock api collection and endpoint, this will enable
+            # us to track the redirected urls for each endpoint in each collection separately, so that we can avoid redirecting to the same url again.
+            local redirectLogCookieName="$MOCK_API_COLLECTION_REDIRECT_LOG_COOKIE_BASE_NAME-$collectionId-$(ParseMockAPICollectionEndpointField "$matchedEndpoint" '.EndpointId')"
+            local encodedRedirectUrl
+            
+            # parse the redirected urls from the request cookie, if any are provided.
+            redirectedUrls=$(GetCookieInBashletRequest "$request" "$redirectLogCookieName")
+            if [[ -n "$redirectedUrls" ]]; then
+                # if redirected urls are provided, split the comma separated list into an array.
+                IFS=',' read -r -a redirectedUrlsArray <<< "$redirectedUrls"
+
+                # filter the redirect urls array to exclude any urls that have already been redirected to.
+                local filteredRedirectUrls=()
+                for url in "${redirectUrls[@]}"; do
+                    if [[ ! " ${redirectedUrlsArray[*]} " =~ "$(UrlEncode "$url")" ]]; then  #the URL read from the cookie will be encoded, hence we compare against the encoded candidate URL.
+                        filteredRedirectUrls+=("$url")
+                    fi
+                done
+                # if there are any urls left in the filtered array, select a random redirect url from the filtered array.
+                if [[ ${#filteredRedirectUrls[@]} -gt 0 ]]; then
+                    Log "DEBUG" "MockingController: No inc or exc index provided, selecting a random redirect url from filtered array of length '${#filteredRedirectUrls[@]}' that excludes already redirected urls."
+                    redirectUrl="${filteredRedirectUrls[RANDOM % ${#filteredRedirectUrls[@]}]}"
+                    encodedRedirectUrl="$(UrlEncode "$redirectUrl")"
+
+                    #  append the selected redirect url to the redirected urls cookie, so that on the next redirect we can avoid redirecting to the same url again.
+                                        redirectedUrls="$redirectedUrls,$encodedRedirectUrl"
+                    setEndpointURLRedirectLogCookieInResponse "$response" "$redirectLogCookieName" "$redirectedUrls"
+                else
+                    Log "DEBUG" "MockingController: No inc or exc index provided, but all redirect urls have already been redirected to, selecting a random redirect url from original array of length '$arrayLength'."
+                    redirectUrl="${redirectUrls[RANDOM % $arrayLength]}"
+                fi
+            else 
+              Log "DEBUG" "MockingController: No inc or exc index provided, selecting a random redirect url from array of length '$arrayLength'."
+              redirectUrl="${redirectUrls[RANDOM % $arrayLength]}"
+                            encodedRedirectUrl="$(UrlEncode "$redirectUrl")"
+
+              # if we have arrived here then redirectedUrls is empty, so we will set the redirectedUrls cookie to the selected redirect url, so that on the next redirect we can avoid redirecting to the same url again.
+                            setEndpointURLRedirectLogCookieInResponse "$response" "$redirectLogCookieName" "$encodedRedirectUrl"
+             
+            fi
+        fi
+    else
+        Log "ERROR" "MockingController: Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array."
+        local err_status_code=500
+        local err_content="Internal Server Error - Redirect responses must be defined as an array of one or more redirect urls, but the matched endpoint is defined with an empty array."       
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+
+    # set the response status code to the value parsed from the matched endpoint definition, guartenteed to be 302 at this point.
+    SetBashletResponseStatusCode "$response" "$statusCode"
+
+    # set the response headers from the matched endpoint definition, if any are defined.
+    setResponseHeadersFromEndpoint "$response" "$matchedEndpoint"
+
+    # finally dispatch a redirect response to the client, the helper function will implicitly
+    # set the Location header to the redirect url and return a 302 response to the client.
+    # We can optionally provide reference to the response object to have any headers or other state
+    # set on the response object to be included in the redirect response.
+    DispatchBashletRedirectResponse "$redirectUrl" "$response" 
+
+
+}
+
 # maps the query string parameters in the inbound request to the response body of the matched endpoint, where the response body 
 # is defined as an object. This allows the value of attributes in the response body JSON to be dynamically set. Where specified,
 # the values provided as request query string parameters will override the corresponding values defined in the matched endpoint 
@@ -1325,6 +1503,17 @@ generateCollectionIdFromName(){
     collectionId="$(echo "$collectionName" | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g' | sed 's/[^a-z0-9-]//g')"
 
     echo "$collectionId"
+}
+
+# helper function to set a cookie in the response for tracking the redirected urls for each endpoint in each collection separately, so that we can avoid redirecting to the same url 
+# where there exists URLS that have not yet been redirected to.
+setEndpointURLRedirectLogCookieInResponse() {
+    local response="$1"
+    local cookieName="$2"
+    local cookieValue="$3"
+   
+    SetCookieInBashletResponse "$response" "$cookieName" "$cookieValue" "path=/" "secure=false" "httpOnly=false" "sameSite=lax"
+
 }
 
 

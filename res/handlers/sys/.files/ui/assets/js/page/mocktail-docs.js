@@ -87,7 +87,7 @@
     const installationCatBtn = document.getElementById('installation-cat-btn');
     const configCatBtn = document.getElementById('config-cat-btn');
     const installationCard = document.getElementById('system-settings-card');
-    const configCard = document.getElementById('security-settings-card');
+    const configCard = document.getElementById('configuration-settings-card');
 
     // Remove active class from all nav-link elements
     installationCatBtn.querySelector('.nav-link').classList.remove('active');

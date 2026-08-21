@@ -6,3 +6,12 @@
  */
 
 /*# sourceMappingURL=custom.css.map */
+
+
+.codeblock-style{
+    background-color: black; 
+    padding: 10px; 
+    color: darkorange; 
+    border-radius: 5px;
+    
+}

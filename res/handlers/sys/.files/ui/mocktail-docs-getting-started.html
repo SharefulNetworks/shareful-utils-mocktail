@@ -217,8 +217,68 @@
                       <h4>Configuring Mocktail Server</h4>
                     </div>
                     <div class="card-body">
-                      <p class="">Configuration details for Mocktail Server. The settings are broadly divided into two categories: General Settings and Security Settings; here all configuration settings (mandatory and optional) are defined complete with their respective data types, function, description and expected values where appropriate.</p>
+                      <p class="">Configuration details for Mocktail Server. The settings are broadly divided into two categories: General Settings and Security Settings; here all configuration settings (mandatory and optional) are defined complete with their respective data types, function, description and expected values where appropriate. All these values may be set in the <span style="color: #6777ef; font-weight: bold;">config.json</span> at the root of the project.</p>
 
+                      <div class="table-responsive">
+                        <table class="table table-striped mb-0" id="configSettingsTable" style="min-width: 980px;">
+                          <colgroup>
+                            <col style="width: 15%;">
+                            <col style="width: 10%;">
+                            <col style="width: 12%;">
+                            <col style="width: 38%;">
+                            <col style="width: 25%;">
+                          </colgroup>
+                          <thead>
+                            <tr>
+                              <th>Name</th>
+                              <th>Type</th>
+                              <th>Category</th>
+                              <th>Description</th>
+                              <th>Accepted Values</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+
+                            <tr>
+                              <td>ListeningPort</td>
+                              <td>Integer</td>
+                              <td>General</td>
+                              <td>The port on which the Mocktail Server will listen for incoming requests.</td>
+                              <td>Any valid port number (e.g., 3000, 8080)</td>
+                            </tr>
+
+                            <tr>
+                              <td>MaxConcurrentProcesses</td>
+                              <td>Integer</td>
+                              <td>General</td>
+                              <td>The maximum number of concurrent processes the Mocktail Server will handle. Mocktail is a request per process server thus setting this to a higher value will allow it to serve more concurrent requests but will <i>also</i> increase resource consumption.</td>
+                              <td>Any positive integer (e.g., 5, 10)</td>
+                            </tr>
+
+                            <tr>
+                              <td>MaxHandlerProcessRuntime</td>
+                              <td>Integer</td>
+                              <td>General</td>
+                              <td>The maximum time (in seconds) a handler process can run before being terminated. Larger values will allow for longer running request but will <i>also</i> increase resource consumption.</td>
+                              <td>Any positive integer (e.g., 30, 60)</td>
+                            </tr>
+
+                            <tr>
+                              <td>LogLevel</td>
+                              <td>Integer</td>
+                              <td>General</td>
+                              <td>The level of logging that the Mocktail Server will use. Higher levels will provide more detailed information but will also increase the amount of data written to the console.</td>
+                              <td>A valid numeric log level 1: Error, 2: Warning, 3: Info, 4: Debug, 5: Trace. The default is 3 (Info).</td>
+                            </tr>
+                           
+
+                            
+                           
+      
+                      
+                          </tbody>
+                        </table>
+                      </div>
                       
                     </div>
 

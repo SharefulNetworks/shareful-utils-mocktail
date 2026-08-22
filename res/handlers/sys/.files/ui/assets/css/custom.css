@@ -12,6 +12,50 @@
     background-color: black; 
     padding: 10px; 
     color: darkorange; 
-    border-radius: 5px;
-    
+    border-radius: 5px;   
 }
+
+.config-table-name-txt{
+    font-weight: bold;
+    color: #6777ef;
+
+}
+
+.config-table-type-txt-2{
+    
+    color: darkorange;
+    font-family: monospace;
+}
+
+.config-table-type-txt{
+    background-color: rgb(1, 1, 90);
+    color: wheat;
+    padding: 11px;
+    border-radius: 10px;
+    border: 2px solid #858585;
+    font-family: monospace;
+    font-size: 10px;
+}
+
+.config-table-type-txt.string{
+    background-color: rgb(1, 90, 56);
+}
+
+.config-table-type-txt.stringarray{
+    background-color: rgb(90, 41, 1);
+}
+
+.config-table-type-txt.boolean{
+    background-color: rgb(72, 1, 90);
+}
+
+
+#configSettingsTable tbody tr:nth-child(even) {
+  background-color:white
+}
+
+#configSettingsTable tbody tr:nth-child(odd) {
+  background-color:  rgb(247, 244, 244)
+}
+
+

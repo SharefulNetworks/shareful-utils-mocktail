@@ -243,7 +243,7 @@
                               <td class="config-table-name-txt">ListeningPort</td>
                               <td><span class="config-table-type-txt">Integer</span></td>
                               <td>General</td>
-                              <td>The port on which the Mocktail Server will listen for incoming requests. The default is 3000.</td>
+                              <td style="padding: 4px;">The port on which the Mocktail Server will listen for incoming requests. The default is 3000.</td>
                               <td>Any valid port number (e.g.1025 - 65535)</td>
                             </tr>
 
@@ -251,7 +251,7 @@
                               <td class="config-table-name-txt">MaxConcurrentProcesses</td>
                               <td><span class="config-table-type-txt">Integer</span></td>
                               <td>General</td>
-                              <td>The maximum number of concurrent processes the Mocktail Server will handle. Mocktail is a request per process server thus setting this to a higher value will allow it to serve more concurrent requests but will <i>also</i> increase resource consumption.</td>
+                              <td style="padding: 4px;">The maximum number of concurrent processes the Mocktail Server will handle. Mocktail is a request per process server thus setting this to a higher value will allow it to serve more concurrent requests but will <i>also</i> increase resource consumption.</td>
                               <td>Any positive integer (e.g., 5, 10)</td>
                             </tr>
 
@@ -259,7 +259,7 @@
                               <td class="config-table-name-txt">MaxHandlerProcessRuntime</td>
                               <td><span class="config-table-type-txt">Integer</span></td>
                               <td>General</td>
-                              <td>The maximum time (in seconds) a handler process can run before being terminated. Larger values will allow for longer running request but will <i>also</i> increase resource consumption. The default is 11 seconds</td>
+                              <td style="padding: 4px;">The maximum time (in seconds) a handler process can run before being terminated. Larger values will allow for longer running request but will <i>also</i> increase resource consumption. The default is 11 seconds</td>
                               <td>Any positive integer (e.g., 30, 60)</td>
                             </tr>
 
@@ -267,7 +267,7 @@
                               <td class="config-table-name-txt">LogLevel</td>
                               <td><span class="config-table-type-txt">Integer</span></td>
                               <td>General</td>
-                              <td>The level of logging that the Mocktail Server will use. Higher levels will provide more detailed information but will also increase the amount of data written to the console.</td>
+                              <td style="padding: 4px;">The level of logging that the Mocktail Server will use. Higher levels will provide more detailed information but will also increase the amount of data written to the console.</td>
                               <td>A valid numeric log level 1: Error, 2: Warning, 3: Info, 4: Debug, 5: Trace. The default is 3 (Info).</td>
                             </tr>
 
@@ -275,7 +275,7 @@
                               <td class="config-table-name-txt">TokenExpirationMinutes</td>
                               <td><span class="config-table-type-txt">Integer</span></td>
                               <td>Security</td>
-                              <td>The time (in minutes) after which system authentication token will expire. This is set to 30 minutes by default.</td>
+                              <td style="padding: 7px;">The time (in minutes) after which system authentication token will expire. This is set to 30 minutes by default.</td>
                               <td>Any positive integer (e.g., 30, 60)</td>
                             </tr>
 
@@ -283,7 +283,7 @@
                               <td class="config-table-name-txt">AuthTokenCookieName</td>
                               <td><span class="config-table-type-txt string">String</span></td>
                               <td>Security</td>
-                              <td>The name of the cookie used to store the authentication token. The default is "mocktail-auth-token".</td>
+                              <td style="padding: 7px;">The name of the cookie used to store the authentication token. The default is "mocktail-auth-token".</td>
                               <td>Any valid string (e.g., "mocktail-auth-token", "mt-auth")</td>
                             </tr>
 
@@ -291,7 +291,7 @@
                               <td class="config-table-name-txt">EnableCORS</td>
                               <td><span class="config-table-type-txt boolean">Boolean</span></td>
                               <td>Security</td>
-                              <td>Whether or not to enable Cross-Origin Resource Sharing (CORS) for the Mocktail Server. This is set to false by default.</td>
+                              <td style="padding: 7px;">Whether or not to enable Cross-Origin Resource Sharing (CORS) for the Mocktail Server. This is set to false by default.</td>
                               <td>true or false</td>
                             </tr>
 
@@ -299,7 +299,7 @@
                               <td class="config-table-name-txt">AllowedOrigins</td>
                               <td><span class="config-table-type-txt stringarray">String[]</span></td>
                               <td>Security</td>
-                              <td>A list of allowed origins for Cross-Origin Resource Sharing (CORS). This is set to "*" by default, allowing all origins. Note: This setting is only effective if EnableCORS is set to true.</td>
+                              <td style="padding: 7px;">A list of allowed origins for Cross-Origin Resource Sharing (CORS). This is set to "*" by default, allowing all origins. Note: This setting is only effective if EnableCORS is set to true.</td>
                               <td>Any valid string (e.g., "*", "http://localhost:3000")</td>
                             </tr>
 
@@ -307,7 +307,7 @@
                               <td class="config-table-name-txt">Email</td>
                               <td><span class="config-table-type-txt string">String</span></td>
                               <td>Security</td>
-                              <td>The Admin account email address, this is set when the admin account is created and is used for login purposes..</td>
+                              <td style="padding: 7px;">The Admin account email address, this is set when the admin account is created and is used for login purposes..</td>
                               <td><b>Do not manually edit</b></td>
                             </tr>
 
@@ -315,7 +315,7 @@
                               <td class="config-table-name-txt">Passphrase</td>
                               <td><span class="config-table-type-txt string">String</span></td>
                               <td>Security</td>
-                              <td>The Admin account passphrase, this is automatically generated from the password specified at admin account creation time and is then used for login/authorization purposes.</td>
+                              <td style="padding: 7px;">The Admin account passphrase, this is automatically generated from the password specified at admin account creation time and is then used for login/authorization purposes.</td>
                               <td><b>Do not manually edit</b></td>
                             </tr>
 
@@ -323,7 +323,7 @@
                               <td class="config-table-name-txt">AuthenticationMethod</td>
                               <td><span class="config-table-type-txt string">String</span></td>
                               <td>Security</td>
-                              <td>The authentication method to be used for the Mocktail Server. Only passphrase-and-token is supported at present</td>
+                              <td style="padding: 7px;">The authentication method to be used for the Mocktail Server. Only passphrase-and-token is supported at present</td>
                               <td><b>Do not manually edit</b></td>
                             </tr>
                            

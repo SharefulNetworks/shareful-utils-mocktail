@@ -51,6 +51,11 @@
     background-color: rgb(72, 1, 90);
 }
 
+.highlighted-docs-text{
+    color: #6777ef;
+    font-weight: bold;
+}
+
 
 #configSettingsTable tbody tr:nth-child(even) {
   background-color:white

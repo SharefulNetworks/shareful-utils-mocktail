@@ -186,22 +186,16 @@
                     </div>
                     <div class="card-body">
 
-                      <p style="font-weight: bold;">Pull the application from source control:</p>
-                      <code class="codeblock-style">git clone https://github.com/SharefulNetworks/shareful-utils-mocktail.git</code>
-                       <p></p>
-                       <p></p>
+                      <p style="font-weight: bold; color: #6777ef;">Overview</p>
+                        Bashlets are <span class="highlighted-docs-text"> specialized, server-side, bash scripts that handle inbound client web requests and generate dynamic responses</span>. The <span class="highlighted-docs-text">Mocktail Server provides a Bashlet Container implementation (BashletEngine) </span> which intercepts inbound requests received from clients,routes them to appropriate handler functions inside a Bashlet and finally returns any user-defined response to the client. Support for common HTTP protocol methods such as GET, POST, PUT, DELETE, OPTIONS is provided as standard. 
+                        <span class="highlighted-docs-text">Bashlets provide a solid foundation for the construction of server-side web applications using nothing more than the Bash scripting language you're already familiar with</span>; all the heavy-lifting related to the acceptance, parsing and routing of inbound client requests, the generation & dispatching standards compliant HTTP responses, and management of the server-side application context, is handled by the Mocktail Server and the BashletEngine. 
+                        <span class="highlighted-docs-text">This allows you to focus on the business logic of your web application without having to worry about low-level HTTP protocol details</span> and the underlying client-server communication/message exchange process.
+                        
                        <hr>
 
-                      <p style="font-weight: bold;">CD into root directory give the Mocktail script execution permissions:</p>
-                      <code class="codeblock-style">chmod +x mocktail</code>
-                      <p></p>
-                      <p></p>
-                      <hr>
+                        <p style="font-weight: bold; color: #6777ef;">The anatomy of an end-to-end Bashlet request </p>
+                          The following diagram illustrates <span class="highlighted-docs-text">a simplified view of the end-to-end flow of a client request to a Bashlet endpoint </span> including the intermediary components that facilitate the generation and dispatch of standards-compliant HTTP responses to the client.
 
-                      <p style="font-weight: bold;">Finally run the application (from the root directory):</p>
-                      <code class="codeblock-style">./mocktail</code>
-                      <p></p>
-                      <p></p>
                      
 
                     </div>

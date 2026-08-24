@@ -195,6 +195,19 @@
 
                         <p style="font-weight: bold; color: #6777ef;">The anatomy of an end-to-end Bashlet request </p>
                           The following diagram illustrates <span class="highlighted-docs-text">a simplified view of the end-to-end flow of a client request to a Bashlet endpoint </span> including the intermediary components that facilitate the generation and dispatch of standards-compliant HTTP responses to the client.
+                          The process, as depicted in the diagram, may be breifly summarised as follows:
+                          <br>
+                          <br>
+                          <ol>
+                            <li>A client sends a HTTP request to the Mocktail Server.</li>
+                            <li>All inbound HTTP requests, received to the Mocktail Server are delegated to the <span class="highlighted-docs-text">Root Handler</span>; this is a special, internal handler that generally<b>does not</b> service client requests directly, <span class="highlighted-docs-text">it's principal purpose is to parse the raw incoming request data of the wire into an equivalent high-level, request object representation and then to route the request to downstream handlers</span> in the Mocktail Server stack.</li>
+                            <li>The <span class="highlighted-docs-text">Root Handler</span> delegates the request to the <span class="highlighted-docs-text">Usr Handler</span>. By default, all <b>user-defined</b> Bashlets will be associated with the <span class="highlighted-docs-text">Usr Handler</span> via the depicted <span class="highlighted-docs-text">usr-handler-routes.json</span> file; this is the simplest way to get started using bashlets. See the next section on <span class="highlighted-docs-text">Configuring Bashlets</span> for an in-depth guide on how to define a Bashlet route type in the Usr Handler's json-based, routing file. Details on how to define <b>custom handlers</b> if absolutely necessary, are also provided, however this is a more complex procedure.</li> 
+                            <li>Next, where <span class="highlighted-docs-text">Usr Handler</span> detects that the request is associated with a <span class="highlighted-docs-text">Bashlet</span> route, it immeidately suspends processing of the request and hands it off to the <span class="highlighted-docs-text">BashletEngine</span>.</li>
+                            <li>The <span class="highlighted-docs-text">BashletEngine</span> then uses the available routing information (Provided by the handler that invoked it) to <span class="highlighted-docs-text">look up the target Bashlet</span> and initialise it by calling its <b>init()</b> function.</li>
+                            <li>Next The <span class="highlighted-docs-text">BashletEngine</span> further parses the request and routes it to the appropriate <span class="highlighted-docs-text"> endpoint function</span> within the now intialised <span class="highlighted-docs-text">Bashlet</span>, at this point control in passed to the <span class="highlighted-docs-text">Bashlet</span>.</li>
+                            <li>The <span class="highlighted-docs-text">Bashlet endpoint function</span> processes the request, generates a response, and returns it to the <span class="highlighted-docs-text">BashletEngine</span>.</li>
+                            <li>Finally the <span class="highlighted-docs-text">BashletEngine</span> formats the response according to HTTP standards  and sends it back to the client</li>
+                          </ol>
                           <img src="assets/img/mocktail-bashlet-request-lifecycle-final.jpeg" alt="Static Web Hosting Setup" height="600px width=auto" style="display: block; margin-left: auto; margin-right: auto; margin-top: 20px;">
 
                      

@@ -10,14 +10,15 @@
   <link rel="stylesheet" href="assets/modules/fontawesome/css/all.min.css">
 
   <!-- CSS Libraries -->
-  <link rel="stylesheet" href="assets/modules/codemirror/lib/codemirror.css">
-  <link rel="stylesheet" href="assets/modules/codemirror/theme/duotone-dark.css">
 
   <!-- Template CSS -->
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link rel="stylesheet" href="assets/css/custom.css">
 
+  <!-- Highlight.js CSS-->
+  <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
 
 
 <!-- Start GA -->
@@ -166,17 +167,15 @@
                   <div class="card-body">
                     <ul class="nav nav-pills flex-column">
                       <li id="dynamic-web-hosting-into-to-bashlets-btn" class="nav-item"><a href="#" class="nav-link active">Intro to Bashlets</a></li>
-                      <li id="dynamic-web-hosting-config-bashlets-btn" class="nav-item"><a href="#" class="nav-link">Configuring Bashlets</a></li>
-                      <li id="dynamic-web-hosting-coding-bashlets-btn" class="nav-item"><a href="#" class="nav-link">Coding Bashlets</a></li>
+                      <li id="dynamic-web-hosting-writing-first-bashlet-btn" class="nav-item"><a href="#" class="nav-link">Writing Your First Bashlet</a></li>
                       <li id="dynamic-web-hosting-context-bashlets-btn" class="nav-item"><a href="#" class="nav-link">The Bashlet Context</a></li>
                       <li id="dynamic-web-hosting-examples-bashlets-btn" class="nav-item"><a href="#" class="nav-link">Bashlet Examples</a></li>
-                      <li id="dynamic-web-hosting-support-bashlets-btn" class="nav-item"><a href="#" class="nav-link">Support</a></li>
                     </ul>
                   </div>
                 </div>
               </div>
               <div class="col-md-8">
-                <form id="setting-form">
+               
 
 
                   <!-- Start of Intro to Bashlets Card-->
@@ -225,10 +224,82 @@
                     <!-- End of Intro to Bashlets Card-->
 
 
-                    <!-- Start of Configuring Bashlets Card-->
-                  <div class="card" id="configuring-bashlets-card" style="display: none;">
+                    <!-- Start of Writing Your First Bashlet Card-->
+                  <div class="card" id="writing-your-first-bashlet-card" style="display: none;">
                     <div class="card-header">
-                      <h4>Configuring Bashlets</h4>
+                      <h4>Writing Your First Bashlet</h4>
+                    </div>
+                    <div class="card-body">
+                        <p style="font-weight: bold; color: #6777ef;">Overview</p>
+                        The process of creating a new <span class="highlighted-docs-text">Bashlet</span> can be broadly divided into the following two simple steps:
+
+                      <br>
+                      <br>
+                      <ol>
+                        <li>Creating the Bashlet script file and implementing the required endpoint functions</li>
+                        <li>Configuring the Mocktail Server to recognise the new Bashlet and route requests to it</li>
+                      </ol>
+                      This the bare minimum required to get a Bashlet up and running on the Mocktail Server. Next we'll explore each step in detail, before breifly covering the more involved process of associating a Bashlet with a <span class="highlighted-docs-text">Custom Handler</span> 
+                   
+                       <br>
+                       <br>
+                       <hr>
+                      <p style=" font-weight: bold; color:#6777ef;">Creating the Bashlet script file</p>
+                      A minimal Bashlet script file would look as follows, <span class="highlighted-docs-text">the requisite BashletContext is imported </span> at the top of the script, and <span class="highlighted-docs-text">a single endpoint function is defined to handle GET requests to the Bashlet at a specific path</span>. The endpoint function simply returns a string "success" response to the client.
+                      <br>
+                      <br>
+                      <pre><code class="language-bash" style="border-radius: 5px;"">
+#!/bin/bash
+
+# Firstly import/source the BashletContext, this is the **only** mandatory import. It provides 
+# functions to support parsing of the incoming request object, constructing.
+# the response object as well as various other utility functions that simplify 
+# the process of writing Bashlets
+source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
+
+# An example Bashlet endpoint function,note the use of the @route annotation
+# below to specify the HTTP Method and Path for this endpoint.
+# @route method=get path=/api/users
+getUsers(){
+
+    # The Bashlet request/response objects are automatically injected into 
+    # every endpoint function (by the BashletEngine) as argument 1 and 2 respectively.
+    request="$1"
+    response="$2"
+
+    # TODO: this is where the business logic of the endpoint function would be implemented, for example
+    # retrieving data from a database, performing calculations, etc.
+
+    # A textual/html or JSON response can be set as the response body.
+    # Here we simply set the response body to the string "success" using the
+    # SetBashletResponseBody" helper function provided by the BashletContext.
+    # The function takes the response object and the body content as arguments and a
+    # call to it will result in the BashletEngine returning this response to the client.
+    SetBashletResponseBody "$response" "success"
+
+
+}
+
+                      </code>
+                      </pre>
+                      <br>
+
+
+                    </div>
+
+                    <div class="card-footer bg-whitesmoke text-md-right">
+                      <button class="btn btn-primary print-btn"><i class="fas fa-print"></i> Print Page</button>
+                      <button class="btn btn-secondary back-btn" type="button"><i class="fas fa-arrow-left"></i> Back</button>
+                    </div>
+                  </div>
+                    <!-- End of Writing Your First Bashlet Card-->
+
+
+
+                  <!-- Start of The Bashlet Context Card-->
+                  <div class="card" id="the-bashlet-context-card" style="display: none;">
+                    <div class="card-header">
+                      <h4>The Bashlet Context</h4>
                     </div>
                     <div class="card-body">
                       
@@ -240,10 +311,28 @@
                       <button class="btn btn-secondary back-btn" type="button"><i class="fas fa-arrow-left"></i> Back</button>
                     </div>
                   </div>
-                    <!-- End of Configuring Bashlets Card-->
+                    <!-- End of The Bashlet Context Card-->
 
 
-                </form>
+                  <!-- Start of Bashlet Examples Card-->
+                  <div class="card" id="bashlet-examples-card" style="display: none;">
+                    <div class="card-header">
+                      <h4>Bashlet Examples</h4>
+                    </div>
+                    <div class="card-body">
+                      
+                      
+                    </div>
+
+                    <div class="card-footer bg-whitesmoke text-md-right">
+                      <button class="btn btn-primary print-btn"><i class="fas fa-print"></i> Print Page</button>
+                      <button class="btn btn-secondary back-btn" type="button"><i class="fas fa-arrow-left"></i> Back</button>
+                    </div>
+                  </div>
+                    <!-- End of Bashlet Examples Card-->
+
+
+                
               </div>
 
 
@@ -283,5 +372,13 @@
   <!-- Template JS File -->
   <script src="assets/js/scripts.js"></script>
   <script src="assets/js/custom.js"></script>
+
+   <!-- Highlight.js Core JS -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+
+  <!-- init Highlight.js -->
+  <script>
+      hljs.highlightAll();
+  </script>
 </body>
 </html>

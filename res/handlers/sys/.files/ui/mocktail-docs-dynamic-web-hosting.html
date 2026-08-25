@@ -252,13 +252,13 @@
 #!/bin/bash
 
 # Firstly import/source the BashletContext, this is the **only** mandatory import. It provides 
-# functions to support parsing of the incoming request object, constructing.
+# functions to support parsing of the incoming request object, construction/augmentation of
 # the response object as well as various other utility functions that simplify 
 # the process of writing Bashlets
 source "$SCRIPT_DIR/res/bashlets/internal/BashletContext"
 
-# An example Bashlet endpoint function,note the use of the @route annotation
-# below to specify the HTTP Method and Path for this endpoint.
+# An example Bashlet endpoint function,note the mandatory use of the @route annotation
+# below, to specify the HTTP Method and Path for the endpoint.
 # @route method=get path=/api/users
 getUsers(){
 
@@ -270,11 +270,11 @@ getUsers(){
     # TODO: this is where the business logic of the endpoint function would be implemented, for example
     # retrieving data from a database, performing calculations, etc.
 
-    # A textual/html or JSON response can be set as the response body.
+    # A textual/html or JSON value can be set as the response body.
     # Here we simply set the response body to the string "success" using the
     # SetBashletResponseBody" helper function provided by the BashletContext.
     # The function takes the response object and the body content as arguments and a
-    # call to it will result in the BashletEngine returning this response to the client.
+    # call to it will ultimately, result in the BashletEngine returning this response to the client.
     SetBashletResponseBody "$response" "success"
 
 

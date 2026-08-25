@@ -239,17 +239,22 @@
                         <li>Creating the Bashlet script file and implementing the required endpoint functions</li>
                         <li>Configuring the Mocktail Server to recognise the new Bashlet and route requests to it</li>
                       </ol>
-                      This the bare minimum required to get a Bashlet up and running on the Mocktail Server. Next we'll explore each step in detail, before breifly covering the more involved process of associating a Bashlet with a <span class="highlighted-docs-text">Custom Handler</span> 
-                   
+                      
                        <br>
                        <br>
                        <hr>
-                      <p style=" font-weight: bold; color:#6777ef;">Creating the Bashlet script file</p>
-                      A minimal Bashlet script file would look as follows, <span class="highlighted-docs-text">the requisite BashletContext is imported </span> at the top of the script, and <span class="highlighted-docs-text">a single endpoint function is defined to handle GET requests to the Bashlet at a specific path</span>. The endpoint function simply returns a string "success" response to the client.
+                       <p style=" font-weight: bold; color:#6777ef;">1. Creating the Bashlet script file</p>
+                       Firstly from the root directory of the Mocktail Server, navigate to the following path: <code class="codeblock-style-small">res</code> / <code class="codeblock-style-small">bashlets</code> / <code class="codeblock-style-small">usr</code>. This is the location where all, <b>user-defined</b>, Bashlet script files should be stored. Create a new file called <span class="highlighted-docs-text">my-first-bashlet.shh </span> and open it in your favourite text editor. The contents of the file should look as follows:
                       <br>
                       <br>
-                      <pre><code class="language-bash" style="border-radius: 5px;"">
+                      <pre style="margin-bottom: -20px;"><code class="language-bash" style="border-radius: 5px;">
 #!/bin/bash
+
+#--------------------------------------------------------------------------------------------------
+# name:         my-first-bashlet.shh 
+# description:  A simple Bashlet that handles GET requests to the path /api/users and 
+#               returns a string "success" response to the client.
+#--------------------------------------------------------------------------------------------------
 
 # Firstly import/source the BashletContext, this is the **only** mandatory import. It provides 
 # functions to support parsing of the incoming request object, construction/augmentation of
@@ -282,11 +287,69 @@ getUsers(){
 
                       </code>
                       </pre>
-                      <br>
+                      This is the <b>bare minimum</b> required to get a Bashlet up and running on the Mocktail Server such that inbound client requests to the Bashlet can be handled and a response returned to the client.
+                      The Bashlet <span class="highlighted-docs-text">imports the requisite BashletContext</span> at the top of the script,<span class="highlighted-docs-text"> defines a single endpoint function to handle GET requests to the Bashlet at a specific path</span> and simply <span class="highlighted-docs-text">returns a string "success" response</span> to the client. <br><br> See the <span class="highlighted-docs-text">Bashlet Examples</span> section for more complex examples of Bashlet endpoint functions that parse the request object to obtain URL query and/or path variables, set and read HTTP headers and cookies as well as return JSON responses. Even this is relatively straightforward as <span class="highlighted-docs-text">the BashletContext provides a rich set of functions to support these and other common tasks</span> that are required when writing Bashlets.
+                        <br>
+                        <br>
+                        <hr>
+                        <p style=" font-weight: bold; color:#6777ef;">2. Creating the Bashlet script route configuration</p>
+                        As depicted in the system architecture diagram in the intro section, a heirarchial set of HTTP handlers serves as the backbone of the Mocktail Server. The <span class="highlighted-docs-text">Usr Handler</span> is the default handler that is responsible for routing requests to user-defined Bashlets (and other user generated content/resources). The <span class="highlighted-docs-text">Usr Handler</span> uses a JSON-based configuration file to define the Bashlet routes that it will service. This file is located at: <code class="codeblock-style-small">res</code> / <code class="codeblock-style-small">handlers</code> / <code class="codeblock-style-small">usr</code> / <code class="codeblock-style-small">usr-handler-routes.json</code>. Open this file in your favourite text editor and you will see the following contents:
+                        <br>
+                        <br>
+                        <pre style="margin-bottom: -20px;"><code class="language-json" style="border-radius: 5px;">
+  {
 
+    "Name": "Mocktail User Handler Routes",
+    "Description": "Defines the routing configuration for the Mocktail user handler.",
+    "Version": "1.0",
+    "Routes": [
+        {
+            "Title": "Example (User Profile) Bashlet Controller Route",
+            "Path": "/example",
+            "Type": "bashlet",
+            "BashletPath": "/res/bashlets/usr/ExampleBashlet",
+            "Description": "An example (profiles) bashlet that serves to demonstrate core bashlet functionality."
 
+        },
+        {
+            "Title": "General System UI Resources For use by the Example Route. This allows requests forwarded to the system handler's UIs to be served with the required static resources.",
+            "Path": "/example/api/profiles/assets/*",
+            "Type": "static",
+            "FilePath": "/res/handlers/sys/.files/ui/assets",
+            "Description": "The wildcard path for serving assets such as CSS, JS, images etc for the system handler's UIs. This route will attempt to match any request starting with /assets/ and serve the corresponding static file from the .files/ui directory. This allows for easy referencing of static resources in the HTML files served by the system handler, ensuring that the necessary assets are available for the UI to function properly.Note: Where a wildcard Path is used (i.e /assets/*)  the FilePath MUST refer to the base internal directory that the files should be served from such that [BASE_DIR]/[Relative_Request_Path_Reveived_To_Handler] resolves to the file on disk, failure to set this path correctly will result in 404 Not Found errors being returned to the client."
+        }
+    ]
+}
+
+                        </code>
+                        </pre>
+
+                        You'll note the existing route for the <span class="highlighted-docs-text">ExampleBashlet</span> which is a pre-defined Bashlet that is included with the Mocktail Server. To add a new route for your newly created Bashlet, simply add the following JSON object to the "Routes" array in the file:
+                        <br>
+                        <br>
+                        <pre style="margin-bottom: -20px;"><code class="language-json" style="border-radius: 5px;">
+        {
+            "Title": "My First Bashlet Route",
+            "Path": "/fb",
+            "Type": "bashlet",
+            "BashletPath": "/res/bashlets/usr/my-first-bashlet.shh",
+            "Description": "A simple Bashlet that handles GET requests to a SINGLE endpoint path: /api/users and returns a string 'success' response to the client."
+        }
+                        </code>
+                        </pre>
+
+                        Note the following important points regarding the new route configuration:
+                        <br>
+                        <br>
+                        <ol>
+                          <li>The <span class="highlighted-docs-text">Path</span> property defines the base path for the Bashlet, all requests to this path will be routed to the Bashlet. In this example, the Bashlet will be accessible at the path <span class="highlighted-docs-text">/fb</span> on the Mocktail Server, where the full path may looks as follows: <span class="highlighted-docs-text">[host]:[port]/usr/fb</span>. The <span class="highlighted-docs-text">/usr</span> component of the path relates to the <span class="highlighted-docs-text">Usr Handler</span> which requests to all user-defined Bashlets must be routed through.</li>
+                          <li>The <span class="highlighted-docs-text">BashletPath</span> property defines the absolute path to the Bashlet script file on disk. This is the file that will be executed by the BashletEngine when a request is routed to this Bashlet.</li>
+                        </ol>
+                        <br>
+                        
                     </div>
 
+                  
                     <div class="card-footer bg-whitesmoke text-md-right">
                       <button class="btn btn-primary print-btn"><i class="fas fa-print"></i> Print Page</button>
                       <button class="btn btn-secondary back-btn" type="button"><i class="fas fa-arrow-left"></i> Back</button>

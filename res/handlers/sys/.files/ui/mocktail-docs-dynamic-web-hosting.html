@@ -231,13 +231,14 @@
                     </div>
                     <div class="card-body">
                         <p style="font-weight: bold; color: #6777ef;">Overview</p>
-                        The process of creating a new <span class="highlighted-docs-text">Bashlet</span> can be broadly divided into the following two simple steps:
+                        The process of creating a new <span class="highlighted-docs-text">Bashlet</span> can be broadly divided into two simple steps; in this section shall cover the following:
 
                       <br>
                       <br>
                       <ol>
                         <li>Creating the Bashlet script file and implementing the required endpoint functions</li>
                         <li>Configuring the Mocktail Server to recognise the new Bashlet and route requests to it</li>
+                        <li>Testing the new Bashlet by sending a request to it and verifying the response</li>
                       </ol>
                       
                        <br>
@@ -343,9 +344,19 @@ getUsers(){
                         <br>
                         <ol>
                           <li>The <span class="highlighted-docs-text">Path</span> property defines the base path for the Bashlet, all requests to this path will be routed to the Bashlet. In this example, the Bashlet will be accessible at the path <span class="highlighted-docs-text">/fb</span> on the Mocktail Server, where the full path may looks as follows: <span class="highlighted-docs-text">[host]:[port]/usr/fb</span>. The <span class="highlighted-docs-text">/usr</span> component of the path relates to the <span class="highlighted-docs-text">Usr Handler</span> which requests to all user-defined Bashlets must be routed through.</li>
-                          <li>The <span class="highlighted-docs-text">BashletPath</span> property defines the absolute path to the Bashlet script file on disk. This is the file that will be executed by the BashletEngine when a request is routed to this Bashlet.</li>
+                          <li>The <span class="highlighted-docs-text">BashletPath</span> property defines the absolute path to the Bashlet script file on disk (i.e the <span class="highlighted-docs-text">my-first-bashlet.shh</span> file that we created). This is the file that will be executed by the BashletEngine when a request is routed to this Bashlet.</li>
                         </ol>
-                        <br>
+            
+                       <br>
+                       <hr>
+                       <p style=" font-weight: bold; color:#6777ef;">3. Testing My First Bashlet</p>
+                        To test the new Bashlet, simply start (or restart, if already running) the Mocktail Server and send a GET request to the following path using your favourite HTTP client (e.g Postman, curl, browser, etc): 
+                        <img src="assets/img/mocktail-first-bashlet-path.png" alt="My First Bashlet Path" height="300" width="auto" style="display: block; margin-left: auto; margin-right: auto; margin-top: 20px;"> 
+                        You should receive a response with the body content set to the string "success" as defined in the Bashlet endpoint function. If you receive a 
+                        404 Not Found error, please ensure that the Bashlet route has been correctly defined in the <span class="highlighted-docs-text">usr-handler-routes.json</span> 
+                        file and that the Mocktail Server has been restarted after making changes to this file. <br><br>
+                        Thats it!! <span class="highlighted-docs-text">You've written and deployed your first Bashlet to Mocktail Server, congratulations!</span> in the next section we'll take a look at real world examples of Bashlet endpoint functions and how to use the <span style="font-weight: bold;">BashletContext</span> to parse request data, persist contextual data across requests, and to generate dynamic responses.
+
                         
                     </div>
 

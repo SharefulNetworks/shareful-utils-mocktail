@@ -168,8 +168,8 @@
                     <ul class="nav nav-pills flex-column">
                       <li id="dynamic-web-hosting-into-to-bashlets-btn" class="nav-item"><a href="#" class="nav-link active">Intro to Bashlets</a></li>
                       <li id="dynamic-web-hosting-writing-first-bashlet-btn" class="nav-item"><a href="#" class="nav-link">Writing Your First Bashlet</a></li>
-                      <li id="dynamic-web-hosting-context-bashlets-btn" class="nav-item"><a href="#" class="nav-link">The Bashlet Context</a></li>
-                      <li id="dynamic-web-hosting-examples-bashlets-btn" class="nav-item"><a href="#" class="nav-link">Bashlet Examples</a></li>
+                       <li id="dynamic-web-hosting-examples-bashlets-btn" class="nav-item"><a href="#" class="nav-link">Bashlets: A Closer Look</a></li>
+                       <li id="dynamic-web-hosting-context-bashlets-btn" class="nav-item"><a href="#" class="nav-link">The Bashlet Context</a></li>
                     </ul>
                   </div>
                 </div>
@@ -352,10 +352,10 @@ getUsers(){
                        <p style=" font-weight: bold; color:#6777ef;">3. Testing My First Bashlet</p>
                         To test the new Bashlet, simply start (or restart, if already running) the Mocktail Server and send a GET request to the following path using your favourite HTTP client (e.g Postman, curl, browser, etc): 
                         <img src="assets/img/mocktail-first-bashlet-path.png" alt="My First Bashlet Path" height="300" width="auto" style="display: block; margin-left: auto; margin-right: auto; margin-top: 20px;"> 
-                        You should receive a response with the body content set to the string "success" as defined in the Bashlet endpoint function. If you receive a 
+                        You should receive a response with the body content set to the string <span class="highlighted-docs-text">"success"</span> as defined in the Bashlet endpoint function. If you receive a 
                         404 Not Found error, please ensure that the Bashlet route has been correctly defined in the <span class="highlighted-docs-text">usr-handler-routes.json</span> 
                         file and that the Mocktail Server has been restarted after making changes to this file. <br><br>
-                        Thats it!! <span class="highlighted-docs-text">You've written and deployed your first Bashlet to Mocktail Server, congratulations!</span> in the next section we'll take a look at real world examples of Bashlet endpoint functions and how to use the <span style="font-weight: bold;">BashletContext</span> to parse request data, persist contextual data across requests, and to generate dynamic responses.
+                        Thats it!! <span class="highlighted-docs-text">You've written and deployed your first Bashlet to Mocktail Server, congratulations!</span> in the next section we'll take a look at real world examples of Bashlet endpoint functions and how to use the <span style="font-weight: bold;">BashletContext</span> to parse request data, persist contextual data across requests, and to generate dynamic JSON responses.
 
                         
                     </div>
@@ -370,7 +370,46 @@ getUsers(){
 
 
 
-                  <!-- Start of The Bashlet Context Card-->
+            
+
+
+                  <!-- Start of Bashlet Examples Card-->
+                  <div class="card" id="bashlet-examples-card" style="display: none;">
+                    <div class="card-header">
+                      <h4>Bashlets: A Closer Look</h4>
+                    </div>
+                    <div class="card-body">
+                       <p style=" font-weight: bold; color:#6777ef;">Overview</p>
+                      In this section we will <span class="highlighted-docs-text">build upon the simple Bashlet that we created in the previous section</span>  and introduce some additional functionality. The goal is to demonstrate how to use the various functions exposed by the <span class="highlighted-docs-text">BashletContext</span> to  <b>easily</b> write real-world Bashlet applications that can parse/process request data, persist contextual data across requests, and generate dynamic JSON responses.
+                      The following details will be covered in this section:
+                      <br>
+                      <br>
+                      <ol>
+                        <li>The Bashlet Request & Response Objects </li>
+                        <li>Parsing URL query and path variables</li>
+                        <li>Parsing and Setting the Request Body</li>
+                        <li>Setting and reading HTTP headers and cookies</li>
+                        <li>Returning JSON responses</li>
+                        <li>Forwarding and redirecting requests</li>
+                      </ol>
+                   
+                      <hr>
+                      <p style=" font-weight: bold; color:#6777ef;">1. The Bashlet Request & Response Objects</p>
+                       Much of the work you'll undertake in a Bashlet will require the direct use of the <span class="highlighted-docs-text">Basdhlet Request and Response objects</span>, thus it may be useful to breifly review their respective structure and usage before progressing any further. The Bashlet <span class="highlighted-docs-text">Request</span> and <span class="highlighted-docs-text">Response</span> objects are high-level JSON-based objects that are automatically injected into every Bashlet endpoint function by the Bashlet Container (BashletEngine) when the endpoint function is invoked. The <span class="highlighted-docs-text">Request</span> object contains all the information about the inbound client request, including the HTTP method, path, headers, query parameters, and body content. The <span class="highlighted-docs-text">Response</span> object is used to construct the response that will be sent back to the client, including setting the status code, headers, and body content.
+                      <hr>
+                      
+                      
+                    </div>
+
+                    <div class="card-footer bg-whitesmoke text-md-right">
+                      <button class="btn btn-primary print-btn"><i class="fas fa-print"></i> Print Page</button>
+                      <button class="btn btn-secondary back-btn" type="button"><i class="fas fa-arrow-left"></i> Back</button>
+                    </div>
+                  </div>
+                    <!-- End of Bashlet Examples Card-->
+
+
+                     <!-- Start of The Bashlet Context Card-->
                   <div class="card" id="the-bashlet-context-card" style="display: none;">
                     <div class="card-header">
                       <h4>The Bashlet Context</h4>
@@ -386,24 +425,6 @@ getUsers(){
                     </div>
                   </div>
                     <!-- End of The Bashlet Context Card-->
-
-
-                  <!-- Start of Bashlet Examples Card-->
-                  <div class="card" id="bashlet-examples-card" style="display: none;">
-                    <div class="card-header">
-                      <h4>Bashlet Examples</h4>
-                    </div>
-                    <div class="card-body">
-                      
-                      
-                    </div>
-
-                    <div class="card-footer bg-whitesmoke text-md-right">
-                      <button class="btn btn-primary print-btn"><i class="fas fa-print"></i> Print Page</button>
-                      <button class="btn btn-secondary back-btn" type="button"><i class="fas fa-arrow-left"></i> Back</button>
-                    </div>
-                  </div>
-                    <!-- End of Bashlet Examples Card-->
 
 
                 

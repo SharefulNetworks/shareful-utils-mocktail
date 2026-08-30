@@ -398,7 +398,7 @@ getUsers(){
                        Much of the work you'll undertake in a Bashlet will require the direct use of the <span class="highlighted-docs-text">Basdhlet Request and Response objects</span>, thus it may be useful to breifly review their respective structure and usage before progressing any further. The Bashlet <span class="highlighted-docs-text">Request</span> and <span class="highlighted-docs-text">Response</span> objects are high-level JSON-based objects that are automatically injected into every Bashlet endpoint function by the Bashlet Container (BashletEngine) when the endpoint function is invoked. The <span class="highlighted-docs-text">Request</span> object contains all the information about the inbound client request, including the HTTP method, path, headers, query parameters, and body content. The <span class="highlighted-docs-text">Response</span> object is used to construct the response that will be sent back to the client, including setting the status code, headers, and body content.
                       <hr>
                       <p style=" font-weight: bold; color:#6777ef;">2. Parsing URL query and path variables</p>
-                       The HTTP specification allows for the inclusion of paramters in a request URL, either as <span class="highlighted-docs-text">query parameters</span> (appended to the URL after a '?' character) or as <span class="highlighted-docs-text">path variables</span> (embedded within the URL path). The BashletContext provides functions to easily extract these parameters from the Request object. The following code examples will demonstrate how to parse query parameters and path variables in a Bashlet endpoint function, open the <span class="highlighted-docs-text">my-first-bashlet.shh</span> file and add the following endpoint functions:
+                       The HTTP specification allows for the inclusion of paramters in a request URL, either as <span class="highlighted-docs-text">query parameters</span> (appended to the URL after a '?' character) or as <span class="highlighted-docs-text">path variables</span> (embedded within the URL path). The BashletContext provides functions to easily extract these parameters from the <span class="highlighted-docs-text">Request</span> object. The following code examples will demonstrate how to parse query parameters and path variables in a Bashlet endpoint function, open the <span class="highlighted-docs-text">my-first-bashlet.shh</span> file and add the following endpoint functions:
                        <br>
                        <br>
                        <pre style="margin-bottom: -20px;"><code class="language-bash" style="border-radius: 5px;">
@@ -451,13 +451,61 @@ createUser(){
                       <br>
                       <br>
                       <ol>
-                        <li>Most <b>critically</b>, the <span class="highlighted-docs-text">ParseBashletRequestQueryStringParam</span> function (provided by the BashletContext) is used to extract the value of a specific query string parameter from the Request object. <span class="highlighted-docs-text">It takes the Request object and the name of the parameter as arguments and returns the value of the parameter if it exists</span>, or an empty string if it does not.</li>
+                        <li>Most <b>critically</b>, the <span class="highlighted-docs-text">ParseBashletRequestQueryStringParam</span> function (provided by the <b>BashletContext</b>) is used to extract the value of a specific query string parameter from the Request object. <span class="highlighted-docs-text">It takes the Request object and the name of the parameter as arguments and returns the value of the parameter if it exists</span>, or an empty string if it does not. Where multiple URL parameters have been specified e.g api/users?<b>id=123&name=John</b>, then multiple calls to the <span class="highlighted-docs-text">ParseBashletRequestQueryStringParam</span> function can be made to parse each parameter.</li>
                         <li>If the required query string parameter is missing, we use the <span class="highlighted-docs-text">SendBashletErrorResponse</span> function to return a 400 Bad Request error response to the client, along with an appropriate error message.</li>
                         <li>If the required query string parameter is present, we proceed with the business logic of the endpoint function and return a success response to the client.</li>
                         <li>Finally you may have noticed log lines at various points in the code to help with debugging and monitoring. <span class="highlighted-docs-text">Log</span> is a built-in function that may be used from anywhere in a Bashlet to log messages at different levels of granularity (i.e. TRACE,DEBUG, INFO, WARN, ERROR). The function takes the log level and the message as arguments.</li>
                       </ol>
+      
                       <br>
-                      
+                        Next we'll take a look at how to parse <span class="highlighted-docs-text">path variables</span> from the request URL. Path variables are typically <span class="highlighted-docs-text">used to identify specific resources in a RESTful API, and they are embedded directly in the URL path</span>. For example, a request to /api/users/<b>123</b> would indicate that we want to access the user with ID 123. In this next example, we'll demonstrate how to parse a path variable from the request URL in a Bashlet endpoint function, which is just as simple as parsing a query string parameter as the BashletContext provides a function to assist us in this regard. Add the following endpoint function definition to your <span class="highlighted-docs-text">my-first-bashlet.shh</span> file:
+                       <br>
+                       <br>
+                       <pre style="margin-bottom: -20px;"><code class="language-bash" style="border-radius: 5px;">
+
+# example update user address endpoint function that demonstrates how to parse path variables from an inbound request and also how to return 
+# an error response to the client if a required path variable is missing. Also note the use of the @route annotation to specify the 
+# PUT HTTP method and a path for this endpoint.  Also note how the path variable is specified in the @route annotation using curly braces, e.g {UserId}.
+# this is the variable that we will parse from the request URL using the ParseBashletRequestPathParam function provided by the BashletContext.                     
+# @route method=put path=/api/users/{UserId}/addresses
+updateUserAddress(){
+    request="$1"
+    response="$2"
+
+   Log "DEBUG" "my-first-bashlet: Inside updateUserAddress function..."
+
+     # parse the user id from the request path.
+     userId=$(ParseBashletRequestPathParam "$request" "UserId")
+
+    # if the user id is empty, return a 400 error to the client.
+    if [ -z "$userId" ]; then
+        local err_content="Bad Request - Missing required path parameter: UserId"
+        SendBashletErrorResponse "400"  "$err_content" "$request"
+        return 1
+    fi
+
+    # TODO: here is where you would parse the rest of the data from the PUT request body and undertake 
+    # the necessary business logic to update the user's address in your application, for example 
+    # updating a record in a database, etc.
+
+    # finally send success response to client, for the purposes of this example we will simply return a 
+    # 200 OK response to the client with a success message
+    local success_content="User address updated successfully for user id: $userId"
+    SetBashletResponseBody "$response" "$success_content"
+
+
+}
+
+
+                       </code>
+                       </pre>
+                       The key points to note in the above example are as follows:
+                       <br>
+                       <br>
+                       <ol>
+                        <li>The <span class="highlighted-docs-text">@route annotation</span> is used to define the <b>method</b> and <b>path</b> for the endpoint as usual, however if you examine the path value, you will note that it <b>also</b> includes a path variable, defined in curly braces: <b>{userId}</b>  in this case. Any number of path variables can be defined in the same way.</li>
+                        <li>The <span class="highlighted-docs-text">ParseBashletRequestPathParam</span> function (provided by the <b>BashletContext</b>) is used to extract the value of a specific path variable from the Request object. <span class="highlighted-docs-text">It takes the Request object and the name of the path variable as arguments (as defined in the @route annotation) and returns the value of the variable if it exists</span>.</li>
+                       </ol>
                     </div>
 
                     <div class="card-footer bg-whitesmoke text-md-right">

@@ -389,7 +389,6 @@ getUsers(){
                         <li>Parsing URL query and path variables</li>
                         <li>Parsing and Setting the Request Body</li>
                         <li>Setting and reading HTTP headers and cookies</li>
-                        <li>Returning JSON responses</li>
                         <li>Forwarding and redirecting requests</li>
                       </ol>
                    
@@ -567,6 +566,112 @@ createUser2(){
                           <li>The <span class="highlighted-docs-text">SetBashletResponseBody</span> function (also provided by the <b>BashletContext</b>) is used to set the response body in the Response object. <span class="highlighted-docs-text">It takes the Response object and the response body content as arguments and sets the response body accordingly</span>.</li>
                         </ol>
                        <br>
+                   
+                       <hr>
+                       <p style=" font-weight: bold; color:#6777ef;">4. Setting and reading HTTP headers and cookies</p>
+                       In this section we'll explore how to set and read HTTP headers and cookies in a Bashlet endpoint function. The <span class="highlighted-docs-text">BashletContext</span> provides functions to easily set and read HTTP headers and cookies in the Request and Response objects. Please add the following endpoint function definition to your <span class="highlighted-docs-text">my-first-bashlet.shh</span> file:
+                        <br>
+                       <br>
+                       <pre style="margin-bottom: -20px;"><code class="language-bash" style="border-radius: 5px;">
+
+# example update user address endpoint function that demonstrates how to set and read HTTP headers and cookies in a Bashlet endpoint function.                    
+# @route method=put path=/api/users/{UserId}/settings
+updateUserSettings(){
+    request="$1"
+    response="$2"
+
+   Log "DEBUG" "my-first-bashlet: Inside updateUserSettings function..."
+
+    # parse the user id from the request path.
+    userId=$(ParseBashletRequestPathParam "$request" "UserId")
+
+    # if the user id is empty, return a 400 error to the client.
+    if [ -z "$userId" ]; then
+        local err_content="Bad Request - Missing required path parameter: UserId"
+        SendBashletErrorResponse "400"  "$err_content" "$request"
+        return 1
+    fi
+
+    # FIRST LETS DEAL WITH THE PROCESS OF READING HTTP HEADERS FROM THE REQUEST OBJECT AND SETTING HTTP HEADERS IN THE RESPONSE OBJECT. 
+    # The BashletContext provides functions to easily read and set HTTP headers in the Request and Response objects.
+
+    # 1) parse the standard "User-Agent" header from the request by using the ParseBashletRequestHeader function provided by the BashletContext.
+    #    This function takes the Request object and the header name as arguments and returns the value of the header if it exists, 
+    #    or an empty string if it does not.
+    #    if it is not present we will return a 400 Bad Request error response to the client.
+    #    Note: You can also alternatively use the ParseBashletRequestHeaders function to parse all headers from the request.
+    # 
+    userAgent="$(ParseBashletRequestHeader "$request" "User-Agent")"
+    if [[ -z $userAgent ]]; then
+        Log "ERROR" "my-first-bashlet: missing required User-Agent header, returning 400 Bad Request error response to client..."
+        local err_status_code=400
+        local err_content="Bad Request - Missing required User-Agent header"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # 2) Next we can set an HTTP header in the response, by using the SetBashletResponseHeadera function provided by the BashletContext. 
+    # This function takes the Response object, the header name and the header value as arguments and sets the header in the response.
+    SetBashletResponseHeader "$response" "X-User-ID" "$userId"
+
+    
+    # NEXT LETS DEAL WITH THE PROCESS OF READING COOKIES FROM THE REQUEST OBJECT AND SETTING COOKIES IN THE RESPONSE OBJECT. COOKIES
+    # ARE REALLY JUST ANOTHER TYPE OF HTTP HEADER, THUS THE PROCESS IS SIMILAR TO THAT OF READING AND SETTING HTTP HEADERS. 
+    # The BashletContext provides functions to easily read and set cookies in the Request and Response objects.
+
+    # 3) parse the "session_id" cookie from the request by using the ParseBashletRequestCookieParam function provided by the BashletContext.
+    #    This function takes the Request object and the cookie name as arguments and returns the value of the cookie if it exists, 
+    #    or an empty string if it does not. If the cookie is not present, we will return a 400 Bad Request error response to the client.
+    #    Note: You can also alternatively use the ParseBashletRequestCookies function to parse all cookies from the request.
+    
+    session_id=$(ParseBashletRequestCookieParam "$request" "session_id")
+    if [[ -z $session_id ]]; then
+        Log "ERROR" "my-first-bashlet: missing required session_id cookie, returning 400 Bad Request error response to client..."
+        local err_status_code=400
+        local err_content="Bad Request - Missing required session_id cookie"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    # 4) Next we can set a cookie in the response, by using the SetCookieInBashletResponse function provided by the BashletContext.
+    # This function takes the Response object, the cookie name, the cookie value and an optional cookie attributes string as arguments 
+    # and sets the cookie in the response. The cookie attributes string can be used
+    # to set additional attributes for the cookie, such as the domain, path, secure, etc.
+    # Here we just set a simple cookie with the name "user_id" and the value of the userId variable, along with some common attributes 
+    # for security and privacy.
+    SetCookieInBashletResponse "$response" "user_id" "$userId" "Path=/; HttpOnly; Secure; SameSite=Strict"
+
+
+    # TODO: here is where you would parse the rest of the data from the PUT request body and undertake 
+    # the necessary business logic to update the user's settingd in your application, for example 
+    # updating a record in a database, etc.
+
+    # finally send success response to client, for the purposes of this example we will simply return a 
+    # 200 OK response to the client with a success message
+    local success_content="User address updated successfully for user id: $userId"
+    SetBashletResponseBody "$response" "$success_content"
+
+
+}
+
+
+                       </code>
+                       </pre>
+
+                       The key points to note in the above example are as follows:
+                       <br>
+                       <br>
+                        <ol>
+                          <li>The <span class="highlighted-docs-text">ParseBashletRequestHeader</span> function (provided by the <b>BashletContext</b>) is used to extract the value of a specific HTTP header from the Request object. <span class="highlighted-docs-text">It takes the Request object and the name of the header as arguments and returns the value of the header if it exists</span>, or an empty string if it does not.</li>
+                          <li>The <span class="highlighted-docs-text">SetBashletResponseHeader</span> function (also provided by the <b>BashletContext</b>) is used to set the value of a specific HTTP header in the Response object. <span class="highlighted-docs-text">It takes the Response object, the name of the header, and the value of the header as arguments and sets the header in the response</span>.</li>
+                          <li>The <span class="highlighted-docs-text">ParseBashletRequestCookieParam</span> function (provided by the <b>BashletContext</b>) is used to extract the value of a specific cookie from the Request object. <span class="highlighted-docs-text">It takes the Request object and the name of the cookie as arguments and returns the value of the cookie if it exists</span>, or an empty string if it does not.</li>
+                          <li>The <span class="highlighted-docs-text">SetCookieInBashletResponse</span> function (also provided by the <b>BashletContext</b>) is used to set the value of a specific cookie in the Response object. <span class="highlighted-docs-text">It takes the Response object, the name of the cookie, the value of the cookie, and an optional cookie attributes string as arguments and sets the cookie in the response</span>.</li>
+                        </ol>
+                       <br>
+                       <hr>
+                       <p style=" font-weight: bold; color:#6777ef;">5. Forwarding and redirecting requests</p>
+                       In this section we'll explore how to forward and redirect requests in a Bashlet endpoint function. The <span class="highlighted-docs-text">BashletContext</span> provides functions to easily forward and redirect requests to both static and dynamic resources. Please add the following endpoint function definition to your <span class="highlighted-docs-text">my-first-bashlet.shh</span> file:
+
 
 
 

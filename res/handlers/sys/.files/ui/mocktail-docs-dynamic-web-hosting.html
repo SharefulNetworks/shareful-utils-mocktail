@@ -730,23 +730,8 @@ redirectToAdminDashboard(){
                             <li>The <span class="highlighted-docs-text">DispatchBashletRedirectResponse</span> function (also provided by the <b>BashletContext</b>) is used to redirect a request to another resource. <span class="highlighted-docs-text">It takes the path to the resource as an argument and redirects the request to that resource</span>. The server sends a response to the client indicating that the requested resource has moved to a new location, and the client is expected to make a new request to the new location.</li>
                           </ol>
                         <br>
-                        <hr>
-                        <p style=" font-weight: bold; color:#6777ef;">The Bashlet Context</p>
-                        As you may gather from the preceeding code examples, the <span class="highlighted-docs-text">BashletContext</span> is a powerful server component that provides a wide range of functions to facilitate the development of Bashlets and their constituent endpoint functions. The <span class="highlighted-docs-text">BashletContext</span> is the <u><b>only</b></u> import that a Bashlet <b>must</b> declare,
-                        the principal features it provides are as follows:
-                        <br>
-                        <br>
-                        <ol>
-                          <li>Provides a <span class="highlighted-docs-text">singluar centralised context for all instances of the same Bashlet</span>, including an integrated, bashlet-scoped Key-Value store</li>
-                          <li>Provides a <span class="highlighted-docs-text">suite of intuitive, utility functions to greatly simplify the development of Bashlets</span>, including functions for parsing and manipulating request and response data.</li>
-                        </ol>
-                          
-                          Next We shall take a look at each of these features in greater detail, and provide some code examples to illustrate their usage.
                         
-                        <!--
-                        by the Bashlet Container (BashletEngine) when the endpoint function is invoked, and it provides a consistent and intuitive interface for interacting with the Request and Response objects.
-                        -->
-
+                
 
 
                     </div>
@@ -765,7 +750,18 @@ redirectToAdminDashboard(){
                       <h4>The Bashlet Context</h4>
                     </div>
                     <div class="card-body">
+                        <p style="font-weight: bold; color: #6777ef;">Overview</p>
+                        As you may gather from the preceeding code examples, the <span class="highlighted-docs-text">BashletContext</span> is a powerful server component that provides a wide range of functions to facilitate the development of Bashlets and their constituent endpoint functions. The <span class="highlighted-docs-text">BashletContext</span> is the <u><b>only</b></u> import that a Bashlet <b>must</b> declare,
+                        the principal features it provides are as follows:
+                        <br>
+                        <br>
+                        <ol>
+                          <li>Provides a <span class="highlighted-docs-text">singluar centralised context for all instances of the same Bashlet</span>, including an integrated, bashlet-scoped Key-Value store</li>
+                          <li>Provides a <span class="highlighted-docs-text">suite of intuitive, utility functions to greatly simplify the development of Bashlets</span>, including functions for parsing and manipulating request and response data.</li>
+                        </ol>
                       
+                          In this section, we shall take a look at each of these features in greater detail, and provide some code examples to illustrate their usage.
+                        
                       
                     </div>
 

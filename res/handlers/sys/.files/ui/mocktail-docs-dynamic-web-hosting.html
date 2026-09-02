@@ -761,7 +761,11 @@ redirectToAdminDashboard(){
                         </ol>
                       
                           In this section, we shall take a look at each of these features in greater detail, and provide some code examples to illustrate their usage.
-                        
+                          <br>
+                          <hr>
+                          <p style="font-weight: bold; color: #6777ef;">1. The Bashlet Context Key-Value Store</p>
+                           Mocktail Server operates on a <span class="highlighted-docs-text">process-per-request model</span>, each incoming request is handled by its own isolated, short-lived process. As such, it follows that every request to a Bashlet results in a new instance of that Bashlet complete with its own execution context (and related data) that is immediately destroyed once the request is complete. The <span class="highlighted-docs-text">BashletContext</span> provides a <span class="highlighted-docs-text">bashlet-scoped Key-Value store that allows you to persist data across requests to the same Bashlet</span>. This is particularly useful for storing/caching contextual application data, specific to a Bashlet, that would be expensive to compute on each request, its also useful for any other data that needs to be shared across multiple requests as <span class="highlighted-docs-text">data stored to the key-value store will persist until its explicitly deleted or the Mocktail Server is shutdown</span>, whichever occurs first.
+
                       
                     </div>
 

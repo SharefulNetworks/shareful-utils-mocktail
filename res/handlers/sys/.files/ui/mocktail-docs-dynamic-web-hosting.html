@@ -570,7 +570,7 @@ createUser2(){
                        <hr>
                        <p style=" font-weight: bold; color:#6777ef;">4. Setting and reading HTTP headers and cookies</p>
                        In this section we'll explore how to set and read HTTP headers and cookies in a Bashlet endpoint function. The <span class="highlighted-docs-text">BashletContext</span> provides functions to easily set and read HTTP headers and cookies in the Request and Response objects. Please add the following endpoint function definition to your <span class="highlighted-docs-text">my-first-bashlet.shh</span> file:
-                        <br>
+                       <br>
                        <br>
                        <pre style="margin-bottom: -20px;"><code class="language-bash" style="border-radius: 5px;">
 
@@ -670,8 +670,68 @@ updateUserSettings(){
                        <br>
                        <hr>
                        <p style=" font-weight: bold; color:#6777ef;">5. Forwarding and redirecting requests</p>
-                       In this section we'll explore how to forward and redirect requests in a Bashlet endpoint function. The <span class="highlighted-docs-text">BashletContext</span> provides functions to easily forward and redirect requests to both static and dynamic resources. Please add the following endpoint function definition to your <span class="highlighted-docs-text">my-first-bashlet.shh</span> file:
+                        In this section we'll explore how to <span class="highlighted-docs-text">forward</span> and <span class="highlighted-docs-text">redirect</span> requests in a Bashlet endpoint function. Whilst they are similar in concept, they have different use cases and implementation details. <span class="highlighted-docs-text">When a request is forwarded to another resource, this all happens server-side</span>; the original request is forwarded to the new resource. <span class="highlighted-docs-text">Conversely, when a request is redirected, the server sends a response to the client indicating that the requested resource has moved to a new location and the client is expected to make a new request to the new location.</span>   The <span class="highlighted-docs-text">BashletContext</span> provides functions to easily forward and redirect requests to both static and dynamic resources. First we'll take a look at how to <span class="highlighted-docs-text">forward</span> a request.Please add the following endpoint function definitions to your <span class="highlighted-docs-text">my-first-bashlet.shh</span> file:
+                       <br>
+                       <br>
+                       <pre style="margin-bottom: -20px;"><code class="language-bash" style="border-radius: 5px;">
 
+# Navigates to a fictious admin dashboard, this endpoint function demonstrates how to forward 
+# a request to a STATIC resource (in this case a static HTML file) using the ForwardBashletRequest 
+# function provided by the BashletContext. The ForwardBashletRequest function takes the path to the resource 
+# to forward the request to as an argument and forwards the request to that resource. Note, the ORIGINAL request 
+# is forwarded to the new resource, and the response from the new resource is returned to the client.
+# Note: The specified paths should be relative to the Mocktail Server's root directory, and the resource must exist on disk, 
+#       otherwise a 404 Not Found error will be returned to the client.
+# @route method=get path=/dashboard
+viewAdminDashboard(){
+    request="$1"
+    response="$2"
+
+    Log "DEBUG" "my-first-bashlet: inside viewAdminDashboard, forwarding to dashboard..."
+
+    # simply issue a call to the ForwardBashletRequest function to forward the request to the 
+    # specified resource, in this case a STATIC HTML file. You may also use this function to 
+    # forward requests to DYNAMIC resources, such as other Bashlets or endpoint functions within 
+    # the SAME Bashlet.
+    ForwardBashletRequest "/usr/ui/my-fictitious-dashboard.html"
+
+}
+
+                        </code>
+                        </pre>
+                        Next we'll take a look at how to <span class="highlighted-docs-text">redirect</span> a request. Please add the following endpoint function definition to your <span class="highlighted-docs-text">my-first-bashlet.shh</span> file:
+                       <br>
+                       <br>
+                       <pre style="margin-bottom: -20px;"><code class="language-bash" style="border-radius: 5px;">
+# Navigates to a fictious admin dashboard, this endpoint function demonstrates how to redirect 
+# a request to a STATIC resource (in this case a static HTML file) using the DispatchBashletRedirectResponse function provided by the BashletContext. 
+# The DispatchBashletRedirectResponse function takes the path to the resource as an argument and redirects the request to that resource.
+# Note: The specified paths should be relative to the Mocktail Server's root directory, and the resource must exist on disk, 
+#       otherwise a 404 Not Found error will be returned to the client.
+# @route method=get path=/redirect-dashboard
+redirectToAdminDashboard(){
+    request="$1"
+    response="$2"
+
+    Log "DEBUG" "my-first-bashlet: inside redirectToAdminDashboard, redirecting to admin dashboard..."
+
+    # simply issue a call to the DispatchBashletRedirectResponse function to redirect the request to the 
+    # specified resource, in this case a STATIC HTML file.
+    DispatchBashletRedirectResponse "/usr/ui/my-fictitious-dashboard.html"
+
+}
+                        </code>
+                        </pre>
+                        The key points to note in the above examples are as follows:
+                        <br>
+                        <br>
+                          <ol>
+                            <li>The <span class="highlighted-docs-text">ForwardBashletRequest</span> function (provided by the <b>BashletContext</b>) is used to forward a request to another resource. <span class="highlighted-docs-text">It takes the path to the resource as an argument and forwards the request to that resource</span>. The original request is forwarded to the new resource, and the response from the new resource is returned to the client.</li>
+                            <li>The <span class="highlighted-docs-text">DispatchBashletRedirectResponse</span> function (also provided by the <b>BashletContext</b>) is used to redirect a request to another resource. <span class="highlighted-docs-text">It takes the path to the resource as an argument and redirects the request to that resource</span>. The server sends a response to the client indicating that the requested resource has moved to a new location, and the client is expected to make a new request to the new location.</li>
+                          </ol>
+                        <br>
+                        <hr>
+                        <p style=" font-weight: bold; color:#6777ef;">The Bashlet Context</p>
 
 
 

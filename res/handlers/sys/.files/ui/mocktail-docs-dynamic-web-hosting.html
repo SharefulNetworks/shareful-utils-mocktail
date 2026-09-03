@@ -391,6 +391,16 @@ getUsers(){
                         <li>Setting and reading HTTP headers and cookies</li>
                         <li>Forwarding and redirecting requests</li>
                       </ol>
+
+                      <!-- light bulb icon-->
+                      <div class="alert alert-light alert-has-icon">
+                        <div class="alert-icon"><i class="far fa-lightbulb"></i></div>
+                        <div class="alert-body">
+                          <div class="alert-title">Pro Tip:</div>
+                           The internal system-level, <b>Admin (i.e this app you're using now) and Mocking applications were themselves created using Bashlets,</b> they are located at <span class="highlighted-docs-text">/res/bashlets/sys/AdminController.shh</span> and <span class="highlighted-docs-text">/res/bashlets/sys/MockingController.shh</span> respectively. Whilst what follows <i><b>is</b></i> a comprehensive overview of how to write dynamic web apps using Bashlets, it is by no means an exhaustive guide covering all the functionality that can be implemented in a Bashlet, you are therefore encouraged to explore the <b>Admin</b> and <b>Mocking</b> Bashlets to get a better understanding of how real-world Bashlet applications might be implemented.
+                        </div>
+                      </div>
+                      <br>
                    
                       <hr>
                       <p style=" font-weight: bold; color:#6777ef;">1. The Bashlet Request & Response Objects</p>
@@ -756,7 +766,7 @@ redirectToAdminDashboard(){
                         <br>
                         <br>
                         <ol>
-                          <li>Provides a <span class="highlighted-docs-text">singluar centralised context for all instances of the same Bashlet</span>, including an integrated, bashlet-scoped Key-Value store</li>
+                          <li>Provides a <span class="highlighted-docs-text">singluar centralised context for all instances of the same Bashlet</span>, including an integrated, bashlet-scoped <span class="highlighted-docs-text">Key-Value store</span>.</li>
                           <li>Provides a <span class="highlighted-docs-text">suite of intuitive, utility functions to greatly simplify the development of Bashlets</span>, including functions for parsing and manipulating request and response data.</li>
                         </ol>
                       
@@ -829,10 +839,60 @@ getAppSettings(){
                            <br>
                            <br>
                            <ol>
-                            <li>The <span class="highlighted-docs-text">init</span> function is an <b>optional</b> lifecycle function that is automatically invoked by the BashletEngine on the first call to a Bashlet. It is a good place to perform any initialization tasks that need to be done before the Bashlet can be used. In this example, we simulate an initialization process and cache the result in the BashletContext's key-value store.</li>
+                            <li>The <span class="highlighted-docs-text">init</span> function is an <b>optional</b> lifecycle function that is <span class="highlighted-docs-text">automatically invoked, by the BashletEngine, on the first call to a Bashlet</span>. It is a good place to perform any initialization tasks that need to be done before the Bashlet can be used. In this example, we simulate an initialization process and cache the result in the BashletContext's key-value store.</li>
                             <li>In the <span class="highlighted-docs-text">init</span> lifecycle function, we use the <span class="highlighted-docs-text">KVWrite</span> function to store the app settings in the key-value store. The <span class="highlighted-docs-text">KVWrite</span> function takes a key and a value as arguments and stores the value in the key-value store under the specified key.</li>
                             <li>In the <span class="highlighted-docs-text">getAppSettings</span> endpoint function, we use the <span class="highlighted-docs-text">KVRead</span> function to retrieve the app settings from the key-value store. The <span class="highlighted-docs-text">KVRead</span> function takes a key as an argument and returns the value stored in the key-value store under the specified key.</li>
-                            
+                           </ol>
+
+                           <br>
+                           <hr>
+                           <p style="font-weight: bold; color: #6777ef;">2. The Bashlet Context Utility Functions</p>
+                           The <span class="highlighted-docs-text">BashletContext</span> provides a suite of utility functions to greatly simplify the development of Bashlets. These functions cover a wide range of functionality, including parsing and manipulating request and response data. In the previous sections, we have already seen several examples of these utility here we will provide a summary of the most commonly used functions, along with a brief description of their purpose and usage. For a complete list of all available functions, please refer to the actual <span class="highlighted-docs-text">BashletContext script file</span> itself, which is located at <span class="highlighted-docs-text">/res/bashlets/internal/BashletContext</span> file on the Mocktail Server. Do note however that its a internal <b>readonly</b> file and should <u><b>not</b></u> be modified. The following table provides an overview of a subset of the most commonly used utiltiy functions provided by the <span class="highlighted-docs-text">BashletContext</span>:
+                           <br>
+                           <br>
+                           <table class="table table-striped table-bordered">
+                            <thead>
+                              <tr>
+                                <th>Function</th>
+                                <th>Description</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td><span class="highlighted-docs-text">ParseBashletRequestPathParam</span></td>
+                                <td>Parses a path variable from the request URL.</td>
+                              </tr>
+                              <tr>
+                                <td><span class="highlighted-docs-text">ParseBashletRequestHeader</span> </td>
+                                <td>Parses a specific HTTP header from the request.</td>
+                              </tr>
+                              <tr>
+                                <td><span class="highlighted-docs-text">ParseBashletRequestCookieParam</span></td>
+                                <td>Parses a specific cookie from the request.</td>
+                              </tr>
+                              <tr>
+                                <td><span class="highlighted-docs-text">ParseBashletRequestBody</span></td>
+                                <td>Parses the entire request body from the request.</td>
+                              </tr>
+                              <tr>
+                                <td><span class="highlighted-docs-text">SetBashletResponseHeader</span></td>
+                                <td>Sets a specific HTTP header in the response.</td>
+                              </tr>
+                              <tr>
+                                <td><span class="highlighted-docs-text">SetCookieInBashletResponse</span></td>
+                                <td>Sets a specific cookie in the response.</td>
+                              </tr>
+                              <tr>
+                                <td><span class="highlighted-docs-text">SetBashletResponseBody</span></td>
+                                <td>Sets the response body in the response.</td>
+                              </tr>
+
+                            </tbody>
+                          </table>
+                          <br>
+                          The above table provides a brief overview of some of the most commonly used utility functions provided by the <span class="highlighted-docs-text">BashletContext</span>. This is just a tiny subset of the full suite of functions available, for a complete list of all available functions, please refer to the actual <span class="highlighted-docs-text">BashletContext script file</span> itself, at the path specified above.
+                     
+
                       
                     </div>
 

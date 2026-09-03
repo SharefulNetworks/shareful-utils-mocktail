@@ -764,8 +764,75 @@ redirectToAdminDashboard(){
                           <br>
                           <hr>
                           <p style="font-weight: bold; color: #6777ef;">1. The Bashlet Context Key-Value Store</p>
-                           Mocktail Server operates on a <span class="highlighted-docs-text">process-per-request model</span>, each incoming request is handled by its own isolated, short-lived process. As such, it follows that every request to a Bashlet results in a new instance of that Bashlet complete with its own execution context (and related data) that is immediately destroyed once the request is complete. The <span class="highlighted-docs-text">BashletContext</span> provides a <span class="highlighted-docs-text">bashlet-scoped Key-Value store that allows you to persist data across requests to the same Bashlet</span>. This is particularly useful for storing/caching contextual application data, specific to a Bashlet, that would be expensive to compute on each request, its also useful for any other data that needs to be shared across multiple requests as <span class="highlighted-docs-text">data stored to the key-value store will persist until its explicitly deleted or the Mocktail Server is shutdown</span>, whichever occurs first.
+                           Mocktail Server operates on a <span class="highlighted-docs-text">process-per-request model</span>, each incoming request is handled by a dedicated, isolated, short-lived process. As such, it follows that every request to a Bashlet results in a new instance of that Bashlet complete with its own execution context (and related data) that is immediately destroyed once the request is complete. The <span class="highlighted-docs-text">BashletContext</span> provides a <span class="highlighted-docs-text">bashlet-scoped Key-Value store that allows you to persist data across requests to the same Bashlet</span>. This is particularly useful for storing/caching contextual application data, specific to a Bashlet, that would be expensive to compute on each request, its also useful for any other data that needs to be shared across multiple requests as <span class="highlighted-docs-text">data stored to the key-value store will persist until its explicitly deleted or the Mocktail Server is shutdown</span>, whichever occurs first. Add the following function definitions to your <span class="highlighted-docs-text">my-first-bashlet.shh</span> file:
+                           <br>
+                           <br>
+                           <pre style="margin-bottom: -20px;"><code class="language-bash" style="border-radius: 5px;">
+# init is an OPTIONAL lifecycle function, when defined it is automatically invoked by the BashletEngine on the first call to a bashlet, since its only
+# called once, it is a good place to perform any initialisation tasks that need to be done before the bashlet can be used.
+# Here we simulate an initialisation process and cache the result in the BashletContext's key-value store. Once stored there the data 
+# will be available to all subsequent requests to the same Bashlet, until the Mocktail Server is shutdown or the data is explicitly deleted.
+init(){
 
+   Log "DEBUG" "my-first-bashlet: Initializing..."
+
+   # Simulate an initialisation proces to do so we just create a dummy app settings JSON object
+   local dummyAppSettings="{}" 
+   dummyAppSettings="$(SetJSONString "$dummyAppSettings" '.appName' 'My First Bashlet')"
+   dummyAppSettings="$(SetJSONString "$dummyAppSettings" '.appVersion' '1.0.0')"
+   dummyAppSettings="$(SetJSONString "$dummyAppSettings" '.appDescription' 'This is my first bashlet')"
+
+
+   #  next and criticially we store the dummy app settings objects to the BashletContext's key-value store using the KVWrite function provided by the BashletContext.
+   #  The KVWrite function takes a key and a value as arguments and stores the value in the key-value store under the specified key. The value can be any 
+   #  valid JSON object, including strings, numbers, booleans, arrays and nested objects. The key can be any valid string
+   KVWrite "app-settings" "$dummyAppSettings"  
+
+   Log "DEBUG" "myfirst-bashlet: Initialization complete,"
+
+}
+
+# This function retrieves the application settings from the BashletContext's key-value store.
+# @route method=get path=/settings
+getAppSettings(){
+    request="$1"
+    response="$2"
+
+    Log "DEBUG" "my-first-bashlet: inside getAppSettings, retrieving app settings from BashletContext's key-value store..."
+
+    #  we retrieve the dummy app settings objects from the BashletContext's key-value store using the KVRead function provided by the BashletContext.
+    #  The KVRead function takes a key as an argument and returns the value stored in the key-value store under the specified key. 
+    #  If the key does not exist, it returns an empty string. In THIS specific example a value WILL exist since we stored it in the init function, 
+    #  which the BashletEngine calls automatically on the first request to a Bashlet, however in general you should always check for an empty string 
+    #  and handle it appropriately.
+    local appSettings="$(KVRead "app-settings")"
+
+    if [[ -z $appSettings ]]; then
+        Log "ERROR" "my-first-bashlet: app settings not found in BashletContext's key-value store, returning 500 Internal Server Error response to client..."
+        local err_status_code=500
+        local err_content="Internal Server Error - App settings not found in BashletContext's key-value store"
+        SendBashletErrorResponse "$err_status_code" "$err_content" "$request"
+        return 1
+    fi
+
+    #  finally we set the response body to the retrieved app settings JSON object using the SetBashletResponseBody function provided by the BashletContext.
+    SetBashletResponseBody "$response" "$appSettings"
+
+}
+
+
+
+                           </code>
+                           </pre>
+                           
+                           The key points to note in the above examples are as follows:
+                           <br>
+                           <br>
+                           <ol>
+                            <li>The <span class="highlighted-docs-text">init</span> function is an <b>optional</b> lifecycle function that is automatically invoked by the BashletEngine on the first call to a Bashlet. It is a good place to perform any initialization tasks that need to be done before the Bashlet can be used. In this example, we simulate an initialization process and cache the result in the BashletContext's key-value store.</li>
+                            <li>In the <span class="highlighted-docs-text">init</span> lifecycle function, we use the <span class="highlighted-docs-text">KVWrite</span> function to store the app settings in the key-value store. The <span class="highlighted-docs-text">KVWrite</span> function takes a key and a value as arguments and stores the value in the key-value store under the specified key.</li>
+                            <li>In the <span class="highlighted-docs-text">getAppSettings</span> endpoint function, we use the <span class="highlighted-docs-text">KVRead</span> function to retrieve the app settings from the key-value store. The <span class="highlighted-docs-text">KVRead</span> function takes a key as an argument and returns the value stored in the key-value store under the specified key.</li>
+                            
                       
                     </div>
 

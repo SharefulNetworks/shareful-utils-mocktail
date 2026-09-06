@@ -91,8 +91,9 @@
     const writingFirstBashletBtn = document.getElementById('dynamic-web-hosting-writing-first-bashlet-btn');
     const contextBashletsBtn = document.getElementById('dynamic-web-hosting-context-bashlets-btn');
     const examplesBashletsBtn = document.getElementById('dynamic-web-hosting-examples-bashlets-btn');
+    const httpHandlerBtn = document.getElementById('dynamic-web-hosting-http-handlers-btn'); 
 
-    if(introBtn && writingFirstBashletBtn && contextBashletsBtn && examplesBashletsBtn){
+    if(introBtn && writingFirstBashletBtn && contextBashletsBtn && examplesBashletsBtn && httpHandlerBtn){
         introBtn.addEventListener('click', function (e) {
             e.preventDefault();
             toggleDynamicWebHostingCategoryContent('intro');
@@ -111,6 +112,11 @@
         examplesBashletsBtn.addEventListener('click', function (e) {
             e.preventDefault();
             toggleDynamicWebHostingCategoryContent('examples');
+        });
+
+        httpHandlerBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleDynamicWebHostingCategoryContent('http-handlers');
         });
     }else{
         console.error("One or more Dynamic Web Hosting category buttons not found on the page.");
@@ -154,11 +160,12 @@
     const writingFirstBashletBtn = document.getElementById('dynamic-web-hosting-writing-first-bashlet-btn');
     const contextBashletsBtn = document.getElementById('dynamic-web-hosting-context-bashlets-btn');
     const examplesBashletsBtn = document.getElementById('dynamic-web-hosting-examples-bashlets-btn');
-
+    const httpHandlerBtn = document.getElementById('dynamic-web-hosting-http-handlers-btn');
     const introCard = document.getElementById('intro-to-bashlets-card');
     const writingFirstBashletCard = document.getElementById('writing-your-first-bashlet-card');
     const contextBashletCard = document.getElementById('the-bashlet-context-card');
     const examplesBashletCard = document.getElementById('bashlet-examples-card');
+    const httpHandlerCard = document.getElementById('http-handlers-card');
 
     // Remove active class from all nav-link elements
     introBtn.querySelector('.nav-link').classList.remove('active');
@@ -191,6 +198,13 @@
             contextBashletCard.style.display = 'none';
             examplesBashletCard.style.display = 'block';
             examplesBashletsBtn.querySelector('.nav-link').classList.add('active');
+        }else if (category === 'http-handlers') {
+            introCard.style.display = 'none';
+            writingFirstBashletCard.style.display = 'none';
+            contextBashletCard.style.display = 'none';
+            examplesBashletCard.style.display = 'none';
+            httpHandlerCard.style.display = 'block';
+            httpHandlerBtn.querySelector('.nav-link').classList.add('active');
         }
     }
    

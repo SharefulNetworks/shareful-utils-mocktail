@@ -170,6 +170,7 @@
                       <li id="dynamic-web-hosting-writing-first-bashlet-btn" class="nav-item"><a href="#" class="nav-link">Writing Your First Bashlet</a></li>
                        <li id="dynamic-web-hosting-examples-bashlets-btn" class="nav-item"><a href="#" class="nav-link">Bashlets: A Closer Look</a></li>
                        <li id="dynamic-web-hosting-context-bashlets-btn" class="nav-item"><a href="#" class="nav-link">The Bashlet Context</a></li>
+                       <li id="dynamic-web-hosting-http-handlers-btn" class="nav-item"><a href="#" class="nav-link">HTTP Handlers</a></li>
                     </ul>
                   </div>
                 </div>
@@ -224,7 +225,7 @@
                     <!-- End of Intro to Bashlets Card-->
 
 
-                    <!-- Start of Writing Your First Bashlet Card-->
+                  <!-- Start of Writing Your First Bashlet Card-->
                   <div class="card" id="writing-your-first-bashlet-card" style="display: none;">
                     <div class="card-header">
                       <h4>Writing Your First Bashlet</h4>
@@ -754,7 +755,7 @@ redirectToAdminDashboard(){
                     <!-- End of Bashlet Examples Card-->
 
 
-                     <!-- Start of The Bashlet Context Card-->
+                   <!-- Start of The Bashlet Context Card-->
                   <div class="card" id="the-bashlet-context-card" style="display: none;">
                     <div class="card-header">
                       <h4>The Bashlet Context</h4>
@@ -904,7 +905,33 @@ getAppSettings(){
                     <!-- End of The Bashlet Context Card-->
 
 
-                
+                     <!-- Start of HTTP Handlers card-->
+                  <div class="card" id="http-handlers-card" style="display: none;">
+                    <div class="card-header">
+                      <h4>HTTP Handlers</h4>
+                    </div>
+                    <div class="card-body">
+                        <p style="font-weight: bold; color: #6777ef;">Overview</p>
+                        As you may gather from the preceeding code examples, the <span class="highlighted-docs-text">BashletContext</span> is a powerful server component that provides a wide range of functions to facilitate the development of Bashlets and their constituent endpoint functions. The <span class="highlighted-docs-text">BashletContext</span> is the <u><b>only</b></u> import that a Bashlet <b>must</b> declare,
+                        the principal features it provides are as follows:
+                        <br>
+                        <br>
+                        <ol>
+                          <li>Provides a <span class="highlighted-docs-text">singluar centralised context for all instances of the same Bashlet</span>, including an integrated, bashlet-scoped <span class="highlighted-docs-text">Key-Value store</span>.</li>
+                          <li>Provides a <span class="highlighted-docs-text">suite of intuitive, utility functions to greatly simplify the development of Bashlets</span>, including functions for parsing and manipulating request and response data.</li>
+                        </ol>
+
+
+                          
+                    </div>
+
+                  
+                    <div class="card-footer bg-whitesmoke text-md-right">
+                      <button class="btn btn-primary print-btn"><i class="fas fa-print"></i> Print Page</button>
+                      <button class="btn btn-secondary back-btn" type="button"><i class="fas fa-arrow-left"></i> Back</button>
+                    </div>
+                  </div>
+                    <!-- End of HTTP Handlers card-->
               </div>
 
 

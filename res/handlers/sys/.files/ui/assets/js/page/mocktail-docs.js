@@ -172,23 +172,28 @@
     writingFirstBashletBtn.querySelector('.nav-link').classList.remove('active');
     contextBashletsBtn.querySelector('.nav-link').classList.remove('active');
     examplesBashletsBtn.querySelector('.nav-link').classList.remove('active');
+    httpHandlerBtn.querySelector('.nav-link').classList.remove('active');
+    
 
-    if(introCard && writingFirstBashletCard && contextBashletCard && examplesBashletCard){
+    if(introCard && writingFirstBashletCard && contextBashletCard && examplesBashletCard && httpHandlerCard){
         if (category === 'intro') {
             introCard.style.display = 'block';
             writingFirstBashletCard.style.display = 'none';
             contextBashletCard.style.display = 'none';
             examplesBashletCard.style.display = 'none';
+            httpHandlerCard.style.display = 'none';
             introBtn.querySelector('.nav-link').classList.add('active');
         } else if (category === 'writing-first-bashlet') {
             introCard.style.display = 'none';
             writingFirstBashletCard.style.display = 'block';
             contextBashletCard.style.display = 'none';
             examplesBashletCard.style.display = 'none';
+            httpHandlerCard.style.display = 'none';
             writingFirstBashletBtn.querySelector('.nav-link').classList.add('active');
         }   else if (category === 'context') {  
             introCard.style.display = 'none';
             writingFirstBashletCard.style.display = 'none';
+            httpHandlerCard.style.display = 'none';
             contextBashletCard.style.display = 'block';
             examplesBashletCard.style.display = 'none';
             contextBashletsBtn.querySelector('.nav-link').classList.add('active');
@@ -196,6 +201,7 @@
             introCard.style.display = 'none';
             writingFirstBashletCard.style.display = 'none';
             contextBashletCard.style.display = 'none';
+            httpHandlerCard.style.display = 'none';
             examplesBashletCard.style.display = 'block';
             examplesBashletsBtn.querySelector('.nav-link').classList.add('active');
         }else if (category === 'http-handlers') {

@@ -912,13 +912,15 @@ getAppSettings(){
                     </div>
                     <div class="card-body">
                         <p style="font-weight: bold; color: #6777ef;">Overview</p>
-                        As you may gather from the preceeding code examples, the <span class="highlighted-docs-text">BashletContext</span> is a powerful server component that provides a wide range of functions to facilitate the development of Bashlets and their constituent endpoint functions. The <span class="highlighted-docs-text">BashletContext</span> is the <u><b>only</b></u> import that a Bashlet <b>must</b> declare,
-                        the principal features it provides are as follows:
+                        As depicted in the system architecture diagram in the <span class="highlighted-docs-text">Intro To Bashlets</span> section, a heirarchial set of HTTP handlers serves as the backbone of the Mocktail Server. As you would have noted in the <span class="highlighted-docs-text">Writing Your First Bashlet</span> guide, the <span class="highlighted-docs-text">Usr Handler</span> is the default handler that is responsible for routing requests 
+                        to user-defined Bashlets (and other user generated content/resources) thus updating <i><b>its</b></i> associated routing configuration file, as demonstrated in the <span class="highlighted-docs-text">Writing Your First Bashlet</span> guide, is the most expedient way to get Bashlets up and running. However, in addition to this HTTP Handler, the Mocktail Server also provides default <span class="highlighted-docs-text">Root Handler</span> and  <span class="highlighted-docs-text">System Handler</span> implementations out of the box.
+                        So far we've also <u><b>only</b></u> looked at defining <b>Bashlet-based routes</b>, in this section we will cover:
                         <br>
                         <br>
                         <ol>
-                          <li>Provides a <span class="highlighted-docs-text">singluar centralised context for all instances of the same Bashlet</span>, including an integrated, bashlet-scoped <span class="highlighted-docs-text">Key-Value store</span>.</li>
-                          <li>Provides a <span class="highlighted-docs-text">suite of intuitive, utility functions to greatly simplify the development of Bashlets</span>, including functions for parsing and manipulating request and response data.</li>
+                          <li>A look at <span class="highlighted-docs-text">other supported HTTP Handler route configuration types</span> and their usecases</li>
+                          <li>A breif overview of the aforementioned <span class="highlighted-docs-text">built-in HTTP Handlers</span>, and their respective functions.</li>
+                          <li>How to define and wire-up  <span class="highlighted-docs-text">A custom HTTP Handler</span> and why you might want to undertake this process. </li>
                         </ol>
 
 

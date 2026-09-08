@@ -1099,13 +1099,21 @@ getAppSettings(){
                           <br>
                           <br>
                           <ol>
-                            <li>Create a new HTTP Handler script file and place it in a new directory under the handlers directory, for example: <span class="highlighted-docs-text">/res/handlers/custom/my-custom-handler1</span>, you are free to assign any name you like to the new handler.</li>
+                            <li>Create a new HTTP Handler script file and associated JSON configuration file and place them in a new directory under the handlers directory, for example: <span class="highlighted-docs-text">/res/handlers/custom/my-custom-handler1</span> and <span class="highlighted-docs-text">/res/handlers/custom/my-custom-handler1-routes.json</span>, you are free to assign any name you like to the new handler.</li>
                             <li>Next copy the HTTP Handler logic, <b>as is</b>, from an existing handler i.e <span class="highlighted-docs-text">/res/handlers/usr/user-handler </span> or <span class="highlighted-docs-text">/res/handlers/sys/system-handler</span> into the new script file.</li>
-                            <li>Finally update the <span class="highlighted-docs-text">Root HTTP Handler</span> configuration JSON file: <span class="highlighted-docs-text">/res/handlers/internal/root-handler-routes.json</span> to include a new <span class="highlighted-docs-text">sub-handler</span> route type (as covered in the prior section) that maps to the new custom handler. Do note however that the Root Handler and its associated configuration are central to the operation of the Mocktail Server, thus errors in this specific configuration can have a significant impact on the server's performance and stability; edit with care.</li>
+                            <li>Finally update the <span class="highlighted-docs-text">Root HTTP Handler</span> configuration JSON file: <span class="highlighted-docs-text">/res/handlers/internal/root-handler-routes.json</span> to include a new <span class="highlighted-docs-text">sub-handler</span> route type (as covered in the prior section) that maps to the new custom handler. Do note however that the <span class="highlighted-docs-text">Root Handler</span> and its associated configuration are central to the operation of the Mocktail Server, thus errors in this specific configuration can have a significant impact on the server's performance and stability; edit with care.</li>
                           </ol>
                           <br>
                           The above three step process is all that is required to create a new custom HTTP Handler, as mentioned previously, the quickest way to get started with defining Bashlets and associated static resources is to simply update the <span class="highlighted-docs-text">Usr Handler</span> configuration JSON file: <span class="highlighted-docs-text">/res/handlers/usr/usr-handler-routes.json</span> as demonstrated in the <span class="highlighted-docs-text">Writing Your First Bashlet</span> guide. However, <span class="highlighted-docs-text">if you have a use case that requires <b>full</b> control over the HTTP handling process or you would like to use a custom path, rather than <b>/usr</b> associated with the default User HTTP Handler, a custom HTTP Handler could be a good fit</span>, the above three step process will allow you to create one with minimal effort.
-                          
+                          <br>
+                          <br>
+                          <div class="alert alert-light alert-has-icon">
+                          <div class="alert-icon"><i class="far fa-lightbulb"></i></div>
+                          <div class="alert-body">
+                          <div class="alert-title">Pro Tip:</div>
+                           In order to <span class="highlighted-docs-text">chain multiple HTTP Handlers</span> together, simply repeat the above three step process for each additional handler you wish to create, however instead of updating the <span class="highlighted-docs-text">Root Handler</span> configuration JSON file, you would update the configuration JSON file for the <b>parent</b> handler to include a new <span class="highlighted-docs-text">sub-handler</span> route type that maps to the new child handler. This allows for a heirarchial routing mechanism, where requests to handlers at one level are isolated from handlers at other levels.
+                        </div>
+                      </div>
                     </div>
 
                   

@@ -4,7 +4,7 @@
   "Version": "1.0",
   "GeneralSettings": {
     "ListeningPort": 3333,
-    "MaxConcurrentProcesses": 55,
+    "MaxConcurrentProcesses": 200,
     "MaxHandlerProcessRuntime": 11,
     "LogLevel": 3  
   },

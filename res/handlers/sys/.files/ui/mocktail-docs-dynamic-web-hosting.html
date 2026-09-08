@@ -1088,8 +1088,23 @@ getAppSettings(){
                           </table>
                           <br>
                           The above table provides a brief overview of the built-in HTTP Handlers provided by the Mocktail Server, along with a brief description of their purpose and functionality. These handlers work together to provide
-                          a <span class="highlighted-docs-text">hierarchical routing mechanism</span> ensuring requests to handlers at one levels are isolated from handlers at other levels, where necessary. 
-
+                          a <span class="highlighted-docs-text">hierarchical routing mechanism</span> ensuring requests to handlers at one level are isolated from handlers at other levels, where necessary. 
+                          <br>
+                          <br>
+                          <hr>
+                          <p style="font-weight: bold; color: #6777ef;">3. Custom HTTP Handlers</p>
+                          In addition to the built-in HTTP Handlers we covered in the immediately preceding section, the Mocktail Server also <span class="highlighted-docs-text">allows developers to define their own custom HTTP Handlers</span>. This is useful for creating a modular and extensible routing system, where different parts of the application can be handled by different handlers.
+                          It is important to note that aside from the Root Handler (which is a special case HTTP Handler that actually parses incoming HTTP request data of the wire) all other Handlers are implemented in <span class="highlighted-docs-text">exactly the same way</span>. The difference between HTTP Handlers is contextual rather than functional, more specifically chaining HTTP Handlers allow for a heirarchial routing mechanism, where requests to handlers at one level are isolated from handlers at other levels, where necessary.
+                          Thus, creating a custom HTTP Handler is as simple as undertaking the following three step process: 
+                          <br>
+                          <br>
+                          <ol>
+                            <li>Create a new HTTP Handler script file and place it in a new directory under the handlers directory, for example: <span class="highlighted-docs-text">/res/handlers/custom/my-custom-handler1</span>, you are free to assign any name you like to the new handler.</li>
+                            <li>Next copy the HTTP Handler logic, <b>as is</b>, from an existing handler i.e <span class="highlighted-docs-text">/res/handlers/usr/user-handler </span> or <span class="highlighted-docs-text">/res/handlers/sys/system-handler</span> into the new script file.</li>
+                            <li>Finally update the <span class="highlighted-docs-text">Root HTTP Handler</span> configuration JSON file: <span class="highlighted-docs-text">/res/handlers/internal/root-handler-routes.json</span> to include a new <span class="highlighted-docs-text">sub-handler</span> route type (as covered in the prior section) that maps to the new custom handler. Do note however that the Root Handler and its associated configuration are central to the operation of the Mocktail Server, thus errors in this specific configuration can have a significant impact on the server's performance and stability.</li>
+                          </ol>
+                          <br>
+                          The above three step process is all that is required to create a new custom HTTP Handler, as mentioned previously, the quickest way to get started with defining Bashlets and associated static resources is to simply update the <span class="highlighted-docs-text">Usr Handler</span> configuration JSON file: <span class="highlighted-docs-text">/res/handlers/usr/usr-handler-routes.json</span> as demonstrated in the <span class="highlighted-docs-text">Writing Your First Bashlet</span> guide. However, <span class="highlighted-docs-text">if you have a use case that requires <b>full</b> control over the HTTP handling process or you would like to use a custom path, rather than <b>/usr</b> associated with the default User HTTP Handler, a custom HTTP Handler could be a good fit</span>, the above three step process will allow you to create one with minimal effort.
                           
                     </div>
 

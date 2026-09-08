@@ -1043,17 +1043,52 @@ getAppSettings(){
                               </pre>   
 
                               </td>
-                              </tr>
+                            </tr>
 
 
-
-                              </tr>
                           </tbody>
                         </table>
                         <br>
                         The above table provides a brief overview of the different route configuration types supported by the Mocktail Server, along with a brief description of their purpose and a code example that demonstrates how they may be defined.
-                              
-                        
+                        <br>
+                        <br>
+                        <hr>
+                        <p style="font-weight: bold; color: #6777ef;">2. Built-in HTTP Handlers</p>
+                          The Mocktail Server provides a number of built-in HTTP Handlers that are designed to handle specific types of requests. The current built-in HTTP Handlers are as follows:
+                          <br>
+                          <br>
+                          <table class="table table-striped table-bordered" style="width: 100%; min-width: 980px; table-layout: fixed;">
+                            <colgroup>
+                              <col style="width: 30%;">
+                              <col style="width: 70%;">
+                            </colgroup>
+                            <thead>
+                              <tr>
+                                <th>HTTP Handler Name</th>
+                                <th>Description</th>  
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              <tr>
+                                <td><span class="highlighted-docs-text">Root Handler</td>
+                                <td>The Root Handler is the top-level handler that is responsible for routing requests to the appropriate sub-handler or resource. It <span class="highlighted-docs-text">serves as the entry point for all incoming requests to the Mocktail Server</span> All requests to the Mocktail Server are first routed through the Root Handler, which then delegates them to the appropriate sub-handler or resource based on the defined route configurations.</td>
+                              </tr>
+                              <tr>
+                                <td><span class="highlighted-docs-text">System Handler</td>
+                                <td>The System Handler is responsible for handling system-level requests, such as health checks, server status, and other administrative functions. It provides endpoints for monitoring and managing the Mocktail Server. <span class="highlighted-docs-text">Requests to built-in, system level Bashlets like AdminController.shh and MockingController.shh are also routed</span> via this handler.</span></td>
+                              </tr>
+                              <tr>
+                                <td><span class="highlighted-docs-text">User Handler</td>
+                                <td>The User Handler is <span class="highlighted-docs-text">responsible for handling user-defined routes and resources.</span> It allows developers to define their own Bashlets and static resources that can be served by the Mocktail Server.Requests to paths like /usr/my-first-bashlet or /usr/assets/* are handled by the User Handler, which serves the corresponding Bashlet or static resource based on the defined route configurations.</td>
+                              </tr>
+
+                            </tbody>
+
+                          </table>
+                          <br>
+                          The above table provides a brief overview of the built-in HTTP Handlers provided by the Mocktail Server, along with a brief description of their purpose and functionality. These handlers work together to provide
+                          a <span class="highlighted-docs-text">hierarchical routing mechanism</span> ensuring requests to handlers at one levels are isolated from handlers at other levels, where necessary. 
 
                           
                     </div>

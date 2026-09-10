@@ -194,7 +194,27 @@
                           <br>
                           <li><span class="highlighted-docs-text">Mocking via Raw JSON</span>. This method allows users to define mock APIs, directly, using JSON files, providing more flexibility and control over the mocking process. This is <span class="highlighted-docs-text">ideal where there is a requirement to programmatically generate, manage and update mock APIs,</span> perhaps from a parent application.</li>
                         </ol> 
+                        Regardless of the API mocking method, one elects to use, <span class="highlighted-docs-text">Mocktail Server provides a robust and reliable platform for mocking APIs</span>, making it an invaluable tool for developers and testers alike. Next we'll take a brief look at the <span class="highlighted-docs-text">structure of a Mock API on Mocktail Server</span>, before we dive into the details of each of the two API mocking methods.
+                      <br>
                        <hr>
+                      <p style="font-weight: bold; color: #6777ef;">Structure of a Mock API</p>
+
+                      Regardless of whether you choose to mock APIs via the Web UI or via Raw JSON, the structure of a Mock API on Mocktail Server is the same. A Mock API consists of two hierarchically nested components:
+                      <br>
+                      <br>
+                      <ol>
+                        <li><span class="highlighted-docs-text">Mock API Collection</span>. This is the top level component of a Mock API. It defines the overall structure and behavior of the Mock API, including its name, description, unique ID and any endpoints it exposes.</li>
+                        <br>
+                        <li><span class="highlighted-docs-text">Mock API Collection Endpoint</span>. This is the second level component of a Mock API. It defines a specific endpoint within the Mock API, including its path, HTTP method, request parameters, and response data. A single Mock API Collection can and often will contain <b>multiple</b> Mock API Collection Endpoints.</li>
+                      </ol>
+                      <br>
+                       <img src="assets/img/mocktail-mocking-api-structure-updated.jpeg" alt="Mock API Structure" height="400px width=auto" style="display: block; margin-left: auto; margin-right: auto;">
+                       <p></p>
+                       <p></p>
+                       In the next section, we'll take a look at <span class="highlighted-docs-text">how to mock APIs via the Web UI</span>. This is the fastest way to get started with API mocking on Mocktail Server as there is no requirement to write any code aside from the actual (JSON based) mock API response data.
+                      <br>
+                      <br>
+                      <hr>
 
                       <!--
                       <p style="font-weight: bold;">CD into root directory give the Mocktail script execution permissions:</p>

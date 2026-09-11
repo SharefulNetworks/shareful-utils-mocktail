@@ -27,6 +27,9 @@
 
     //setup dynamic web hosting category menu buttons
     setupDynamicWebHostingCategoryEventListeners();
+
+    //setup api mocking category menu buttons
+    setupApiMockingEventListeners();
  }
 
 
@@ -121,10 +124,73 @@
     }else{
         console.error("One or more Dynamic Web Hosting category buttons not found on the page.");
     }
+ }  
+
+ function setupApiMockingEventListeners(){
+
+    const apiMockingIntroBtn = document.getElementById('api-mocking-intro-btn');
+    const apiMockingWebUiBtn = document.getElementById('api-mocking-web-ui-btn');
+    const apiMockingRawJsonBtn = document.getElementById('api-mocking-raw-json-btn');
+
+
+    if(apiMockingIntroBtn && apiMockingWebUiBtn && apiMockingRawJsonBtn){
+
+        apiMockingIntroBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleApiMockingCategoryContent('intro');
+        });
+
+        apiMockingWebUiBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleApiMockingCategoryContent('web-ui');
+        });
+
+        apiMockingRawJsonBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleApiMockingCategoryContent('raw-json');
+        });
+    }else{
+        console.error("One or more API Mocking category buttons not found on the page.");
+    }
  }
 
 
+//toggle the display of the api mocking category content based on the button clicked
+ function toggleApiMockingCategoryContent(category) {
+    const introBtn = document.getElementById('api-mocking-intro-btn');
+    const webUiBtn = document.getElementById('api-mocking-web-ui-btn');
+    const rawJsonBtn = document.getElementById('api-mocking-raw-json-btn');
+    const introCard = document.getElementById('api-mocking-intro-card');
+    const webUiCard = document.getElementById('api-mocking-web-ui-card');
+    const rawJsonCard = document.getElementById('api-mocking-raw-json-card');
 
+    // Remove active class from all nav-link elements
+    introBtn.querySelector('.nav-link').classList.remove('active');
+    webUiBtn.querySelector('.nav-link').classList.remove('active');
+    rawJsonBtn.querySelector('.nav-link').classList.remove('active');
+
+    if(introCard && webUiCard && rawJsonCard){
+        if (category === 'intro') {
+            introCard.style.display = 'block';
+            webUiCard.style.display = 'none';
+            rawJsonCard.style.display = 'none';
+            introBtn.querySelector('.nav-link').classList.add('active');
+        } else if (category === 'web-ui') {
+            introCard.style.display = 'none';
+            webUiCard.style.display = 'block';
+            rawJsonCard.style.display = 'none';
+            webUiBtn.querySelector('.nav-link').classList.add('active');
+        } else if (category === 'raw-json') {
+            introCard.style.display = 'none';
+            webUiCard.style.display = 'none';
+            rawJsonCard.style.display = 'block';
+            rawJsonBtn.querySelector('.nav-link').classList.add('active');
+        }
+    }else{
+        console.error("One or more API Mocking category content cards not found on the page.");
+        console.log(introCard,webUiCard,rawJsonCard)
+    }
+ }
 
 
  //toggle the display of the getting started category content  based on the button clicked

@@ -176,8 +176,8 @@
                
 
 
-                  <!-- Start of API Mocking Card-->
-                  <div class="card" id="static-webhosting-card" style="display: block;">
+                  <!-- Start of API Mocking overview Card-->
+                  <div class="card" id="api-mocking-intro-card" style="display: block;">
                     <div class="card-header">
                       <h4>Intro to API Mocking.</h4>
                     </div>
@@ -208,7 +208,7 @@
                         <li><span class="highlighted-docs-text">Mock API Collection Endpoint</span>. This is the second level component of a Mock API. It defines a specific endpoint within the Mock API, including its path, HTTP method, request parameters, and response data. A single Mock API Collection can and often will contain <b>multiple</b> Mock API Collection Endpoints.</li>
                       </ol>
                       <br>
-                       <img src="assets/img/mocktail-mocking-api-structure-updated.jpeg" alt="Mock API Structure" height="400px width=auto" style="display: block; margin-left: auto; margin-right: auto;">
+                       <img src="assets/img/mocktail-mocking-api-structure-updated.jpeg" alt="Mock API Structure" height="400" style="display: block; margin-left: auto; margin-right: auto; width: auto;">
                        <p></p>
                        <p></p>
                        In the next section, we'll take a look at <span class="highlighted-docs-text">how to mock APIs via the Web UI</span>. This is the fastest way to get started with API mocking on Mocktail Server as there is no requirement to write any code aside from the actual (JSON based) mock API response data.
@@ -216,20 +216,108 @@
                       <br>
                       <hr>
 
-                      <!--
-                      <p style="font-weight: bold;">CD into root directory give the Mocktail script execution permissions:</p>
-                      <code class="codeblock-style">chmod +x mocktail</code>
-                      <p></p>
-                      <p></p>
+                      </div>
+
+                   </div>
+                   <!-- End of API Mocking overview Card-->
+
+
+
+                    <!-- Start of API Mocking via Web UI Card-->
+                    <div class="card" id="api-mocking-web-ui-card" style="display: none;">
+                      <div class="card-header">
+                        <h4>API Mocking via Web UI.</h4>
+                      </div>
+                      <div class="card-body">
+
+                      <p style="font-weight: bold; color: #6777ef;">Overview</p>
+                       
+                        Mocktail Server is a 
+                      
+                      <br>
                       <hr>
 
-                      <p style="font-weight: bold;">Finally run the application (from the root directory):</p>
-                      <code class="codeblock-style">./mocktail</code>
-                      <p></p>
-                      <p></p>
-                    -->
+                      <p style="font-weight: bold; color: #6777ef;">Accesing the API Mocking Web App </p>
+                       
+                        Mocktail Server is a 
+      
+                      <br>
+                      <hr>
+                      <p style="font-weight: bold; color: #6777ef;">Creating a New Mock API Collection</p>
+
+                      Regardless of whether you choose to mock APIs via the Web UI or via Raw JSON, the structure of a Mock API on Mocktail Server is the same. A Mock API consists of two hierarchically nested components:
+                      <br>
+                      <br>
+                     
+                       In the next section, we'll take a look at <span class="highlighted-docs-text">how to mock APIs via the Web UI</span>. This is the fastest way to get started with API mocking on Mocktail Server as there is no requirement to write any code aside from the actual (JSON based) mock API response data.
+                      <br>
+                      <br>
+                      <hr>
+
+                      </div>
+                    </div>
+                    <!-- End of API Mocking via Web UI Card-->
+
+
+
+                    <!-- Start of API Mocking via Raw JSON Card-->
+
+                    <div class="card" id="api-mocking-raw-json-card" style="display: none;">
+                      <div class="card-header">
+                        <h4>API Mocking via Raw JSON.</h4>
+                      </div>
+                      <div class="card-body">
+
+                      <p style="font-weight: bold; color: #6777ef;">Overview</p>
+
+                      <p>
+                        Raw JSON mocking lets you define mock API collections directly in JSON files. This is the best fit when you want to generate, version, or update mock APIs from another tool or application.
+                      </p>
+
+                      <hr>
+
+                      <p style="font-weight: bold; color: #6777ef;">Accessing the Raw JSON Files</p>
+
+                      <p>
+                        Mocktail stores raw mock API definitions as JSON collections. You can use the template collection as a starting point and copy it into the mock API location used by your setup.
+                      </p>
+
+                      <pre><code>{
+  "name": "Example Mock API Collection",
+  "description": "A simple mock API defined in raw JSON",
+  "endpoints": [
+    {
+      "path": "/api/status",
+      "method": "GET",
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "ok"
+        }
+      }
+    }
+  ]
+}</code></pre>
+
+                      <hr>
+
+                      <p style="font-weight: bold; color: #6777ef;">Creating a New Mock API Collection</p>
+
+                      <p>
+                        Start with a collection object, then add one or more endpoint definitions beneath it. The structure is the same whether you are hand-editing JSON or generating it programmatically.
+                      </p>
+
+                      <p>
+                        If you prefer a guided workflow, the Web UI is the faster place to begin. Raw JSON is more flexible once you already know the shape of the mock you want to maintain.
+                      </p>
+
+                      <hr>
 
                     </div>
+                    <!-- End of API Mocking via Raw JSON Card-->
+
+                    
+                  </div>
 
                      <div class="card-footer bg-whitesmoke text-md-right">
                       <button class="btn btn-primary print-btn"><i class="fas fa-print"></i> Print Page</button>
@@ -237,10 +325,10 @@
                     </div>
               
                   </div>
-                    <!-- End of API Mocking Card-->
+                   
 
 
-              </div>
+                
 
 
               
@@ -273,7 +361,7 @@
   <script src="assets/modules/codemirror/mode/javascript/javascript.js"></script>
 
 
-  ]  <!-- docs specific script -->
+  <!-- docs specific script -->
   <script src="assets/js/page/mocktail-docs.js"></script>
   
   <!-- Template JS File -->

@@ -414,7 +414,12 @@
                       <p style="font-weight: bold; color: #6777ef;">Overview</p>
 
                       <p>
-                        Raw JSON mocking lets you define mock API collections directly in JSON files. This is the best fit when you want to generate, version, or update mock APIs from another tool or application.
+                        Mocktail Server allows for the <span class="highlighted-docs-text">definition of mock API collections directly in JSON files</span>. This is the best fit when you want to programatically generate/update mock APIs from another application or script and negates the need to use the Web UI entirely. It's important to note that <span class="highlighted-docs-text">Mocktail uses JSON files to store and manage its mock API definitions, under the hood and the Web App (presented in the previous section) is really just a convenient abstraction layer that simplifies the process of creating and managing mock APIs by automatically generating/updating these JSON files for you</span>. This section will walk you through the steps to <span class="highlighted-docs-text"> manually create and manage Mock API Collections using raw JSON</span>. The topics we will cover will be as follows:
+                        <ol>
+                          <li>Accessing the Raw JSON Files on the Server</li>
+                          <li>Defining a new Mock API Collection</li>
+                          <li>Adding Endpoints to a Mock API Collection</li>
+                        </ol>
                       </p>
 
                       <hr>
@@ -422,25 +427,11 @@
                       <p style="font-weight: bold; color: #6777ef;">Accessing the Raw JSON Files</p>
 
                       <p>
-                        Mocktail stores raw mock API definitions as JSON collections. You can use the template collection as a starting point and copy it into the mock API location used by your setup.
+                        Mocktail stores raw mock API collections as JSON files (one per file), to the following dedicated directory on the mocktail server: <code class="codeblock-style-small">res</code> / <code class="codeblock-style-small">usr</code> / <code class="codeblock-style-small">mocks</code> from the server root that will look as follows:
+                        
                       </p>
 
-                      <pre><code>{
-  "name": "Example Mock API Collection",
-  "description": "A simple mock API defined in raw JSON",
-  "endpoints": [
-    {
-      "path": "/api/status",
-      "method": "GET",
-      "response": {
-        "status": 200,
-        "body": {
-          "status": "ok"
-        }
-      }
-    }
-  ]
-}</code></pre>
+                     
 
                       <hr>
 

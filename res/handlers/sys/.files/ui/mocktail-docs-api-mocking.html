@@ -18,6 +18,12 @@
   <link rel="stylesheet" href="assets/css/components.css">
   <link rel="stylesheet" href="assets/css/custom.css">
 
+  <!-- Highlight.js CSS-->
+  <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
+
+
+
 
 
 <!-- Start GA -->
@@ -426,25 +432,44 @@
 
                       <p style="font-weight: bold; color: #6777ef;">Accessing the Raw JSON Files</p>
 
-                      <p>
-                        Mocktail stores raw mock API collections as JSON files (one per file), to the following dedicated directory on the mocktail server: <code class="codeblock-style-small">res</code> / <code class="codeblock-style-small">usr</code> / <code class="codeblock-style-small">mocks</code> from the server root that will look as follows:
-                        
-                      </p>
-
-                     
-
+                      
+                      Mocktail stores raw mock API collections as JSON files (one per file), to the following dedicated directory on the mocktail server: <code class="codeblock-style-small">res</code> / <code class="codeblock-style-small">usr</code> / <code class="codeblock-style-small">mocks</code> from the server root that will look as follows:
+                      <br>
+                      <br>
+                      <img src="assets/img/mocktail-docs-api-mocking-raw-json-file-location.png" alt="Accessing Raw JSON Files" height="400px width=auto" style="display: block; margin-left: auto; margin-right: auto;">
+                       <p></p>
+                       <p></p>
+                       You'll note the presence of a <span class="highlighted-docs-text">template-mock-api-collection.json</span> file. This is an  example mock API collection that is bundled with the server and can be used as a reference when creating your own mock API collections. You can also use this file as a starting point for your own mock API collection by copying it and renaming it to something more appropriate for your needs. For the purpose of this guide create a new file called <span class="highlighted-docs-text">my-mock-api-collection.json</span> in the same directory in the next section we will use it to define a demonstation mock API collection. You can use any text editor to create and edit the JSON files, but it's recommended to use an editor that supports JSON syntax highlighting and validation, such as Visual Studio Code or Sublime Text.
+                    
                       <hr>
 
                       <p style="font-weight: bold; color: #6777ef;">Creating a New Mock API Collection</p>
-
-                      <p>
-                        Start with a collection object, then add one or more endpoint definitions beneath it. The structure is the same whether you are hand-editing JSON or generating it programmatically.
-                      </p>
-
-                      <p>
-                        If you prefer a guided workflow, the Web UI is the faster place to begin. Raw JSON is more flexible once you already know the shape of the mock you want to maintain.
-                      </p>
-
+                      
+                      The absolute minimum JSON structure required to define a new Mock API Collection is as follows::
+                      <br>
+                      <br>
+               
+                       <pre style="margin-bottom: -20px;"><code class="language-bash" style="border-radius: 5px;">
+{
+  "collectionName": "My Mock API Collection",
+  "collectionDescription": "This is a description of my mock API collection.",
+  "Version": "1.0",
+  "collectionId": "my-mock-api-collection",
+  "endpoints": []
+}
+                     </code> </pre>
+                      <p></p>
+                      <p></p>
+                      Copy and paste the above JSON into your newly created <span class="highlighted-docs-text">my-mock-api-collection.json</span> file. You can then edit the values of the fields to suit your needs.
+                      <br>
+                      <ol>
+                        <li><span class="highlighted-docs-text">collectionName</span>: The name of the mock API collection.</li>
+                        <li><span class="highlighted-docs-text">collectionDescription</span>: A brief description of the mock API collection.</li>
+                        <li><span class="highlighted-docs-text">Version</span>: The version of the mock API collection.</li>
+                        <li><span class="highlighted-docs-text">collectionId</span>: A unique identifier for the mock API collection; also used to reference the collection in the URL when making requests to the mock API.</li>
+                        <li><span class="highlighted-docs-text">endpoints</span>: An array that will contain the definitions of the endpoints for the collection. You can add as many endpoints as you like to this array.</li>
+                     </ol>
+                 
                       <hr>
 
                     </div>
@@ -501,5 +526,14 @@
   <!-- Template JS File -->
   <script src="assets/js/scripts.js"></script>
   <script src="assets/js/custom.js"></script>
+
+   <!-- Highlight.js Core JS -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+
+  <!-- init Highlight.js -->
+  <script>
+      hljs.highlightAll();
+  </script>
+
 </body>
 </html>

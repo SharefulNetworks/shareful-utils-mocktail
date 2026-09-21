@@ -198,7 +198,7 @@
                         <ol>
                           <li><span class="highlighted-docs-text">Mocking via Web UI</span>. Mocktail Server provides a simple and intuitive interface that allows users to create and manage mock APIs without writing any code. This is <span class="highlighted-docs-text"> the fastest way to get started with API mocking</span> on Mocktail Server.</li>
                           <br>
-                          <li><span class="highlighted-docs-text">Mocking via Raw JSON</span>. This method allows users to define mock APIs, directly, using JSON files, providing more flexibility and control over the mocking process. This is <span class="highlighted-docs-text">ideal where there is a requirement to programmatically generate, manage and update mock APIs,</span> perhaps from a parent application.</li>
+                          <li><span class="highlighted-docs-text">Mocking via Raw JSON</span>. This method allows users to define mock APIs, directly, using JSON files, providing more flexibility and control over the mocking process. This is <span class="highlighted-docs-text">ideal where there is a requirement to programmatically generate, manage and update mock APIs,</span> perhaps from a parent application. Directly manipulating the JSON files gives you greater control over the mock API definitions including the ability to define special attributes and dynamic response behavior. See the <span class="highlighted-docs-text">Special Endpoint Properties</span> of the <span class="highlighted-docs-text">API Mocking via Raw JSON</span> section  for more details.</li>
                         </ol> 
                         Regardless of the API mocking method, one elects to use, <span class="highlighted-docs-text">Mocktail Server provides a robust and reliable platform for mocking APIs</span>, making it an invaluable tool for developers and testers alike. Next we'll take a brief look at the <span class="highlighted-docs-text">structure of a Mock API on Mocktail Server</span>, before we dive into the details of each of the two API mocking methods.
                       <br>
@@ -621,10 +621,46 @@
                   <br>
                   <br>
                   <pre style="margin-bottom: -20px;"><code class="language-bash" style="border-radius: 5px;"> 
+{
+      "Id": "5",
+      "Path": "/api/v1/profiles/{profileId}/settings",
+      "Method": "GET",
+      "EnableDynamicParamSubstitution": true,
+      "Response": {
+        "Body": {
+          "ProfileId": 1,
+          "Username": "JonnyDoe",
+          "Email": "john.doe@example.com",
+          "Enable2FA": true,
+          "EnableMailNotifications": false,
+          "EnableUserGeolocation": true
+        }
+      }
+    },
 
                   </code>
                   </pre>
-    {
+                  <br>
+                  The key thing to note in the above JSON structure is the use of the optional<span class="highlighted-docs-text">EnableDynamicParamSubstitution</span> property which is set to <span class="highlighted-docs-text">true</span>. This tells Mocktail Server to dynamically substitute any parameters defined in the request query string into the response data returned by the endpoint. For example, if you made the following request: <code class="codeblock-style-small">GET /api/v1/profiles/1/settings?Enable2FA=false&EnableMailNotifications=true</code> Mocktail Server would return a response with the following body:
+                  <br>
+                  <br>
+                  <pre style="margin-bottom: -20px;"><code class="language-bash" style="border-radius: 5px;"> 
+{
+  "ProfileId": 1,
+  "Username": "JonnyDoe",
+  "Email": "john.doe@example.com",
+  "Enable2FA": false,
+  "EnableMailNotifications": true,
+  "EnableUserGeolocation": true
+}
+                  </code>
+                  </pre>
+             
+                  In the above response, the values of the <span class="highlighted-docs-text">Enable2FA</span> and <span class="highlighted-docs-text">EnableMailNotifications</span> properties have been dynamically substituted based on the values provided in the request query string parameters.
+                  <br>
+                  <br>
+                  This concludes our overview of how to define and manage Mock API Collections and Endpoints using raw JSON files. <span class="highlighted-docs-text">You can now create, edit, and delete mock APIs directly by manipulating the JSON files</span> on the server.
+    
                     </div>
                     <!-- End of API Mocking via Raw JSON Card-->
 

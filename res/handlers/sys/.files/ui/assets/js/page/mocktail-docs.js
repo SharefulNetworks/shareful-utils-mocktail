@@ -69,8 +69,9 @@
 
     const installationCatBtn = document.getElementById('installation-cat-btn');
     const configCatBtn = document.getElementById('config-cat-btn');
+    const loggingInCatBtn = document.getElementById('logging-in-cat-btn');
 
-    if(installationCatBtn && configCatBtn){
+    if(installationCatBtn && configCatBtn && loggingInCatBtn){
         installationCatBtn.addEventListener('click', function (e) {
             e.preventDefault();
             toggleGettingStartedCategoryContent('installation');
@@ -81,6 +82,11 @@
             e.preventDefault();
             toggleGettingStartedCategoryContent('configuration');
            
+        });
+
+        loggingInCatBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleGettingStartedCategoryContent('logging-in');
         });
     }else{
         console.error("Getting Started category buttons not found on the page.");
@@ -197,12 +203,15 @@
  function toggleGettingStartedCategoryContent(category) {
     const installationCatBtn = document.getElementById('installation-cat-btn');
     const configCatBtn = document.getElementById('config-cat-btn');
+    const loggingInCatBtn = document.getElementById('logging-in-cat-btn');
     const installationCard = document.getElementById('system-settings-card');
     const configCard = document.getElementById('configuration-settings-card');
+    const loggingInCard = document.getElementById('logging-in-settings-card');
 
     // Remove active class from all nav-link elements
     installationCatBtn.querySelector('.nav-link').classList.remove('active');
     configCatBtn.querySelector('.nav-link').classList.remove('active');
+    loggingInCatBtn.querySelector('.nav-link').classList.remove('active');
 
     if(installationCard && configCard){
         if (category === 'installation') {
@@ -213,6 +222,12 @@
             installationCard.style.display = 'none';
             configCard.style.display = 'block';
             configCatBtn.querySelector('.nav-link').classList.add('active');
+        }
+        else if (category === 'logging-in') {
+            installationCard.style.display = 'none';
+            configCard.style.display = 'none';
+            loggingInCard.style.display = 'block';
+            loggingInCatBtn.querySelector('.nav-link').classList.add('active');
         }
     }else{
         console.error("One or more Getting Started category content cards not found on the page.");

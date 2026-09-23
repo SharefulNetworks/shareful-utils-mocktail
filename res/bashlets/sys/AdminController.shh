@@ -268,6 +268,61 @@ viewGeneralSettingsDetail(){
 }
 
 
+# Navigates to the getting started docs page which is only accessible to authenticated users, hence the secure route attribute.
+# @route method=get path=/docs/getting-started secure=true
+viewDocsGettingStarted(){
+    request="$1"
+    response="$2"
+
+    Log "DEBUG" "AdminController: inside viewDocsGettingStarted, forwarding to Docs Getting Started page..."
+
+
+    ForwardBashletRequest "/sys/ui/mocktail-docs-getting-started.html"
+
+}
+
+# Navigates to the static web hosting docs page which is only accessible to authenticated users, hence the secure route attribute.
+# @route method=get path=/docs/static-web-hosting secure=true
+viewDocsStaticWebHosting(){
+    request="$1"
+    response="$2"
+
+    Log "DEBUG" "AdminController: inside viewDocsStaticWebHostring, forwarding to Static Web Hosting page..."
+
+
+    ForwardBashletRequest "/sys/ui/mocktail-docs-static-web-hosting.html"
+
+}
+
+
+# Navigates to the dynamic web hosting docs page which is only accessible to authenticated users, hence the secure route attribute.
+# @route method=get path=/docs/dynamic-web-hosting secure=true
+viewDocsDynamicWebHosting(){
+    request="$1"
+    response="$2"
+
+    Log "DEBUG" "AdminController: inside viewDocsDynamicWebHosting, forwarding to Dynamic Web Hosting page..."
+
+
+    ForwardBashletRequest "/sys/ui/mocktail-docs-dynamic-web-hosting.html"
+
+}
+
+
+# Navigates to the API mocking docs page which is only accessible to authenticated users, hence the secure route attribute.
+# @route method=get path=/docs/api-mocking secure=true
+viewDocsAPIMocking(){
+    request="$1"
+    response="$2"
+
+    Log "DEBUG" "AdminController: inside viewDocsAPIMocking, forwarding to API Mocking page..."
+
+    ForwardBashletRequest "/sys/ui/mocktail-docs-api-mocking.html"
+
+}
+
+
+
 
 
 

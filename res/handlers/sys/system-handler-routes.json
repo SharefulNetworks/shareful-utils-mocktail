@@ -21,6 +21,14 @@
 
         },
         {
+            "Title": "Access To General System UI Assets From The System Admin Controller (Docs) Route",
+            "Path": "/admin/docs/assets/*",
+            "Type": "static",
+            "FilePath": "/res/handlers/sys/.files/ui/assets",
+            "Description": "Similar to the assets wildcard route defined below but this route specifically makes the system UI assets available to the AdminController and all constituent handler functions.."
+
+        },
+        {
             "Title": "System Mocking Controller Route",
             "Path": "/mock",
             "Type": "bashlet",

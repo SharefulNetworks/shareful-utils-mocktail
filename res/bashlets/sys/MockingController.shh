@@ -130,11 +130,26 @@ viewMockingDashboard(){
     request="$1"
     response="$2"
 
-   Log "DEBUG" "MockingController: Inside viewMockingDashboard function..."
+    Log "DEBUG" "MockingController: Inside viewMockingDashboard function..."
 
     ForwardBashletRequest "/sys/ui/mocktail-mocking-dashboard.html"
    
 }
+
+# Navigates to the MockingController api mocking settings page, which provides a user interface for managing General and Security
+# API Mocking Settings.
+# @route method=get path=/settings secure=true
+viewMockingSettings(){
+    request="$1"
+    response="$2"
+
+    Log "DEBUG" "MockingController: Inside viewMockingSettings function..."
+
+    ForwardBashletRequest "/sys/ui/mocktail-mocking-settings.html"
+   
+}
+
+
 
 
 

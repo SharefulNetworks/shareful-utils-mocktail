@@ -201,7 +201,20 @@
                 activeDropdown.classList.add('active');
               }
             }
-        } else if (parentView === 'general_settings') {
+        } else if(parentView === 'mocking_dash'){
+          const mockingDashboardLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/mock/dashboard"]');
+          if (mockingDashboardLink) {
+            const activeItem = mockingDashboardLink.closest('li');
+            if (activeItem) {
+              activeItem.classList.add('active');
+            }
+
+            const activeDropdown = mockingDashboardLink.closest('li.dropdown');
+            if (activeDropdown) {
+              activeDropdown.classList.add('active');
+            }
+          }
+        }else if (parentView === 'general_settings') {
             const generalSettingsLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/settings"]');
             if (generalSettingsLink) {
               const activeItem = generalSettingsLink.closest('li');
@@ -210,6 +223,71 @@
               }
 
               const activeDropdown = generalSettingsLink.closest('li.dropdown');
+              if (activeDropdown) {
+                activeDropdown.classList.add('active');
+              }
+            }
+        }else if (parentView === 'mocking_settings') {
+            const mockingSettingsLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/mock/settings"]');
+            if (mockingSettingsLink) {
+              const activeItem = mockingSettingsLink.closest('li');
+              if (activeItem) {
+                activeItem.classList.add('active');
+              }
+
+              const activeDropdown = mockingSettingsLink.closest('li.dropdown');
+              if (activeDropdown) {
+                activeDropdown.classList.add('active');
+              }
+            }
+        }else if (parentView === 'static_web_hosting') {
+            const staticWebHostingLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/static-web-hosting"]');
+            if (staticWebHostingLink) {
+              const activeItem = staticWebHostingLink.closest('li');
+              if (activeItem) {
+                activeItem.classList.add('active');
+              }
+
+              const activeDropdown = staticWebHostingLink.closest('li.dropdown');
+              if (activeDropdown) {
+                activeDropdown.classList.add('active');
+              }
+            }
+        }else if (parentView === 'dynamic_web_hosting') {
+            const dynamicWebHostingLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/dynamic-web-hosting?cat=dynamic-web-hosting&panel=intro"]');
+            if (dynamicWebHostingLink) {
+              const activeItem = dynamicWebHostingLink.closest('li');
+              if (activeItem) {
+                activeItem.classList.add('active');
+              }
+
+              const activeDropdown = dynamicWebHostingLink.closest('li.dropdown');
+              if (activeDropdown) {
+                activeDropdown.classList.add('active');
+              }
+            }
+        }else if (parentView === 'api_mocking') {
+            const apiMockingLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/api-mocking?cat=api-mocking&panel=intro"]');
+            if (apiMockingLink) {
+              const activeItem = apiMockingLink.closest('li');
+              if (activeItem) {
+                activeItem.classList.add('active');
+              }
+
+              const activeDropdown = apiMockingLink.closest('li.dropdown');
+              if (activeDropdown) {
+                activeDropdown.classList.add('active');
+              }
+            }
+        }else if (parentView === 'docs_getting_started') {
+            const docsGettingStartedInstallationLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/getting-started?cat=getting-started&panel=installation"]');
+            if (docsGettingStartedInstallationLink) {
+              const activeItem = docsGettingStartedInstallationLink.closest('li');
+              if (activeItem) {
+                activeItem.classList.add('active');
+              }
+
+              const activeDropdown = docsGettingStartedInstallationLink.closest('li.dropdown');
               if (activeDropdown) {
                 activeDropdown.classList.add('active');
               }

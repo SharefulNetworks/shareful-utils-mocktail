@@ -277,7 +277,7 @@ viewDocsGettingStarted(){
     Log "DEBUG" "AdminController: inside viewDocsGettingStarted, forwarding to Docs Getting Started page..."
 
 
-    ForwardBashletRequest "/sys/ui/mocktail-docs-getting-started.html"
+    ForwardBashletRequest "/sys/ui/docs/mocktail-docs-getting-started.html"
 
 }
 
@@ -290,7 +290,7 @@ viewDocsStaticWebHosting(){
     Log "DEBUG" "AdminController: inside viewDocsStaticWebHostring, forwarding to Static Web Hosting page..."
 
 
-    ForwardBashletRequest "/sys/ui/mocktail-docs-static-web-hosting.html"
+    ForwardBashletRequest "/sys/ui/docs/mocktail-docs-static-web-hosting.html"
 
 }
 
@@ -304,7 +304,7 @@ viewDocsDynamicWebHosting(){
     Log "DEBUG" "AdminController: inside viewDocsDynamicWebHosting, forwarding to Dynamic Web Hosting page..."
 
 
-    ForwardBashletRequest "/sys/ui/mocktail-docs-dynamic-web-hosting.html"
+    ForwardBashletRequest "/sys/ui/docs/mocktail-docs-dynamic-web-hosting.html"
 
 }
 
@@ -317,7 +317,7 @@ viewDocsAPIMocking(){
 
     Log "DEBUG" "AdminController: inside viewDocsAPIMocking, forwarding to API Mocking page..."
 
-    ForwardBashletRequest "/sys/ui/mocktail-docs-api-mocking.html"
+    ForwardBashletRequest "/sys/ui/docs/mocktail-docs-api-mocking.html"
 
 }
 

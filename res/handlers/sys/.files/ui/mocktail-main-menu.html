@@ -241,46 +241,54 @@
               }
             }
         }else if (parentView === 'static_web_hosting') {
-            const staticWebHostingLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/static-web-hosting"]');
-            if (staticWebHostingLink) {
-              const activeItem = staticWebHostingLink.closest('li');
+            const docsStaticWebHostingLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/static-web-hosting"]');
+            if (docsStaticWebHostingLink) {
+              const activeItem = docsStaticWebHostingLink.closest('li');
               if (activeItem) {
                 activeItem.classList.add('active');
               }
 
-              const activeDropdown = staticWebHostingLink.closest('li.dropdown');
+              const activeDropdown = docsStaticWebHostingLink.closest('li.dropdown');
               if (activeDropdown) {
                 activeDropdown.classList.add('active');
               }
             }
         }else if (parentView === 'dynamic_web_hosting') {
-            const dynamicWebHostingLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/dynamic-web-hosting?cat=dynamic-web-hosting&panel=intro"]');
-            if (dynamicWebHostingLink) {
-              const activeItem = dynamicWebHostingLink.closest('li');
+            const selectedPanel = parseTargetPanelFromURL();
+            const docsDynamicWebHostingLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/dynamic-web-hosting?cat=dynamic-web-hosting&panel=' + selectedPanel + '"]');
+            
+
+            if (docsDynamicWebHostingLink) {
+              const activeItem = docsDynamicWebHostingLink.closest('li');
               if (activeItem) {
                 activeItem.classList.add('active');
               }
 
-              const activeDropdown = dynamicWebHostingLink.closest('li.dropdown');
+              const activeDropdown = docsDynamicWebHostingLink.closest('li.dropdown');
               if (activeDropdown) {
                 activeDropdown.classList.add('active');
               }
             }
         }else if (parentView === 'api_mocking') {
-            const apiMockingLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/api-mocking?cat=api-mocking&panel=intro"]');
-            if (apiMockingLink) {
-              const activeItem = apiMockingLink.closest('li');
+            const selectedPanel = parseTargetPanelFromURL();
+            const docsApiMockingLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/api-mocking?cat=api-mocking&panel=' + selectedPanel + '"]');
+           
+            if (docsApiMockingLink) {
+              const activeItem = docsApiMockingLink.closest('li');
               if (activeItem) {
                 activeItem.classList.add('active');
               }
 
-              const activeDropdown = apiMockingLink.closest('li.dropdown');
+              const activeDropdown = docsApiMockingLink.closest('li.dropdown');
               if (activeDropdown) {
                 activeDropdown.classList.add('active');
               }
             }
         }else if (parentView === 'docs_getting_started') {
-            const docsGettingStartedInstallationLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/getting-started?cat=getting-started&panel=installation"]');
+          const selectedPanel = parseTargetPanelFromURL();
+          const docsGettingStartedInstallationLink = sidebarRoot.querySelector('a.nav-link[href="../../sys/admin/docs/getting-started?cat=getting-started&panel=' + selectedPanel + '"]');
+        
+            
             if (docsGettingStartedInstallationLink) {
               const activeItem = docsGettingStartedInstallationLink.closest('li');
               if (activeItem) {
@@ -293,6 +301,12 @@
               }
             }
         }
+    }
+
+
+    const parseTargetPanelFromURL = () => {
+    const urlParams = new URLSearchParams(parent.window.location.search);
+      return urlParams.get('panel');
     }
 
 

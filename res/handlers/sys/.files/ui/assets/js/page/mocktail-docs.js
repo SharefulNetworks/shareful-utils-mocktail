@@ -8,6 +8,25 @@
     //call helper function to attach event listeners to buttons on the page
     setupBtnEventListeners();
 
+
+     // Check URL for panel parameter and show the appropriate panel
+     const targetCategory = parseTargetCategoryFromURL();
+     const targetPanel = parseTargetPanelFromURL();
+
+     if (targetCategory && targetPanel) {
+       if (targetCategory === "getting-started") {
+         toggleGettingStartedCategoryContent(targetPanel);
+       } else if (targetCategory === "dynamic-web-hosting") {
+         toggleDynamicWebHostingCategoryContent(targetPanel);
+       } else if (targetCategory === "api-mocking") {
+         toggleApiMockingCategoryContent(targetPanel);
+       } else {
+         console.warn(
+           "No valid category found in URL parameters. Default content will be displayed.",
+         );
+       }
+     }
+
  })
 
 
@@ -295,4 +314,15 @@
         }
     }
    
+}
+
+
+const parseTargetPanelFromURL = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('panel');
+}
+
+const parseTargetCategoryFromURL = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('cat');
 }

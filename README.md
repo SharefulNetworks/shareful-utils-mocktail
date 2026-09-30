@@ -151,7 +151,20 @@ This request lifecycle is described in the  [docs](#Documentation) and is a good
 ![Bashlet request lifecycle](res/handlers/sys/.files/ui/assets/img/mocktail-bashlet-request-lifecycle-final.jpeg)
 
 #### 3.2 Creating a Bashlet Script
-A minimal Bashlet implementation would look something like as follows, here only a single enpoint function is defined for the purposes of this example, **a real Bashlet would typically have multiple endpoint functions defined** to handle different paths and HTTP methods:
+
+The Mocktail Server expects Bashlet scripts to be located in the following directory:
+
+```text
+res/bashlets/usr/
+```
+Thus firstly create a new Bashlet script in the above directory, for example:
+
+```bash
+touch res/bashlets/usr/ExampleBashlet.shh
+```
+**note:** The `.shh` file extension is used to indicate to Mocktail's internal BashletEngine that the script is a Bashlet. **All Bashlet scripts must have the `.shh` file extension**, otherwise they will not be recognised as Bashlets by the server. Incidentally, `shh` stands for: SHell Hosted, signifying that the script is a server-side Bash script.
+
+A minimal Bashlet implementation would look something like as follows, here only a single endpoint function is defined for the purposes of this example, **a real Bashlet would typically have multiple endpoint functions defined** to handle different paths and HTTP methods. For now, just copy and paste the following into your newly created Bashlet script:
 
 ```bash
 
@@ -197,7 +210,7 @@ Key points to note from the snippet above are as follows:
 
 - Additionally, **`request` and `response` objects are also passed into every endpoint function**, allowing you to access request data and set response data.
 - The `Log` function is a built-in helper for logging messages at different levels (DEBUG, INFO, ERROR, etc.).
-- The `SetBashletResponseBody` This is a built in helper function that is provided by the BashletContext and is used to set the response body of the HTTP response. Its also possible to forward and/or redirect to other endpoints and ,HTML content using the `SetBashletResponseForward` and `SetBashletResponseRedirect` helper functions respectively, see the docs for more details on these functions.
+- The `SetBashletResponseBody` This is a built in helper function that is provided by the BashletContext and is used to set the response body of the HTTP response. Its also possible to forward and/or redirect to other endpoints and ,HTML content using the `SetBashletResponseForward` and `SetBashletResponseRedirect` helper functions respectively, see the [docs](#Documentation) for more details on these functions.
 - The `BashletContext` is sourced at the top of the script to provide a multitude of helper functions for parsing requests and constructing responses.
 
 A more detailed example of how to implement Bashlets is provided in the  [docs](#Documentation), along with a description of the most commonly used helper functions for working with the HTTP request and response objects.

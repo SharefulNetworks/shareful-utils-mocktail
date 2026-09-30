@@ -2,6 +2,24 @@
   <img src="res/handlers/sys/.files/ui/assets/img/mocktail-logo-new-trans.png" alt="Mocktail logo" width="460" />
 </div>
 
+<p align="center">
+  <a href="https://github.com/SharefulNetworks/shareful-utils-mocktail/blob/main/LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/SharefulNetworks/shareful-utils-mocktail?style=flat-square" />
+  </a>
+  <a href="https://github.com/SharefulNetworks/shareful-utils-mocktail/stargazers">
+    <img alt="GitHub stars" src="https://img.shields.io/github/stars/SharefulNetworks/shareful-utils-mocktail?style=flat-square" />
+  </a>
+  <a href="https://github.com/SharefulNetworks/shareful-utils-mocktail/network/members">
+    <img alt="GitHub forks" src="https://img.shields.io/github/forks/SharefulNetworks/shareful-utils-mocktail?style=flat-square" />
+  </a>
+  <a href="https://github.com/SharefulNetworks/shareful-utils-mocktail/issues">
+    <img alt="Open issues" src="https://img.shields.io/github/issues/SharefulNetworks/shareful-utils-mocktail?style=flat-square" />
+  </a>
+  <a href="https://github.com/SharefulNetworks/shareful-utils-mocktail/commits/main">
+    <img alt="Last commit" src="https://img.shields.io/github/last-commit/SharefulNetworks/shareful-utils-mocktail?style=flat-square" />
+  </a>
+</p>
+
 ## 
 ## What is Mocktail
 **Mocktail is a lightweight, Bash-based HTTP server for creating mock APIs that may be deployed to test, develoment or QA environments and shared between one or more engineering teams.** Integrated support for the hosting of static and dynamic web applications is also provided out-of-the-box. Originally conceived as a simple utility for serving predefined, static, JSON API responses, **Mocktail evolved as a result of the need to generate fully dynamic JSON API responses**. To facilitate this process **a brand new, dynamic, HTTP Web Serving sub-system was put in place, based on Bashlets (special Mocktail,server-side Bash scripts that receive HTTP requests, processes them, and returns valid HTTP responses)**. This capability was then later exposed to third-party developers to allow them to **build and prototype dynamic web applications, on top of Mocktail Server, without having to install a full application development environment** like Python,Go Java,etc **all thats required is a BASH**, which comes installed, as standard, on most Linux distributions.

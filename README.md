@@ -208,7 +208,7 @@ createProfiles(){
 Key points to note from the snippet above are as follows:
 - Bashlet **endpoint functions are just standard bash functions with the exception that they are annotated with a `@route` annotation in the comment** that specifies the HTTP **method** and **path**.
 
-- Additionally, **`request` and `response` objects are also passed into every endpoint function**, allowing you to access request data and set response data.
+- Additionally, **`request` and `response` objects are also injected into every endpoint function by the BashletEngine**, allowing you to access request data and set response data.
 - The `Log` function is a built-in helper for logging messages at different levels (DEBUG, INFO, ERROR, etc.).
 - The `SetBashletResponseBody` This is a built in helper function that is provided by the BashletContext and is used to set the response body of the HTTP response. Its also possible to forward and/or redirect to other endpoints and ,HTML content using the `SetBashletResponseForward` and `SetBashletResponseRedirect` helper functions respectively, see the [docs](#Documentation) for more details on these functions.
 - The `BashletContext` is sourced at the top of the script to provide a multitude of helper functions for parsing requests and constructing responses.
@@ -278,6 +278,13 @@ The project layout is intentional and is **designed to separate the internal ser
 Mocktail is bundled with comprehensive project documentation library that covers all aspects of the server, including the finer details of API Mocking, static and dynamic web hosting and Server configuration/management options. Once you are logged into the server, you can access the docs from the main dashboard under the **Docs** menu item to the left of the screen:
 ![Bashlet request lifecycle](res/handlers/sys/.files/ui/assets/img/mocktail-readme-dashboard-docs.png)
 
+## Authors
+
+This project is maintained by the **SharefulNetworks OSS** team. The lead developer and maintainer details are as follows:
+- **Name**: Giles Thompson
+- **Email**: giles@shareful.net
+
+To contribute to the project or raise any issues please reach out to the above email address or raise an issue on the official GitHub repository.
 
 
 ## License

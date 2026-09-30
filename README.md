@@ -219,7 +219,7 @@ createProfiles(){
     #      as demonstrated below.
 
     #here we just dispatch a "success" response message to the client.
-    SetBashletResponseBody "$response" "Sucess!"
+    SetBashletResponseBody "$response" "Success!"
 }
 ```
 

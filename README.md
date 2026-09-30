@@ -6,11 +6,11 @@
 ## What is Mocktail
 **Mocktail is a lightweight, Bash-based HTTP server for creating mock APIs with integrated support for the hosting of static and dynamic web applications.** Originally conceived as a simple utility for serving predefined, static, JSON API responses, **Mocktail evolved as a result of the need to generate fully dynamic JSON API responses**. To facilitate this process **a brand new, dynamic, HTTP Web Serving sub-system was put in place, based on Bashlets (special Mocktail,server-side Bash scripts that receive HTTP requests, processes them, and returns valid HTTP responses)**. This capability was then later exposed to third-party developers to allow them to **build and prototype dynamic web applications, on top of Mocktail Server, without having to install a full application development environment** like Python,Go Java,etc **all thats required is a BASH**, which comes installed, as standard, on most Linux distributions.
 
-> **NOTE:** Mocktail is purpose-built for mocking APIs, while static and dynamic web hosting are supported, as complementary features, for rapid local or test environment deployment. Mocktail is **not** intended for general web serving in a production environment.
+> **NOTE:** Mocktail is purpose-built for mocking APIs. Whilst static and dynamic web hosting are supported, as complementary features, for rapid local or test environment deployment, Mocktail is **not** intended for general web serving in a production environment.
 
 ## Highlights
 
-- Intuitive UI for the easy creation of Mock API collections and their respective endpoints; great for rapid REST-stylem, API testing.
+- Intuitive UI for the easy creation of Mock API collections and their respective endpoints; great for rapid REST-style, API testing.
 
 - Being written fully in BASH, with only standard command-line tool dependencies, Mocktail is **super easy to deploy to a cloud server or VPS thereby allowing teams to share and/or evolve Mock APIs** in a test or QA environment.
 
@@ -32,18 +32,27 @@ Mocktail is ideal when you need to:
 
 ## Quick start
 
+You can get started with Mocktail in 3 simple steps:
+
+1) Firstly `clone` the project from the official SharefulNetworks GitHub repository. 
 ```bash
 git clone https://github.com/SharefulNetworks/shareful-utils-mocktail.git
+```
+
+2) Next navigate the to the project root directory and give the `mocktail` script execute permissions.
+```bash
 cd shareful-utils-mocktail
 chmod +x mocktail
+```
+
+3) Finally, start the server by executing the `mocktail` script:
+```bash
 ./mocktail
 ```
 
-Then navigate to the following URL in your browser:
+ 
 
-- `http://localhost:3333`
-
-If the server was started without error you should see the Mocktail **start page** in your browser. From there you can select the **Settings** card to be taken to the main Mocktail dashboard:
+If the server was started without error, when you navigate to `http://localhost:3333`, you should see the Mocktail **start page** in your browser. From there you can select the **Settings** card to be taken to the main Mocktail dashboard:
 
 ![API Mocking start page](res/handlers/sys/.files/ui/assets/img/mocktail-docs-getting-started-start-screen-dash-selection.png)
 
@@ -137,7 +146,7 @@ Put your HTML, CSS, JS, or other assets there and they will be served by the ser
 #### 3.1 Overview
 Dynamic hosting is built around Bashlet scripts. A Bashlet is a specialised Mocktail Bash script that receives HTTP requests, processes them, and returns a response. The server routes the request into the appropriate Bashlet **endpoint function** based on it associated path and method.
 
-This request lifecycle is described in the docs and is a good mental model for how Mocktail handles incoming traffic:
+This request lifecycle is described in the  [docs](#Documentation) and is a good mental model for how Mocktail handles incoming traffic:
 
 ![Bashlet request lifecycle](res/handlers/sys/.files/ui/assets/img/mocktail-bashlet-request-lifecycle-final.jpeg)
 
@@ -191,7 +200,7 @@ Key points to note from the snippet above are as follows:
 - The `SetBashletResponseBody` This is a built in helper function that is provided by the BashletContext and is used to set the response body of the HTTP response. Its also possible to forward and/or redirect to other endpoints and ,HTML content using the `SetBashletResponseForward` and `SetBashletResponseRedirect` helper functions respectively, see the docs for more details on these functions.
 - The `BashletContext` is sourced at the top of the script to provide a multitude of helper functions for parsing requests and constructing responses.
 
-A more detailed example of how to implement Bashlets is provided in the docs, along with a description of the most commonly used helper functions for working with the HTTP request and response objects.
+A more detailed example of how to implement Bashlets is provided in the  [docs](#Documentation), along with a description of the most commonly used helper functions for working with the HTTP request and response objects.
 
 #### 3.3 Referecing Bashlet in Handler config
 Once a Bashlet script has been created, it must be referenced in the appropriate handler config file, **By default, Mocktail Server expects user-defined Bashlet Scripts to be referenced in the User Handler config file** located at:

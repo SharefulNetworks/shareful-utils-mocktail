@@ -12,10 +12,10 @@
 
 - Intuitive UI for the easy creation of Mock API collections and their respective endpoints; great for rapid REST-style, API testing.
 
-- Being written fully in BASH, with only standard command-line tool dependencies, Mocktail is **super easy to deploy to a cloud server or VPS thereby allowing teams to share and/or evolve Mock APIs** in a test or QA environment.
+- Being fully written in BASH, with only standard command-line tool dependencies, Mocktail is **super easy to deploy to a cloud server or VPS thereby allowing teams to share and/or evolve Mock APIs** in a test or QA environment.
 
-- Static file hosting for HTML, CSS, JavaScript, images, and static assets
-- Support for Dynamic web application hosting using Bashlets (special server-side Bash Scripts), no other languages or development environments required.
+- Support for **static website hosting** for HTML, CSS, JavaScript, images, and static assets
+- Support for **dynamic web application hosting** using Bashlets (special server-side Bash Scripts), no other languages or development environments required.
 - Built-in admin and mocking dashboards for simple server management and monitoring
 - Simple startup flow with a single `mocktail` launcher script
 

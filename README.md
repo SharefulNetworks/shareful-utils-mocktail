@@ -155,7 +155,7 @@ Mocktail can function as a static web server for HTML, CSS, JS, and other assets
 res/usr/www
 ```
 
-Put your HTML, CSS, JS, or other assets there and they will be served by the server. If you place an `index.html` in the root of the web folder, it becomes the default page.
+Put your HTML, CSS, JS, or other assets there and they will be served by the server. **If you place a file titled: `index.html`, in the `res/usr/www` directory, it will replace the default Mocktail welcome page** when the root server URL: `http://localhost:3333` is accessed in the browser.
 
 ![Static web hosting setup](res/handlers/sys/.files/ui/assets/img/mocktail-root-dir-screenshot-annotated.png)
 

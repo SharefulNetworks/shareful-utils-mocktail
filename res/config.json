@@ -9,8 +9,8 @@
     "LogLevel": 3  
   },
   "SecuritySettings": {
-    "Email": "gilest@hotmail.co.uk",
-    "Passphrase": "3c2631eac71a3ee0a9ab0bb76bfa1a2e28ca35262b4d7ec561877edb4628d91c145cd0f8d2049b44f93689f7087a3d041692be08859bd2960740450804ace8bb  -",
+    "Email": "",
+    "Passphrase": "",
     "AuthenticationMethod": "passphrase-and-token",
     "TokenExpirationMinutes": 30,
     "AuthTokenCookieName": "mocktail_auth_token",

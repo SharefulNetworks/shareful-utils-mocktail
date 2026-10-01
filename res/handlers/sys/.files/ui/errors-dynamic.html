@@ -35,6 +35,13 @@
   const message = urlParams.get('message');
   const content = urlParams.get('content');
 
+  //handle the special case where we have a forbidden 403 error SPECIFICALLY because
+  //the user does not have an account (i.e. if this is the first time the user has launched mocktail)
+  //if (status === '403' && message.includes('Please create an System Admin account')) {
+  //  // Redirect to a specific page or show a custom message
+  //  window.location.href = 'sys/signup';
+  //}
+
   // Update the page with the error information
   document.addEventListener('DOMContentLoaded', () => {
     if (status) {

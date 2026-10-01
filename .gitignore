@@ -1,0 +1,14 @@
+.DS_Store
+*.log
+*.tmp
+
+# Docker
+.docker/
+
+# Editor / local
+.vscode/
+.idea/
+
+# Build artifacts
+**/__pycache__/
+**/*.pyc

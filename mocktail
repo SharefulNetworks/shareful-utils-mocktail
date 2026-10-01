@@ -34,7 +34,7 @@ startup() {
  Log "INFO" "Starting Mocktail server..."
   acquireScriptDependencies
   exportUtilityFunctions # export utility functions that the handler (sub) scripts may need to reference.
-  # applyServerFilePermissions # apply file permissions to all server files, including sub scripts, internal and system files.
+  applyServerFilePermissions # apply file permissions to all server files, including sub scripts, internal and system files.
   configureServer
   exportSharedVariables # export shared variables that the handler (sub)  scripts may need to reference.
   initialiseBashletEngine # call private helper function to initialise the BashletEngine.
@@ -362,8 +362,8 @@ applyServerFilePermissions(){
  Log "INFO" "Applying file permissions to server files..."
 
     applySubScriptFilePermissions
-    applyInternalFilePermissions
-    applySystemFilePermissions
+    #applyInternalFilePermissions  commented out for now in case we need to dynamically update internal files.
+    #applySystemFilePermissions commented out for now in case we need to dynamically update system files.
 
    Log "INFO" "File permissions applied to server files."
 }

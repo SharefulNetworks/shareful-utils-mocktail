@@ -290,6 +290,32 @@ The project layout is intentional and is **designed to separate the internal ser
 | ![sys - Medium Risk](https://img.shields.io/badge/sys-Medium%20Risk-orange?style=flat-square) `*/sys` | Anything under a **sys** directory contains system-level resources and logic to support the correct functioning of built-in Mocktail Web applications like **System Management** and **API Mocking**. Whilst these resources are at a higher level than those in the **internal** directory, they are still critical to the default operation of the server. These resources should generally **not** be modified by end users, unless there is a specific requirement to modify how the built-in Mocktail applications function. |
 | ![usr - Low Risk](https://img.shields.io/badge/usr-Low%20Risk-green?style=flat-square) `*/usr` | Anything under a **usr** directory contains user-level resources and configurations. These are **always safe for end users to modify**, as they are not critical to the operation of the server. These are typically the resources that users will interact with directly, such as custom Bashlets, user-defined mock collections, and user-specific web content. |
 
+## Running Mocktail With Docker
+
+Mocktail Server can also be run in a Docker container using the project Docker configuration located in the `docker/` directory.
+
+The container is built from Ubuntu and starts the server using the main `mocktail` launcher script. By default, Mocktail listens on port `3333`, and the container exposes that port automatically.
+
+### Quick Docker run
+
+A helper script is provided to make it easy to build and run the container, simply execute the following commands from the project root directory:
+```bash
+cd shareful-utils-mocktail
+chmod +x docker/run.sh
+sudo ./docker/run.sh
+```
+
+This helper script builds the image and starts the resultant container. You can then navigate to `http://localhost:3333` in your browser to access the Mocktail **start page**. To stop the container, simply type `docker stop mocktail` in the terminal.
+
+### Direct Docker build
+Alternatively, you can build and run the container directly using the following commands:
+
+```bash
+sudo docker build -f docker/Dockerfile -t mocktail .
+sudo docker run --rm -p 3333:3333 --name mocktail mocktail
+```
+
+Once the container is running, open `http://localhost:3333` in your browser to access the Mocktail **start page**. To stop the container, simply type `docker stop mocktail` in the terminal.
 
 ## Documentation
 

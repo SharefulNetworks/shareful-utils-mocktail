@@ -533,12 +533,17 @@ handleStaticRouteRequest() {
       if [[ -f "$absolute_file_path/index.html" ]]; then
         dispatchFileResponse "$absolute_file_path/index.html" "text/html"
        Log "DEBUG" "handler-utils: Static resource response sent for path: $path, found index.html, closing connection."
-      #final check: if the provided path is the server www root and no index.html exist we return the default mocktail welcome page to the client.
-      elif [[ "$absolute_file_path" == "/home/gilesthompson/erudite/shareful-oss/shareful-utils-mocktail/res/usr/www" ]]; then
-        dispatchFileResponse "${SCRIPT_DIR}/res/handlers/internal/xmocktail-welcome-page.html" "text/html"
-       Log "DEBUG" "handler-utils: Static resource response sent for path: $path, found index.htm, closing connection."
+      # final check: if the provided path is the server www root and no index.html exists we return the default mocktail welcome page to the client.
+      # normalize the raw path to avoid differences caused by trailing slashes or realpath normalization.
       else
-        DispatchErrorResponse 404 "The provided path references a directory that DOES NOT contain an index.html file" "application/json" "$request_path" "$request_method" "$request_json_object"
+        local normalized_absolute_dir="${absolute_file_path%/}"
+        local normalized_expected_root="${SCRIPT_DIR%/}/res/usr/www"
+        if [[ "$normalized_absolute_dir" == "$normalized_expected_root" ]]; then
+          dispatchFileResponse "${SCRIPT_DIR}/res/handlers/internal/xmocktail-welcome-page.html" "text/html"
+          Log "DEBUG" "handler-utils: Static resource response sent for path: $path, serving default welcome page for server root, closing connection."
+        else
+          DispatchErrorResponse 404 "The provided path references a directory that DOES NOT contain an index.html file" "application/json" "$request_path" "$request_method" "$request_json_object"
+        fi
       fi
     else
       Log "ERROR" "handler-utils: Static resource file not found for path: $path at file path: $route_file_path, the absolute file path was: $absolute_file_path, sending error response."

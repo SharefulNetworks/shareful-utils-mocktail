@@ -237,11 +237,21 @@ DelegateRequestToBashletEngine() {
         if [[ -z "$authCookie" ]] || [[ "$authCookieValid" -eq 1 ]]; then
            Log "DEBUG" "BashletEngine: Received request to secure route: $sanitized_request_path, but user is not currently authenticated, redirecting to signin page..."
 
+            # check if the user actually has an account, where this is not the case (i.e. if this is the first time the user has launched mocktail)
+            # we redirect them to the signup page instead of the signin page. No account is indicated by the absence of a stored passphrase in the config file, 
+            # which is required for authentication.
+            if [[ -z "$storedPassphrase" ]]; then
+                Log "DEBUG" "BashletEngine: User does not have an account, redirecting to signup page..."
+                DispatchBashletRedirectResponse "/sys/signup"
+                return 1
+            fi
+
+
             # Build up the signin success path, this is the location we will redirect the user to after successful signin, which is the original request path they were attempting to access.
             # NOTE: The signin success path MUST be absolute as the redirect will be peformed by the browser as a brand new request.
             absoluteSigninSuccessRedirectPath="$(realpath -m "/sys/$relative_request_path")"
             absoluteSigninSuccessRedirectPath="$(UrlEncode "$absoluteSigninSuccessRedirectPath")"
-            
+        
             # build warning message acording to whether or not the user had a prior valid session
             # that has now expired.
             local warningMessageVal

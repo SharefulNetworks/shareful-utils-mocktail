@@ -5,22 +5,21 @@
   "CollectionId": "1234",
   "Endpoints": [
     {
-      "Id": "1", 
+      "Id": "1",
       "Path": "/api/v1/products",
       "Method": "GET",
       "Response": {
-        "Body": 
-          [
-            {
-              "id": 1,
-              "name": "Squash"
-            },
-            {
-              "id": 2,
-              "name": "Marmalade"
-            }
-          ]
+        "Body": [
+          {
+            "id": 1,
+            "name": "Jam"
+          },
+          {
+            "id": 2,
+            "name": "Marmalade"
+          }
+        ]
       }
-    } 
+    }
   ]
 }
